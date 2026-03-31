@@ -3021,7 +3021,7 @@ def cmd_update(args):
         # attributes like display_hermes_home() added since the last release.
         try:
             import importlib
-            import core.hermes_constants as hermes_constants as _hc
+            import core.hermes_constants as _hc
             importlib.reload(_hc)
         except Exception:
             pass  # non-fatal — worst case a lazy import fails gracefully
