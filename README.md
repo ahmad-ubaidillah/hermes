@@ -352,18 +352,41 @@ print(f"Success rate: {stats['success_rate']}%")
 
 ---
 
-## Free Model Integration
+## Free Model Integration via OpenCode
 
-Hermes v3.0 works with free models via z.ai:
+Hermes v3.0 integrates with [OpenCode](https://github.com/opencode-ai/opencode) for free AI models:
 
-| Model | Use Case | Daily Limit |
-|-------|----------|-------------|
-| `qwen3.6-plus-free` | Coding tasks | 550K tokens/day |
-| `mimo-v2-omni-free` | Fast responses | 550K tokens/day |
-| `minimax-m2.5-free` | Complex tasks | 550K tokens/day |
+| Model | Use Case | Cost |
+|-------|----------|------|
+| `opencode/qwen3.6-plus-free` | Coding tasks | FREE |
+| `opencode/mimo-v2-omni-free` | Fast responses | FREE |
+| `opencode/mimo-v2-pro-free` | Advanced tasks | FREE |
+| `opencode/minimax-m2.5-free` | Complex reasoning | FREE |
+| `opencode/nemotron-3-super-free` | General purpose | FREE |
+| `opencode/big-pickle` | Large context | FREE |
+| `opencode/gpt-5-nano` | Quick tasks | FREE |
+
+### Install OpenCode
 
 ```bash
-hermes model zai:qwen3.6-plus-free
+# Install OpenCode CLI
+curl -fsSL https://raw.githubusercontent.com/opencode-ai/opencode/main/install.sh | bash
+
+# Or via npm
+npm install -g @opencode-ai/opencode
+
+# List available models
+opencode models
+```
+
+### Use with Hermes
+
+```bash
+# Start OpenCode (runs as background agent)
+opencode &
+
+# Or use OpenCode directly for coding tasks
+opencode run "implement user authentication"
 ```
 
 ---
