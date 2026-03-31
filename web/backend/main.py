@@ -1,245 +1,287 @@
 """
-Hermes Web Dashboard - FastAPI Backend
+Hermes v3.0 Web Dashboard Backend - FastAPI
 
-Provides REST API and WebSocket for:
-- Agent status and management
-- Sprint board and tasks
-- Model budget tracking
-- Real-time updates
+Features:
+- Agent management (18 agents)
+- Sprint/Kanban board
+- Model usage tracking
+- v3.0 features (IntentGate, Background Agents, Hooks)
+- Real-time WebSocket updates
+- Observability integration
 """
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pathlib import Path
 import asyncio
 import json
 import os
 import sys
 
-# Add parent to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add parent to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 app = FastAPI(
-    title="Hermes Dashboard",
-    description="Web dashboard for Hermes AI Agent",
+    title="Hermes Dashboard v3.0",
+    description="Web dashboard for Hermes AI Agent Team",
     version="3.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# CORS for frontend
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict this
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ============== MODELS ==============
 
-# ============== Models ==============
-
-class AgentStatus(BaseModel):
+class Agent(BaseModel):
+    id: str
     name: str
     role: str
-    status: str = "idle"  # idle, busy, error
+    tag: str
+    status: str = "idle"
     current_task: Optional[str] = None
-    last_activity: Optional[datetime] = None
     tasks_completed: int = 0
     tokens_used: int = 0
+    last_activity: Optional[datetime] = None
 
-
-class SprintTask(BaseModel):
+class Task(BaseModel):
     id: str
     title: str
     description: str = ""
-    status: str = "todo"  # todo, in_progress, done, blocked
+    status: str = "todo"
     assignee: Optional[str] = None
-    priority: str = "medium"  # low, medium, high, critical
+    priority: str = "medium"
+    intent: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    estimated_tokens: int = 0
-    actual_tokens: int = 0
-
 
 class Sprint(BaseModel):
     id: str
     name: str
+    status: str = "active"
     start_date: datetime
     end_date: Optional[datetime] = None
-    status: str = "active"  # planning, active, completed
     tasks: List[str] = []
 
-
-class ModelUsage(BaseModel):
-    provider: str
-    model: str
-    tokens_used: int
-    cost: float
-    is_free: bool
-
-
-class DashboardStats(BaseModel):
+class Stats(BaseModel):
     total_agents: int
     active_agents: int
     total_tasks: int
     completed_tasks: int
     total_tokens: int
     remaining_budget: int
+    v3_features: Dict[str, bool]
 
+class IntentResult(BaseModel):
+    intent: str
+    confidence: float
+    recommended_agent: str
+    reasoning: str
 
-# ============== In-Memory Store ==============
+class HookEvent(BaseModel):
+    event: str
+    agent: Optional[str] = None
+    tool: Optional[str] = None
+    timestamp: datetime
+    data: Optional[Dict[str, Any]] = None
 
-# In production, this would be a database
-_agents: Dict[str, AgentStatus] = {
-    "Flash": AgentStatus(name="Flash", role="Quick Tasks"),
-    "Dev": AgentStatus(name="Dev", role="Development"),
-    "Arch": AgentStatus(name="Arch", role="Architecture"),
-    "QA": AgentStatus(name="QA", role="Quality Assurance"),
-    "Ops": AgentStatus(name="Ops", role="Operations"),
-    "Sec": AgentStatus(name="Sec", role="Security"),
-    "Research": AgentStatus(name="Research", role="Research"),
+# ============== DATA STORE ==============
+
+# 18 Hermes Agents
+AGENTS = {
+    "Flash": Agent(id="flash", name="Flash", role="Quick Tasks", tag="[FLASH]"),
+    "Hermes": Agent(id="hermes", name="Hermes", role="CEO - Decision Maker", tag="[CEO]"),
+    "Biz": Agent(id="biz", name="Biz", role="Business Development", tag="[BIZ]"),
+    "Pixel": Agent(id="pixel", name="Pixel", role="UI/UX Designer", tag="[DESIGN]"),
+    "Nova": Agent(id="nova", name="Nova", role="Product Manager", tag="[PM]"),
+    "Testa": Agent(id="testa", name="Testa", role="Quality Assurance", tag="[QA]"),
+    "Atlas": Agent(id="atlas", name="Atlas", role="Architect", tag="[ARCH]"),
+    "Cody": Agent(id="cody", name="Cody", role="Developer", tag="[DEV]"),
+    "Deploya": Agent(id="deploya", name="Deploya", role="DevOps", tag="[OPS]"),
+    "Query": Agent(id="query", name="Query", role="Database Admin", tag="[DBA]"),
+    "Shield": Agent(id="shield", name="Shield", role="Security", tag="[SEC]"),
+    "Scoutra": Agent(id="scoutra", name="Scoutra", role="Researcher", tag="[RESEARCH]"),
+    "Crawla": Agent(id="crawla", name="Crawla", role="Web Crawler", tag="[CRAWLER]"),
+    "Libra": Agent(id="libra", name="Libra", role="Knowledge Manager", tag="[KNOWLEDGE]"),
 }
 
+_tasks: Dict[str, Task] = {}
 _sprints: Dict[str, Sprint] = {}
-_tasks: Dict[str, SprintTask] = {}
-_model_usage: List[ModelUsage] = []
+_hooks_log: List[HookEvent] = []
+_model_usage: List[Dict] = []
 
-# WebSocket connections
-_ws_connections: List[WebSocket] = []
+# v3.0 Feature flags
+_v3_features = {
+    "intent_gate": True,
+    "background_agents": True,
+    "lifecycle_hooks": True,
+    "hash_edit": True,
+    "lsp_integration": False,
+}
 
-
-# ============== WebSocket Manager ==============
-
+# WebSocket manager
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.connections: List[WebSocket] = []
     
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        self.connections.append(ws)
     
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+    def disconnect(self, ws: WebSocket):
+        if ws in self.connections:
+            self.connections.remove(ws)
     
-    async def broadcast(self, message: dict):
-        for connection in self.active_connections:
+    async def broadcast(self, msg: dict):
+        for ws in self.connections:
             try:
-                await connection.send_json(message)
+                await ws.send_json(msg)
             except:
                 pass
 
-
 manager = ConnectionManager()
 
-
-# ============== Routes ==============
+# ============== ROUTES ==============
 
 @app.get("/")
 async def root():
-    return {"message": "Hermes Dashboard API v3.0", "docs": "/docs"}
+    return {
+        "name": "Hermes Dashboard v3.0",
+        "docs": "/docs",
+        "websocket": "/ws",
+    }
 
+# --- Stats ---
 
-@app.get("/api/stats", response_model=DashboardStats)
+@app.get("/api/stats", response_model=Stats)
 async def get_stats():
-    """Get dashboard statistics."""
-    active = sum(1 for a in _agents.values() if a.status == "busy")
+    active = sum(1 for a in AGENTS.values() if a.status == "busy")
     completed = sum(1 for t in _tasks.values() if t.status == "done")
-    total_tokens = sum(a.tokens_used for a in _agents.values())
+    tokens = sum(a.tokens_used for a in AGENTS.values())
     
-    return DashboardStats(
-        total_agents=len(_agents),
+    return Stats(
+        total_agents=len(AGENTS),
         active_agents=active,
         total_tasks=len(_tasks),
         completed_tasks=completed,
-        total_tokens=total_tokens,
-        remaining_budget=550000 - total_tokens,  # Free tier limit
+        total_tokens=tokens,
+        remaining_budget=550000 - tokens,
+        v3_features=_v3_features,
     )
-
 
 # --- Agents ---
 
-@app.get("/api/agents", response_model=List[AgentStatus])
+@app.get("/api/agents")
 async def list_agents():
-    """List all agents and their status."""
-    return list(_agents.values())
+    return list(AGENTS.values())
 
+@app.get("/api/agents/{agent_id}")
+async def get_agent(agent_id: str):
+    if agent_id not in AGENTS:
+        raise HTTPException(404, "Agent not found")
+    return AGENTS[agent_id]
 
-@app.get("/api/agents/{agent_name}", response_model=AgentStatus)
-async def get_agent(agent_name: str):
-    """Get agent status."""
-    if agent_name not in _agents:
-        raise HTTPException(status_code=404, detail="Agent not found")
-    return _agents[agent_name]
-
-
-@app.post("/api/agents/{agent_name}/assign")
-async def assign_task(agent_name: str, task_id: str):
-    """Assign a task to an agent."""
-    if agent_name not in _agents:
-        raise HTTPException(status_code=404, detail="Agent not found")
-    
+@app.post("/api/agents/{agent_id}/assign")
+async def assign_task(agent_id: str, task_id: str):
+    if agent_id not in AGENTS:
+        raise HTTPException(404, "Agent not found")
     if task_id not in _tasks:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(404, "Task not found")
     
-    _agents[agent_name].current_task = task_id
-    _agents[agent_name].status = "busy"
-    _tasks[task_id].assignee = agent_name
+    AGENTS[agent_id].current_task = task_id
+    AGENTS[agent_id].status = "busy"
+    _tasks[task_id].assignee = agent_id
     _tasks[task_id].status = "in_progress"
+    _tasks[task_id].updated_at = datetime.now()
     
-    # Broadcast update
     await manager.broadcast({
         "type": "agent_assigned",
-        "agent": agent_name,
+        "agent": agent_id,
         "task": task_id,
     })
     
-    return {"message": f"Task {task_id} assigned to {agent_name}"}
+    return {"message": f"Task {task_id} assigned to {agent_id}"}
 
+@app.post("/api/agents/{agent_id}/complete")
+async def complete_task(agent_id: str, tokens_used: int = 0):
+    if agent_id not in AGENTS:
+        raise HTTPException(404, "Agent not found")
+    
+    agent = AGENTS[agent_id]
+    task_id = agent.current_task
+    
+    if task_id and task_id in _tasks:
+        _tasks[task_id].status = "done"
+        _tasks[task_id].updated_at = datetime.now()
+    
+    agent.current_task = None
+    agent.status = "idle"
+    agent.tasks_completed += 1
+    agent.tokens_used += tokens_used
+    agent.last_activity = datetime.now()
+    
+    await manager.broadcast({
+        "type": "task_completed",
+        "agent": agent_id,
+        "task": task_id,
+    })
+    
+    return {"message": "Task completed"}
 
 # --- Tasks ---
 
-@app.get("/api/tasks", response_model=List[SprintTask])
-async def list_tasks(sprint_id: Optional[str] = None, status: Optional[str] = None):
-    """List tasks, optionally filtered."""
+@app.get("/api/tasks")
+async def list_tasks(status: Optional[str] = None, assignee: Optional[str] = None):
     tasks = list(_tasks.values())
-    
-    if sprint_id:
-        sprint = _sprints.get(sprint_id)
-        if sprint:
-            tasks = [t for t in tasks if t.id in sprint.tasks]
-    
     if status:
         tasks = [t for t in tasks if t.status == status]
-    
+    if assignee:
+        tasks = [t for t in tasks if t.assignee == assignee]
     return tasks
 
-
-@app.post("/api/tasks", response_model=SprintTask)
+@app.post("/api/tasks")
 async def create_task(
     title: str,
     description: str = "",
     priority: str = "medium",
-    sprint_id: Optional[str] = None,
+    intent: Optional[str] = None,
 ):
-    """Create a new task."""
     task_id = f"task_{len(_tasks) + 1}"
     now = datetime.now()
     
-    task = SprintTask(
+    # Use IntentGate if enabled and no intent provided
+    if _v3_features["intent_gate"] and not intent:
+        try:
+            from routing.intent_gate import IntentGate
+            gate = IntentGate()
+            result = gate.analyze(title)
+            intent = result.intent.value
+        except:
+            intent = "unknown"
+    
+    task = Task(
         id=task_id,
         title=title,
         description=description,
         priority=priority,
+        intent=intent,
         created_at=now,
         updated_at=now,
     )
     
     _tasks[task_id] = task
-    
-    if sprint_id and sprint_id in _sprints:
-        _sprints[sprint_id].tasks.append(task_id)
     
     await manager.broadcast({
         "type": "task_created",
@@ -248,25 +290,19 @@ async def create_task(
     
     return task
 
-
 @app.patch("/api/tasks/{task_id}")
-async def update_task(task_id: str, status: Optional[str] = None):
-    """Update task status."""
+async def update_task(task_id: str, status: Optional[str] = None, assignee: Optional[str] = None):
     if task_id not in _tasks:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(404, "Task not found")
     
     task = _tasks[task_id]
     
     if status:
         task.status = status
         task.updated_at = datetime.now()
-        
-        # Update agent status if task completed
-        if status == "done" and task.assignee:
-            if task.assignee in _agents:
-                _agents[task.assignee].current_task = None
-                _agents[task.assignee].status = "idle"
-                _agents[task.assignee].tasks_completed += 1
+    
+    if assignee:
+        task.assignee = assignee
     
     await manager.broadcast({
         "type": "task_updated",
@@ -275,18 +311,28 @@ async def update_task(task_id: str, status: Optional[str] = None):
     
     return task
 
+@app.delete("/api/tasks/{task_id}")
+async def delete_task(task_id: str):
+    if task_id not in _tasks:
+        raise HTTPException(404, "Task not found")
+    
+    del _tasks[task_id]
+    
+    await manager.broadcast({
+        "type": "task_deleted",
+        "task_id": task_id,
+    })
+    
+    return {"message": "Task deleted"}
 
 # --- Sprints ---
 
-@app.get("/api/sprints", response_model=List[Sprint])
+@app.get("/api/sprints")
 async def list_sprints():
-    """List all sprints."""
     return list(_sprints.values())
 
-
-@app.post("/api/sprints", response_model=Sprint)
+@app.post("/api/sprints")
 async def create_sprint(name: str):
-    """Create a new sprint."""
     sprint_id = f"sprint_{len(_sprints) + 1}"
     
     sprint = Sprint(
@@ -297,77 +343,90 @@ async def create_sprint(name: str):
     
     _sprints[sprint_id] = sprint
     
-    await manager.broadcast({
-        "type": "sprint_created",
-        "sprint": sprint.model_dump(),
-    })
-    
     return sprint
 
+# --- v3.0 Features ---
+
+@app.get("/api/v3/features")
+async def get_v3_features():
+    return _v3_features
+
+@app.post("/api/v3/features")
+async def set_v3_features(features: Dict[str, bool]):
+    global _v3_features
+    _v3_features.update(features)
+    return _v3_features
+
+@app.post("/api/v3/intent")
+async def analyze_intent(text: str):
+    """Analyze intent using IntentGate."""
+    try:
+        from routing.intent_gate import IntentGate
+        gate = IntentGate()
+        result = gate.analyze(text)
+        return IntentResult(
+            intent=result.intent.value,
+            confidence=result.confidence,
+            recommended_agent=result.recommended_agent,
+            reasoning=result.verbalize(),
+        )
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/api/v3/hooks")
+async def get_hooks_log():
+    """Get recent hook events."""
+    return [h.model_dump() for h in _hooks_log[-50:]]
+
+@app.post("/api/v3/hooks")
+async def log_hook_event(event: HookEvent):
+    """Log a hook event."""
+    _hooks_log.append(event)
+    await manager.broadcast({
+        "type": "hook_event",
+        "event": event.model_dump(),
+    })
+    return event
 
 # --- Model Usage ---
 
-@app.get("/api/models/usage", response_model=List[ModelUsage])
+@app.get("/api/models/usage")
 async def get_model_usage():
-    """Get model usage statistics."""
     return _model_usage
-
 
 @app.post("/api/models/usage")
 async def record_usage(provider: str, model: str, tokens: int, cost: float = 0.0):
-    """Record model usage."""
-    usage = ModelUsage(
-        provider=provider,
-        model=model,
-        tokens_used=tokens,
-        cost=cost,
-        is_free=cost == 0.0,
-    )
-    
+    usage = {
+        "provider": provider,
+        "model": model,
+        "tokens": tokens,
+        "cost": cost,
+        "is_free": cost == 0.0,
+        "timestamp": datetime.now().isoformat(),
+    }
     _model_usage.append(usage)
-    
-    await manager.broadcast({
-        "type": "usage_recorded",
-        "usage": usage.model_dump(),
-    })
-    
     return usage
-
 
 # --- WebSocket ---
 
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket for real-time updates."""
-    await manager.connect(websocket)
-    
+async def websocket_endpoint(ws: WebSocket):
+    await manager.connect(ws)
     try:
         while True:
-            data = await websocket.receive_text()
-            
-            # Parse and handle message
+            data = await ws.receive_text()
             try:
-                message = json.loads(data)
-                # Echo back for now
-                await websocket.send_json({
-                    "type": "echo",
-                    "message": message,
-                })
-            except json.JSONDecodeError:
-                await websocket.send_json({
-                    "type": "error",
-                    "message": "Invalid JSON",
-                })
-    
+                msg = json.loads(data)
+                await ws.send_json({"type": "echo", "message": msg})
+            except:
+                pass
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        manager.disconnect(ws)
 
-
-# ============== Startup/Shutdown ==============
+# --- Startup ---
 
 @app.on_event("startup")
 async def startup():
-    """Initialize on startup."""
     # Create default sprint
     if not _sprints:
         sprint = Sprint(
@@ -377,20 +436,11 @@ async def startup():
         )
         _sprints["sprint_1"] = sprint
 
-
-@app.on_event("shutdown")
-async def shutdown():
-    """Cleanup on shutdown."""
-    pass
-
-
-# ============== Run ==============
+# --- Run ---
 
 def run_server(host: str = "0.0.0.0", port: int = 8000):
-    """Run the FastAPI server."""
     import uvicorn
     uvicorn.run(app, host=host, port=port)
-
 
 if __name__ == "__main__":
     run_server()

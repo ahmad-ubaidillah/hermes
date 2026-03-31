@@ -1,13 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hermes Dashboard</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes v3.0 Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        .agent-card { transition: all 0.2s ease; }
+        .agent-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .task-card { transition: all 0.2s ease; cursor: pointer; }
+        .task-card:hover { background-color: #f9fafb; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .kanban-column { min-height: 200px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" v-cloak>
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">⚕ Hermes Dashboard</h1>
+                        <p class="text-sm text-gray-500">v3.0 - Autonomous AI Team</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full" :class="wsConnected ? 'bg-green-500' : 'bg-red-500'"></span>
+                            <span class="text-sm text-gray-500">{{ wsConnected ? 'Connected' : 'Disconnected' }}</span>
+                        </div>
+                        <button @click="showSettings = true" class="p-2 rounded-lg hover:bg-gray-100">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div class="bg-white rounded-xl shadow-sm p-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Active</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ stats.active_agents }}/{{ stats.total_agents }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Tasks</p>
+                    <p class="text-2xl font-bold text-green-600">{{ stats.completed_tasks }}/{{ stats.total_tasks }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Tokens</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ (stats.total_tokens / 1000).toFixed(1) }}K</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Budget</p>
+                    <p class="text-2xl font-bold text-emerald-600">{{ (stats.remaining_budget / 1000).toFixed(0) }}K</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-4" v-for="(enabled, feature) in stats.v3_features" :key="feature">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">{{ feature.replace('_', ' ') }}</p>
+                    <p class="text-2xl font-bold" :class="enabled ? 'text-green-600' : 'text-gray-400'">{{ enabled ? '✓' : '✗' }}</p>
+                </div>
+            </div>
+
+            <!-- IntentGate Test -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4">🎯 IntentGate</h2>
+                <div class="flex space-x-4">
+                    <input v-model="intentInput" @keyup.enter="analyzeIntent" 
+                           placeholder="Enter a task to analyze intent..."
+                           class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <button @click="analyzeIntent" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Analyze
+                    </button>
+                </div>
+                <div v-if="intentResult" class="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p><strong>Intent:</strong> {{ intentResult.intent }}</p>
+                    <p><strong>Agent:</strong> {{ intentResult.recommended_agent }}</p>
+                    <p><strong>Confidence:</strong> {{ (intentResult.confidence * 100).toFixed(0) }}%</p>
+                    <p class="text-gray-600 mt-2">{{ intentResult.reasoning }}</p>
+                </div>
+            </div>
+
+            <!-- Agents Grid -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">🤖 Agents</h2>
+                    <button @click="showNewTask = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                        + New Task
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div v-for="agent in agents" :key="agent.id" 
+                         class="agent-card bg-white rounded-xl shadow-sm p-4 border-l-4"
+                         :class="{
+                             'border-green-500': agent.status === 'idle',
+                             'border-yellow-500': agent.status === 'busy',
+                             'border-red-500': agent.status === 'error'
+                         }">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{{ agent.tag }}</span>
+                            <span class="w-2 h-2 rounded-full" 
+                                  :class="{
+                                      'bg-green-500': agent.status === 'idle',
+                                      'bg-yellow-500 pulse': agent.status === 'busy',
+                                      'bg-red-500': agent.status === 'error'
+                                  }"></span>
+                        </div>
+                        <h3 class="font-bold">{{ agent.name }}</h3>
+                        <p class="text-sm text-gray-500">{{ agent.role }}</p>
+                        <div class="mt-3 text-xs text-gray-500">
+                            <p v-if="agent.current_task">Task: {{ agent.current_task }}</p>
+                            <p>{{ agent.tasks_completed }} completed · {{ agent.tokens_used }} tokens</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban Board -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">📋 Sprint Board</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div v-for="status in ['todo', 'in_progress', 'done', 'blocked']" :key="status" 
+                         class="kanban-column bg-gray-50 rounded-xl p-4">
+                        <h3 class="font-medium mb-3 capitalize text-gray-700">
+                            {{ status.replace('_', ' ') }}
+                            <span class="text-gray-400 text-sm">({{ tasksByStatus(status).length }})</span>
+                        </h3>
+                        <div class="space-y-3">
+                            <div v-for="task in tasksByStatus(status)" :key="task.id"
+                                 class="task-card bg-white rounded-lg shadow-sm p-3 border"
+                                 :class="{
+                                     'border-gray-200': task.priority === 'low',
+                                     'border-blue-300': task.priority === 'medium',
+                                     'border-orange-300': task.priority === 'high',
+                                     'border-red-300': task.priority === 'critical'
+                                 }"
+                                 @click="selectedTask = task">
+                                <div class="flex items-start justify-between">
+                                    <h4 class="font-medium text-sm">{{ task.title }}</h4>
+                                    <span class="text-xs px-2 py-0.5 rounded"
+                                          :class="{
+                                              'bg-gray-100 text-gray-600': task.priority === 'low',
+                                              'bg-blue-100 text-blue-600': task.priority === 'medium',
+                                              'bg-orange-100 text-orange-600': task.priority === 'high',
+                                              'bg-red-100 text-red-600': task.priority === 'critical'
+                                          }">
+                                        {{ task.priority }}
+                                    </span>
+                                </div>
+                                <p v-if="task.intent" class="text-xs text-purple-600 mt-1">{{ task.intent }}</p>
+                                <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+                                    <span>{{ task.assignee || 'Unassigned' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hooks Log -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4">🔔 Recent Hooks</h2>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                    <div v-for="hook in hooksLog.slice(-10).reverse()" :key="hook.timestamp"
+                         class="flex items-center space-x-4 text-sm p-2 bg-gray-50 rounded">
+                        <span class="font-mono text-xs text-gray-400">{{ hook.timestamp }}</span>
+                        <span class="font-medium text-blue-600">{{ hook.event }}</span>
+                        <span v-if="hook.agent" class="text-gray-600">{{ hook.agent }}</span>
+                        <span v-if="hook.tool" class="text-gray-600">({{ hook.tool }})</span>
+                    </div>
+                    <p v-if="!hooksLog.length" class="text-gray-400 text-sm">No hooks yet</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- New Task Modal -->
+        <div v-if="showNewTask" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                <h3 class="text-lg font-semibold mb-4">Create Task</h3>
+                <div class="space-y-4">
+                    <input v-model="newTask.title" placeholder="Task title" 
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                    <textarea v-model="newTask.description" placeholder="Description"
+                              class="w-full border border-gray-300 rounded-lg px-4 py-2 h-24"></textarea>
+                    <select v-model="newTask.priority" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        <option value="low">Low Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="high">High Priority</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button @click="showNewTask = false" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button @click="createTask" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Create</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div v-if="showSettings" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                <h3 class="text-lg font-semibold mb-4">⚙️ v3.0 Features</h3>
+                <div class="space-y-3">
+                    <label v-for="(enabled, feature) in v3Features" :key="feature" 
+                           class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span class="capitalize">{{ feature.replace('_', ' ') }}</span>
+                        <input type="checkbox" v-model="v3Features[feature]" 
+                               @change="updateFeatures"
+                               class="w-5 h-5 text-blue-600 rounded">
+                    </label>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button @click="showSettings = false" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+        
+        const API = 'http://localhost:8000/api';
+        
+        createApp({
+            setup() {
+                // State
+                const wsConnected = ref(false);
+                const stats = ref({ total_agents: 0, active_agents: 0, total_tasks: 0, completed_tasks: 0, total_tokens: 0, remaining_budget: 550000, v3_features: {} });
+                const agents = ref([]);
+                const tasks = ref([]);
+                const hooksLog = ref([]);
+                const v3Features = ref({ intent_gate: true, background_agents: true, lifecycle_hooks: true, hash_edit: true, lsp_integration: false });
+                
+                // UI State
+                const showNewTask = ref(false);
+                const showSettings = ref(false);
+                const selectedTask = ref(null);
+                const intentInput = ref('');
+                const intentResult = ref(null);
+                const newTask = ref({ title: '', description: '', priority: 'medium' });
+                
+                // WebSocket
+                let ws = null;
+                let reconnectInterval = null;
+                
+                function connectWS() {
+                    ws = new WebSocket('ws://localhost:8000/ws');
+                    ws.onopen = () => { wsConnected.value = true; clearInterval(reconnectInterval); };
+                    ws.onclose = () => { wsConnected.value = false; reconnectInterval = setInterval(connectWS, 3000); };
+                    ws.onmessage = (e) => {
+                        const msg = JSON.parse(e.data);
+                        if (msg.type === 'task_created' || msg.type === 'task_updated') fetchTasks();
+                        if (msg.type === 'agent_assigned') fetchAgents();
+                        if (msg.type === 'hook_event') hooksLog.value.push(msg.event);
+                    };
+                }
+                
+                // Fetch functions
+                async function fetchStats() { try { stats.value = (await axios.get(`${API}/stats`)).data; } catch {} }
+                async function fetchAgents() { try { agents.value = (await axios.get(`${API}/agents`)).data; } catch {} }
+                async function fetchTasks() { try { tasks.value = (await axios.get(`${API}/tasks`)).data; } catch {} }
+                async function fetchHooks() { try { hooksLog.value = (await axios.get(`${API}/v3/hooks`)).data; } catch {} }
+                async function fetchFeatures() { try { v3Features.value = (await axios.get(`${API}/v3/features`)).data; } catch {} }
+                
+                // Actions
+                async function analyzeIntent() {
+                    if (!intentInput.value) return;
+                    try {
+                        intentResult.value = (await axios.post(`${API}/v3/intent?text=${encodeURIComponent(intentInput.value)}`)).data;
+                    } catch (e) { console.error(e); }
+                }
+                
+                async function createTask() {
+                    if (!newTask.value.title) return;
+                    try {
+                        await axios.post(`${API}/tasks`, null, { params: newTask.value });
+                        showNewTask.value = false;
+                        newTask.value = { title: '', description: '', priority: 'medium' };
+                        fetchTasks();
+                        fetchStats();
+                    } catch (e) { console.error(e); }
+                }
+                
+                async function updateFeatures() {
+                    try { await axios.post(`${API}/v3/features`, v3Features.value); } catch {}
+                }
+                
+                const tasksByStatus = (status) => tasks.value.filter(t => t.status === status);
+                
+                // Lifecycle
+                onMounted(() => {
+                    fetchStats(); fetchAgents(); fetchTasks(); fetchHooks(); fetchFeatures();
+                    connectWS();
+                    setInterval(() => { fetchStats(); fetchAgents(); }, 5000);
+                });
+                
+                onUnmounted(() => { if (ws) ws.close(); });
+                
+                return {
+                    wsConnected, stats, agents, tasks, hooksLog, v3Features,
+                    showNewTask, showSettings, selectedTask, intentInput, intentResult, newTask,
+                    analyzeIntent, createTask, updateFeatures, tasksByStatus
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
 </html>
