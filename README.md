@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/ahmad-ubaidillah/hermes"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/hermes-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
-  <a href="https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/ahmad-ubaidillah/hermes/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
 </p>
 
@@ -54,13 +54,92 @@ Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Re
 
 ---
 
-## Quick Start
+## Installation
 
-### Install
+### Method 1: Quick Install (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash
 source ~/.bashrc
+```
+
+### Method 2: Git Clone
+
+```bash
+git clone https://github.com/ahmad-ubaidillah/hermes.git ~/.hermes/hermes-agent
+cd ~/.hermes/hermes-agent
+python -m venv venv
+source venv/bin/activate
+pip install -e ".[all]"
+
+# Create hermes command
+echo 'source ~/.hermes/hermes-agent/venv/bin/activate && python ~/.hermes/hermes-agent/cli.py "$@"' > ~/.local/bin/hermes
+chmod +x ~/.local/bin/hermes
+```
+
+### Method 3: pip (Coming Soon)
+
+```bash
+pip install hermes-agent
+```
+
+### Method 4: Docker
+
+```bash
+docker pull ghcr.io/ahmad-ubaidillah/hermes:latest
+docker run -it -v ~/.hermes:/root/.hermes hermes:latest
+```
+
+### Method 5: Development
+
+```bash
+git clone https://github.com/ahmad-ubaidillah/hermes.git
+cd hermes
+python -m venv venv
+source venv/bin/activate
+pip install -e ".[dev]"
+pre-commit install
+```
+
+### Install Options
+
+```bash
+# Skip setup wizard
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --skip-setup
+
+# Minimal install (no OpenCode, no dashboard)
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --minimal
+
+# Install specific branch
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --branch develop
+
+# Custom install directory
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --dir /opt/hermes
+```
+
+### Post-Installation
+
+After installation, you can:
+
+```bash
+# Start chatting with Hermes
+hermes
+
+# Run setup wizard to configure
+hermes setup
+
+# Start web dashboard
+hermes-dashboard
+
+# Or manually
+python -m web.server --port 8000
+
+# Use OpenCode for free AI coding
+opencode run "implement feature X"
+
+# Check installation
+hermes --version
+hermes doctor
 ```
 
 ### Use v3.0 Features
