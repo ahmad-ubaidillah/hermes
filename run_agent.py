@@ -45,7 +45,7 @@ import fire
 from datetime import datetime
 from pathlib import Path
 
-from hermes_constants import get_hermes_home
+from core.hermes_constants import get_hermes_home
 
 # Load .env from ~/.hermes/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
@@ -62,7 +62,7 @@ else:
 
 
 # Import our tool system
-from model_tools import (
+from tools.model_tools import (
     get_tool_definitions,
     get_toolset_for_tool,
     handle_function_call,
@@ -73,7 +73,7 @@ from tools.interrupt import set_interrupt as _set_interrupt
 from tools.browser_tool import cleanup_browser
 
 
-from hermes_constants import OPENROUTER_BASE_URL
+from core.hermes_constants import OPENROUTER_BASE_URL
 
 # Agent internals extracted to agent/ package for modularity
 from agent.prompt_builder import (
@@ -100,7 +100,7 @@ from agent.trajectory import (
     convert_scratchpad_to_think, has_incomplete_scratchpad,
     save_trajectory as _save_trajectory_to_file,
 )
-from utils import atomic_json_write
+from core.utils import atomic_json_write
 
 HONCHO_TOOL_NAMES = {
     "honcho_context",
@@ -2707,7 +2707,7 @@ class AIAgent:
             if context_files_prompt:
                 prompt_parts.append(context_files_prompt)
 
-        from hermes_time import now as _hermes_now
+        from core.hermes_time import now as _hermes_now
         now = _hermes_now()
         timestamp_line = f"Conversation started: {now.strftime('%A, %B %d, %Y %I:%M %p')}"
         if self.pass_session_id and self.session_id:
@@ -6975,7 +6975,7 @@ class AIAgent:
                         print(f"{self.log_prefix}   Auth method: {auth_method}")
                         print(f"{self.log_prefix}   Token prefix: {key[:12]}..." if key and len(key) > 12 else f"{self.log_prefix}   Token: (empty or short)")
                         print(f"{self.log_prefix}   Troubleshooting:")
-                        from hermes_constants import display_hermes_home as _dhh_fn
+                        from core.hermes_constants import display_hermes_home as _dhh_fn
                         _dhh = _dhh_fn()
                         print(f"{self.log_prefix}     • Check ANTHROPIC_TOKEN in {_dhh}/.env for Hermes-managed OAuth/setup tokens")
                         print(f"{self.log_prefix}     • Check ANTHROPIC_API_KEY in {_dhh}/.env for API keys or legacy token values")
@@ -8182,8 +8182,8 @@ def main(
     
     # Handle tool listing
     if list_tools:
-        from model_tools import get_all_tool_names, get_toolset_for_tool, get_available_toolsets
-        from toolsets import get_all_toolsets, get_toolset_info
+        from tools.model_tools import get_all_tool_names, get_toolset_for_tool, get_available_toolsets
+        from tools.toolsets import get_all_toolsets, get_toolset_info
         
         print("📋 Available Tools & Toolsets:")
         print("-" * 50)

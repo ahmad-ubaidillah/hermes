@@ -33,7 +33,7 @@ import subprocess
 import tempfile
 import threading
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from core.hermes_constants import get_hermes_home
 from typing import Callable, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ DEFAULT_ELEVENLABS_STREAMING_MODEL_ID = "eleven_flash_v2_5"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini-tts"
 DEFAULT_OPENAI_VOICE = "alloy"
 def _get_default_output_dir() -> str:
-    from hermes_constants import get_hermes_dir
+    from core.hermes_constants import get_hermes_dir
     return str(get_hermes_dir("cache/audio", "audio_cache"))
 
 DEFAULT_OUTPUT_DIR = _get_default_output_dir()

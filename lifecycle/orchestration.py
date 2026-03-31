@@ -217,7 +217,7 @@ def integrate_with_cli():
     Integration point for Hermes CLI.
     
     Add to hermes_cli/main.py:
-        from orchestration import process_request, get_pipeline
+        from lifecycle.orchestration import process_request, get_pipeline
         
         async def handle_message(user_input: str) -> str:
             result = await process_request(user_input)

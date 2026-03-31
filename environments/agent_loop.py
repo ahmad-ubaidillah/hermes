@@ -20,7 +20,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from model_tools import handle_function_call
+from tools.model_tools import handle_function_call
 
 # Thread pool for running sync tool calls that internally use asyncio.run()
 # (e.g., the Modal/Docker/Daytona terminal backends). Running them in a separate

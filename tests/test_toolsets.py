@@ -2,7 +2,7 @@
 
 import pytest
 
-from toolsets import (
+from tools.toolsets import (
     TOOLSETS,
     get_toolset,
     resolve_toolset,

@@ -82,7 +82,7 @@ class TestGatewayIntegration(unittest.TestCase):
         self.assertIn("FEISHU_ALLOW_ALL_USERS", source)
 
     def test_feishu_toolset_exists(self):
-        from toolsets import TOOLSETS
+        from tools.toolsets import TOOLSETS
 
         self.assertIn("hermes-feishu", TOOLSETS)
         self.assertIn("hermes-feishu", TOOLSETS["hermes-gateway"]["includes"])

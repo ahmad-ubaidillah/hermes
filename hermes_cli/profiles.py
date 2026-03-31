@@ -371,7 +371,7 @@ def create_profile(
     if clone_from is not None or clone_all or clone_config:
         if clone_from is None:
             # Default: clone from active profile
-            from hermes_constants import get_hermes_home
+            from core.hermes_constants import get_hermes_home
             source_dir = get_hermes_home()
         else:
             validate_profile_name(clone_from)
@@ -661,7 +661,7 @@ def get_active_profile_name() -> str:
     Returns the profile name if HERMES_HOME points into ``~/.hermes/profiles/<name>``.
     Returns ``"custom"`` if HERMES_HOME is set to an unrecognized path.
     """
-    from hermes_constants import get_hermes_home
+    from core.hermes_constants import get_hermes_home
     hermes_home = get_hermes_home()
     resolved = hermes_home.resolve()
 

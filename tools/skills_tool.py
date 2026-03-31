@@ -69,7 +69,7 @@ Usage:
 import json
 import logging
 
-from hermes_constants import get_hermes_home
+from core.hermes_constants import get_hermes_home
 import os
 import re
 import sys

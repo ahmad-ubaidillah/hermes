@@ -166,7 +166,7 @@ def _handle_send(args):
         return json.dumps(duplicate_skip)
 
     try:
-        from model_tools import _run_async
+        from tools.model_tools import _run_async
         result = _run_async(
             _send_to_platform(
                 platform,

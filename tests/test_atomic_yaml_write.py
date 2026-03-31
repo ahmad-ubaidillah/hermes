@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from utils import atomic_yaml_write
+from core.utils import atomic_yaml_write
 
 
 class TestAtomicYamlWrite:

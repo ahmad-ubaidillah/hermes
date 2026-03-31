@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from acp_adapter.session import SessionManager, SessionState
-from hermes_state import SessionDB
+from core.hermes_state import SessionDB
 
 
 def _mock_agent():

@@ -70,7 +70,7 @@ _COMMAND_SPINNER_FRAMES = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧
 
 # Load .env from ~/.hermes/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
-from hermes_constants import get_hermes_home, display_hermes_home, OPENROUTER_BASE_URL
+from core.hermes_constants import get_hermes_home, display_hermes_home, OPENROUTER_BASE_URL
 from hermes_cli.env_loader import load_hermes_dotenv
 
 _hermes_home = get_hermes_home()
@@ -113,7 +113,7 @@ def _load_prefill_messages(file_path: str) -> List[Dict[str, Any]]:
 
 def _parse_reasoning_config(effort: str) -> dict | None:
     """Parse a reasoning effort level into an OpenRouter reasoning config dict."""
-    from hermes_constants import parse_reasoning_effort
+    from core.hermes_constants import parse_reasoning_effort
     result = parse_reasoning_effort(effort)
     if effort and effort.strip() and result is None:
         logger.warning("Unknown reasoning_effort '%s', using default (medium)", effort)
@@ -478,12 +478,12 @@ import fire
 
 # Import the agent and tool systems
 from run_agent import AIAgent
-from model_tools import get_tool_definitions, get_toolset_for_tool
+from tools.model_tools import get_tool_definitions, get_toolset_for_tool
 
 # Extracted CLI modules (Phase 3)
 from hermes_cli.banner import build_welcome_banner
 from hermes_cli.commands import SlashCommandCompleter, SlashCommandAutoSuggest
-from toolsets import get_all_toolsets, get_toolset_info, validate_toolset
+from tools.toolsets import get_all_toolsets, get_toolset_info, validate_toolset
 
 # Cron job system for scheduled tasks (execution is handled by the gateway)
 from cron import get_job
@@ -1213,7 +1213,7 @@ class HermesCLI:
         # Initialize SQLite session store early so /title works before first message
         self._session_db = None
         try:
-            from hermes_state import SessionDB
+            from core.hermes_state import SessionDB
             self._session_db = SessionDB()
         except Exception as e:
             logger.warning("Failed to initialize SessionDB — session will NOT be indexed for search: %s", e)
@@ -2038,7 +2038,7 @@ class HermesCLI:
         # Initialize SQLite session store for CLI sessions (if not already done in __init__)
         if self._session_db is None:
             try:
-                from hermes_state import SessionDB
+                from core.hermes_state import SessionDB
                 self._session_db = SessionDB()
             except Exception as e:
                 logger.warning("SQLite session store not available — session will NOT be indexed: %s", e)
@@ -2628,7 +2628,7 @@ class HermesCLI:
     def _show_tool_availability_warnings(self):
         """Show warnings about disabled tools due to missing API keys."""
         try:
-            from model_tools import check_tool_availability
+            from tools.model_tools import check_tool_availability
             
             available, unavailable = check_tool_availability()
             
@@ -2839,7 +2839,7 @@ class HermesCLI:
     
     def _handle_profile_command(self):
         """Display active profile name and home directory."""
-        from hermes_constants import get_hermes_home, display_hermes_home
+        from core.hermes_constants import get_hermes_home, display_hermes_home
 
         home = get_hermes_home()
         display = display_hermes_home()
@@ -3760,7 +3760,7 @@ class HermesCLI:
                     if self._session_db:
                         # Sanitize the title early so feedback matches what gets stored
                         try:
-                            from hermes_state import SessionDB
+                            from core.hermes_state import SessionDB
                             new_title = SessionDB.sanitize_title(raw_title)
                         except ValueError as e:
                             _cprint(f"  {e}")
@@ -4797,7 +4797,7 @@ class HermesCLI:
                 i += 1
 
         try:
-            from hermes_state import SessionDB
+            from core.hermes_state import SessionDB
             from agent.insights import InsightsEngine
 
             db = SessionDB()
@@ -4901,7 +4901,7 @@ class HermesCLI:
 
             # Refresh the agent's tool list so the model can call new tools
             if self.agent is not None:
-                from model_tools import get_tool_definitions
+                from tools.model_tools import get_tool_definitions
                 self.agent.tools = get_tool_definitions(
                     enabled_toolsets=self.agent.enabled_toolsets
                     if hasattr(self.agent, "enabled_toolsets") else None,

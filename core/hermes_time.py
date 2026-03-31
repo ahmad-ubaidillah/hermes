@@ -17,7 +17,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from .hermes_constants import get_hermes_home
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -118,3 +118,9 @@ def reset_cache() -> None:
     _cached_tz = None
     _cached_tz_name = None
     _cache_resolved = False
+
+
+def get_timestamp() -> str:
+    """Return ISO format timestamp."""
+    return now().isoformat()
+

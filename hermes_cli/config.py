@@ -139,7 +139,7 @@ def managed_error(action: str = "modify configuration"):
 # =============================================================================
 
 # Re-export from hermes_constants — canonical definition lives there.
-from hermes_constants import get_hermes_home  # noqa: F811,E402
+from core.hermes_constants import get_hermes_home  # noqa: F811,E402
 
 def get_config_path() -> Path:
     """Get the main config file path."""
@@ -1509,7 +1509,7 @@ def save_config(config: Dict[str, Any]):
     if is_managed():
         managed_error("save configuration")
         return
-    from utils import atomic_yaml_write
+    from core.utils import atomic_yaml_write
 
     ensure_hermes_home()
     config_path = get_config_path()

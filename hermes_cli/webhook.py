@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 
-from hermes_constants import display_hermes_home
+from core.hermes_constants import display_hermes_home
 
 
 _SUBSCRIPTIONS_FILENAME = "webhook_subscriptions.json"

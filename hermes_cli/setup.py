@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from hermes_constants import get_optional_skills_dir
+from core.hermes_constants import get_optional_skills_dir
 
 logger = logging.getLogger(__name__)
 
@@ -688,7 +688,7 @@ def _print_setup_summary(config: dict, hermes_home):
         print_warning(
             "Some tools are disabled. Run 'hermes setup tools' to configure them,"
         )
-        from hermes_constants import display_hermes_home as _dhh
+        from core.hermes_constants import display_hermes_home as _dhh
         print_warning(f"or edit {_dhh()}/.env directly to add the missing API keys.")
         print()
 
@@ -712,7 +712,7 @@ def _print_setup_summary(config: dict, hermes_home):
     print()
 
     # Show file locations prominently
-    from hermes_constants import display_hermes_home as _dhh
+    from core.hermes_constants import display_hermes_home as _dhh
     print(color(f"📁 All your files are in {_dhh()}/:", Colors.CYAN, Colors.BOLD))
     print()
     print(f"   {color('Settings:', Colors.YELLOW)}  {get_config_path()}")
@@ -2816,7 +2816,7 @@ def setup_gateway(config: dict):
         save_env_value("WEBHOOK_ENABLED", "true")
         print()
         print_success("Webhooks enabled! Next steps:")
-        from hermes_constants import display_hermes_home as _dhh
+        from core.hermes_constants import display_hermes_home as _dhh
         print_info(f"   1. Define webhook routes in {_dhh()}/config.yaml")
         print_info("   2. Point your service (GitHub, GitLab, etc.) at:")
         print_info("      http://your-server:8644/webhooks/<route-name>")

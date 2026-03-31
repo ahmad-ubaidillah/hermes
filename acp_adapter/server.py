@@ -420,7 +420,7 @@ class HermesACPAgent(acp.Agent):
 
     def _cmd_tools(self, args: str, state: SessionState) -> str:
         try:
-            from model_tools import get_tool_definitions
+            from tools.model_tools import get_tool_definitions
             toolsets = getattr(state.agent, "enabled_toolsets", None) or ["hermes-acp"]
             tools = get_tool_definitions(enabled_toolsets=toolsets, quiet_mode=True)
             if not tools:

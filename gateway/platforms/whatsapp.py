@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Dict, Optional, Any
 
 from hermes_cli.config import get_hermes_home
-from hermes_constants import get_hermes_dir
+from core.hermes_constants import get_hermes_dir
 
 logger = logging.getLogger(__name__)
 

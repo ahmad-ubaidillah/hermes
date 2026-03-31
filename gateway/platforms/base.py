@@ -27,7 +27,7 @@ sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))
 from gateway.config import Platform, PlatformConfig
 from gateway.session import SessionSource, build_session_key
 from hermes_cli.config import get_hermes_home
-from hermes_constants import get_hermes_dir
+from core.hermes_constants import get_hermes_dir
 
 
 GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE = (

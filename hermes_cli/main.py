@@ -148,7 +148,7 @@ import time as _time
 from datetime import datetime
 
 from hermes_cli import __version__, __release_date__
-from hermes_constants import OPENROUTER_BASE_URL
+from core.hermes_constants import OPENROUTER_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -481,7 +481,7 @@ def _session_browse_picker(sessions: list) -> Optional[str]:
 def _resolve_last_cli_session() -> Optional[str]:
     """Look up the most recent CLI session ID from SQLite. Returns None if unavailable."""
     try:
-        from hermes_state import SessionDB
+        from core.hermes_state import SessionDB
         db = SessionDB()
         sessions = db.search_sessions(source="cli", limit=1)
         db.close()
@@ -500,7 +500,7 @@ def _resolve_session_by_name_or_id(name_or_id: str) -> Optional[str]:
     - Falls back to the other method if the first doesn't match.
     """
     try:
-        from hermes_state import SessionDB
+        from core.hermes_state import SessionDB
         db = SessionDB()
 
         # Try as exact session ID first
@@ -2189,7 +2189,7 @@ def _run_anthropic_oauth_flow(save_env_value):
         ):
             use_anthropic_claude_code_credentials(save_fn=save_env_value)
             print("  ✓ Claude Code credentials linked.")
-            from hermes_constants import display_hermes_home as _dhh_fn
+            from core.hermes_constants import display_hermes_home as _dhh_fn
             print(f"    Hermes will use Claude's credential store directly instead of copying a setup-token into {_dhh_fn()}/.env.")
             return True
         return False
@@ -3021,7 +3021,7 @@ def cmd_update(args):
         # attributes like display_hermes_home() added since the last release.
         try:
             import importlib
-            import hermes_constants as _hc
+            import core.hermes_constants as hermes_constants as _hc
             importlib.reload(_hc)
         except Exception:
             pass  # non-fatal — worst case a lazy import fails gracefully
@@ -3331,7 +3331,7 @@ def cmd_profile(args):
         check_alias_collision, create_wrapper_script, remove_wrapper_script,
         _is_wrapper_dir_in_path, _get_wrapper_dir,
     )
-    from hermes_constants import display_hermes_home
+    from core.hermes_constants import display_hermes_home
 
     action = getattr(args, "profile_action", None)
 
@@ -3446,7 +3446,7 @@ def cmd_profile(args):
             print(f"  {name} chat               Start chatting")
             print(f"  {name} gateway start      Start the messaging gateway")
             if clone or clone_all:
-                from hermes_constants import get_hermes_home
+                from core.hermes_constants import get_hermes_home
                 profile_dir_display = f"~/.hermes/profiles/{name}"
                 print(f"\n  Edit {profile_dir_display}/.env for different API keys")
                 print(f"  Edit {profile_dir_display}/SOUL.md for different personality")
@@ -4477,7 +4477,7 @@ For more help on a command:
     def cmd_sessions(args):
         import json as _json
         try:
-            from hermes_state import SessionDB
+            from core.hermes_state import SessionDB
             db = SessionDB()
         except Exception as e:
             print(f"Error: Could not open session database: {e}")
@@ -4643,7 +4643,7 @@ For more help on a command:
 
     def cmd_insights(args):
         try:
-            from hermes_state import SessionDB
+            from core.hermes_state import SessionDB
             from agent.insights import InsightsEngine
 
             db = SessionDB()

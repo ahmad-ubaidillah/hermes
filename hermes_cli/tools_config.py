@@ -342,7 +342,7 @@ def _run_post_setup(post_setup_key: str):
             if result.returncode == 0:
                 _print_success("    Node.js dependencies installed")
             else:
-                from hermes_constants import display_hermes_home
+                from core.hermes_constants import display_hermes_home
                 _print_warning(f"    npm install failed - run manually: cd {display_hermes_home()}/hermes-agent && npm install")
         elif not node_modules.exists():
             _print_warning("    Node.js not found - browser tools require: npm install (in hermes-agent directory)")
@@ -455,7 +455,7 @@ def _get_platform_tools(
     include_default_mcp_servers: bool = True,
 ) -> Set[str]:
     """Resolve which individual toolset names are enabled for a platform."""
-    from toolsets import resolve_toolset
+    from tools.toolsets import resolve_toolset
 
     platform_toolsets = config.get("platform_toolsets", {})
     toolset_names = platform_toolsets.get(platform)
@@ -722,7 +722,7 @@ def _estimate_tool_tokens() -> Dict[str, int]:
 
     try:
         # Trigger full tool discovery (imports all tool modules).
-        import model_tools  # noqa: F401
+        import tools.model_tools as model_tools  # noqa: F401
         from tools.registry import registry
     except Exception:
         logger.debug("Tool registry unavailable; skipping token estimation")
@@ -744,7 +744,7 @@ def _estimate_tool_tokens() -> Dict[str, int]:
 def _prompt_toolset_checklist(platform_label: str, enabled: Set[str]) -> Set[str]:
     """Multi-select checklist of toolsets. Returns set of selected toolset keys."""
     from hermes_cli.curses_ui import curses_checklist
-    from toolsets import resolve_toolset
+    from tools.toolsets import resolve_toolset
 
     # Pre-compute per-tool token counts (cached after first call).
     tool_tokens = _estimate_tool_tokens()
@@ -1378,7 +1378,7 @@ def tools_command(args=None, first_install: bool = False, config: dict = None):
         platform_choices[idx] = f"Configure {pinfo['label']}  ({new_count}/{total} enabled)"
 
     print()
-    from hermes_constants import display_hermes_home
+    from core.hermes_constants import display_hermes_home
     print(color(f"  Tool configuration saved to {display_hermes_home()}/config.yaml", Colors.DIM))
     print(color("  Changes take effect on next 'hermes' or gateway restart.", Colors.DIM))
     print()

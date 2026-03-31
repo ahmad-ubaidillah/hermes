@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from core.hermes_constants import get_hermes_home
 
 
 def _setup_logging() -> None:

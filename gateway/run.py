@@ -76,8 +76,8 @@ _ensure_ssl_certs()
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Resolve Hermes home directory (respects HERMES_HOME override)
-from hermes_constants import get_hermes_home
-from utils import atomic_yaml_write
+from core.hermes_constants import get_hermes_home
+from core.utils import atomic_yaml_write
 _hermes_home = get_hermes_home()
 
 # Load environment variables from ~/.hermes/.env first.
@@ -325,7 +325,7 @@ def _check_unavailable_skill(command_name: str) -> str | None:
                 )
 
         # Check optional skills (shipped with repo but not installed)
-        from hermes_constants import get_hermes_home, get_optional_skills_dir
+        from core.hermes_constants import get_hermes_home, get_optional_skills_dir
         repo_root = Path(__file__).resolve().parent.parent
         optional_dir = get_optional_skills_dir(repo_root / "optional-skills")
         if optional_dir.exists():
@@ -487,7 +487,7 @@ class GatewayRunner:
         # Initialize session database for session_search tool support
         self._session_db = None
         try:
-            from hermes_state import SessionDB
+            from core.hermes_state import SessionDB
             self._session_db = SessionDB()
         except Exception as e:
             logger.debug("SQLite session store not available: %s", e)
@@ -925,7 +925,7 @@ class GatewayRunner:
         "medium", "low", "minimal", "none". Returns None to use default
         (medium).
         """
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
         effort = ""
         try:
             import yaml as _y
@@ -3038,7 +3038,7 @@ class GatewayRunner:
     
     async def _handle_profile_command(self, event: MessageEvent) -> str:
         """Handle /profile — show active profile name and home directory."""
-        from hermes_constants import get_hermes_home, display_hermes_home
+        from core.hermes_constants import get_hermes_home, display_hermes_home
         from pathlib import Path
 
         home = get_hermes_home()
@@ -4619,7 +4619,7 @@ class GatewayRunner:
                     i += 1
 
         try:
-            from hermes_state import SessionDB
+            from core.hermes_state import SessionDB
             from agent.insights import InsightsEngine
 
             loop = _asyncio.get_event_loop()

@@ -937,7 +937,7 @@ def launchd_install(force: bool = False):
     print()
     print("Next steps:")
     print("  hermes gateway status             # Check status")
-    from hermes_constants import display_hermes_home as _dhh
+    from core.hermes_constants import display_hermes_home as _dhh
     print(f"  tail -f {_dhh()}/logs/gateway.log  # View logs")
 
 def launchd_uninstall():

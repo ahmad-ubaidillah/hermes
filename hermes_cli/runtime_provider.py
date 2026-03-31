@@ -18,7 +18,7 @@ from hermes_cli.auth import (
     has_usable_secret,
 )
 from hermes_cli.config import load_config
-from hermes_constants import OPENROUTER_BASE_URL
+from core.hermes_constants import OPENROUTER_BASE_URL
 
 
 def _normalize_custom_provider_name(value: str) -> str:

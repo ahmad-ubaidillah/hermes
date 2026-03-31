@@ -10,7 +10,7 @@ import subprocess
 import shutil
 
 from hermes_cli.config import get_project_root, get_hermes_home, get_env_path
-from hermes_constants import display_hermes_home
+from core.hermes_constants import display_hermes_home
 
 PROJECT_ROOT = get_project_root()
 HERMES_HOME = get_hermes_home()
@@ -28,7 +28,7 @@ if _env_path.exists():
 load_dotenv(PROJECT_ROOT / ".env", override=False, encoding="utf-8")
 
 from hermes_cli.colors import Colors, color
-from hermes_constants import OPENROUTER_MODELS_URL
+from core.hermes_constants import OPENROUTER_MODELS_URL
 
 
 _PROVIDER_ENV_HINTS = (
@@ -646,7 +646,7 @@ def run_doctor(args):
     try:
         # Add project root to path for imports
         sys.path.insert(0, str(PROJECT_ROOT))
-        from model_tools import check_tool_availability, TOOLSET_REQUIREMENTS
+        from tools.model_tools import check_tool_availability, TOOLSET_REQUIREMENTS
         
         available, unavailable = check_tool_availability()
         available, unavailable = _apply_doctor_tool_availability_overrides(available, unavailable)

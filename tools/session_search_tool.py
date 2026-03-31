@@ -379,7 +379,7 @@ def session_search(
             # disposable event loop that conflicted with cached
             # AsyncOpenAI/httpx clients bound to a different loop,
             # causing deadlocks in gateway mode (#2681).
-            from model_tools import _run_async
+            from tools.model_tools import _run_async
             results = _run_async(_summarize_all())
         except concurrent.futures.TimeoutError:
             logging.warning(
@@ -433,7 +433,7 @@ def session_search(
 def check_session_search_requirements() -> bool:
     """Requires SQLite state database and an auxiliary text model."""
     try:
-        from hermes_state import DEFAULT_DB_PATH
+        from core.hermes_state import DEFAULT_DB_PATH
         return DEFAULT_DB_PATH.parent.exists()
     except ImportError:
         return False

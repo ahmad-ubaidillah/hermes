@@ -793,7 +793,7 @@ class MCPServerTask:
         — atomic from the event loop's perspective.
         """
         from tools.registry import registry
-        from toolsets import TOOLSETS
+        from tools.toolsets import TOOLSETS
 
         async with self._refresh_lock:
             # 1. Fetch current tool list from server
@@ -1440,7 +1440,7 @@ def _sync_mcp_toolsets(server_names: Optional[List[str]] = None) -> None:
 
     Skips server names that collide with built-in toolsets.
     """
-    from toolsets import TOOLSETS
+    from tools.toolsets import TOOLSETS
 
     if server_names is None:
         server_names = list(_load_mcp_config().keys())
@@ -1640,7 +1640,7 @@ def _register_server_tools(name: str, server: MCPServerTask, config: dict) -> Li
         List of registered prefixed tool names.
     """
     from tools.registry import registry
-    from toolsets import create_custom_toolset, TOOLSETS
+    from tools.toolsets import create_custom_toolset, TOOLSETS
 
     registered_names: List[str] = []
     toolset_name = f"mcp-{name}"

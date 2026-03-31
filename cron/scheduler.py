@@ -25,11 +25,11 @@ except ImportError:
     except ImportError:
         msvcrt = None
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from core.hermes_constants import get_hermes_home
 from hermes_cli.config import load_config
 from typing import Optional
 
-from hermes_time import now as _hermes_now
+from core.hermes_time import now as _hermes_now
 
 logger = logging.getLogger(__name__)
 
@@ -302,7 +302,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
     # and discoverable via session_search (same pattern as gateway/run.py).
     _session_db = None
     try:
-        from hermes_state import SessionDB
+        from core.hermes_state import SessionDB
         _session_db = SessionDB()
     except Exception as e:
         logger.debug("Job '%s': SQLite session store not available: %s", job.get("id", "?"), e)
@@ -359,7 +359,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
             logger.warning("Job '%s': failed to load config.yaml, using defaults: %s", job_id, e)
 
         # Reasoning config from env or config.yaml
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
         effort = os.getenv("HERMES_REASONING_EFFORT", "")
         if not effort:
             effort = str(_cfg.get("agent", {}).get("reasoning_effort", "")).strip()

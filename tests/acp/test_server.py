@@ -27,7 +27,7 @@ from acp.schema import (
 )
 from acp_adapter.server import HermesACPAgent, HERMES_VERSION
 from acp_adapter.session import SessionManager
-from hermes_state import SessionDB
+from core.hermes_state import SessionDB
 
 
 @pytest.fixture()
