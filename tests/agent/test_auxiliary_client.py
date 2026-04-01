@@ -686,8 +686,10 @@ class TestVisionClientFallback:
 
         Many local models (Qwen-VL, LLaVA, etc.) support vision.
         When no OpenRouter/Nous/Codex is available, try the custom endpoint.
+        Note: OPENAI_BASE_URL is no longer consulted - use OPENROUTER_BASE_URL or config.
         """
-        monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:1234/v1")
+        # Use OPENROUTER_BASE_URL for custom endpoint (OPENAI_BASE_URL not consulted)
+        monkeypatch.setenv("OPENROUTER_BASE_URL", "http://localhost:1234/v1")
         monkeypatch.setenv("OPENAI_API_KEY", "local-key")
         with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
              patch("agent.auxiliary_client.OpenAI") as mock_openai:

@@ -90,6 +90,8 @@ def test_custom_setup_clears_active_oauth_provider(tmp_path, monkeypatch):
     def fake_prompt_choice(question, choices, default=0):
         if question == "Select your inference provider:":
             return 3
+        if "vision" in question.lower():
+            return 0  # Skip vision configuration
         tts_idx = _maybe_keep_current_tts(question, choices)
         if tts_idx is not None:
             return tts_idx
@@ -208,6 +210,8 @@ def test_custom_setup_no_model_name_still_preserves_endpoint(
     def fake_prompt_choice(question, choices, default=0):
         if question == "Select your inference provider:":
             return 3
+        if "vision" in question.lower():
+            return 2  # "Skip for now" - index 2 in vision choices
         tts_idx = _maybe_keep_current_tts(question, choices)
         if tts_idx is not None:
             return tts_idx

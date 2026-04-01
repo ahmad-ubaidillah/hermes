@@ -559,8 +559,10 @@ class TestAuxiliaryClientProviderPriority:
         assert model == "google/gemini-3-flash-preview"
 
     def test_custom_endpoint_when_no_nous(self, monkeypatch):
+        """Custom endpoint via OPENROUTER_BASE_URL (not OPENAI_BASE_URL)."""
         monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
-        monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:1234/v1")
+        # OPENAI_BASE_URL is no longer consulted - use OPENROUTER_BASE_URL
+        monkeypatch.setenv("OPENROUTER_BASE_URL", "http://localhost:1234/v1")
         monkeypatch.setenv("OPENAI_API_KEY", "local-key")
         from agent.auxiliary_client import get_text_auxiliary_client
         with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \

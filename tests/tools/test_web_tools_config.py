@@ -405,6 +405,7 @@ class TestCheckWebApiKey:
     def test_no_keys_returns_false(self):
         from tools.web_tools import check_web_api_key
 
+        # Returns False when no API keys set and ddgs library not installed
         assert check_web_api_key() is False
 
     def test_both_keys_returns_true(self):
