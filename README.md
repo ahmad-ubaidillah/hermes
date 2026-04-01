@@ -1,16 +1,24 @@
 <p align="center">
-
-```
-         ▄▀▀▀▀▀▄  
-        ▐  ◕  ◕ ▌  
-        ▐    0  ▌     <z> AIZEN AGENT
-         ▀▄▀▄▀▄▀      Execute with Zen
-                        Assign. Review. Repeat.
-```
-
+  <img src="assets/jellyfish.svg" alt="Aizen Agent Jellyfish" width="200">
 </p>
 
-# <z> Aizen Agent
+<p align="center">
+  <pre>
+    ___    _________   _______   __   ___   _____________   ________
+   /   |  /  _/__  /  / ____/ | / /  /   | / ____/ ____/ | / /_  __/
+  / /| |  / /   / /  / __/ /  |/ /  / /| |/ / __/ __/ /  |/ / / /   
+ / ___ |_/ /   / /__/ /___/ /|  /  / ___ / /_/ / /___/ /|  / / /    
+/_/  |_/___/  /____/_____/_/ |_/  /_/  |_\____/_____/_/ |_/ /_/     
+  </pre>
+</p>
+
+<p align="center">
+  <b>Execute with Zen</b>
+</p>
+
+<p align="center">
+  <i>Assign. Review. Repeat.</i>
+</p>
 
 <p align="center">
   <a href="https://github.com/ahmad-ubaidillah/aizen"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/aizen-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
@@ -18,7 +26,9 @@
   <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
 </p>
 
-**Execute with Zen • Assign. Review. Repeat. — Autonomous AI Team Platform**
+---
+
+**Autonomous AI Team Platform — Build software with minimal human intervention**
 
 ---
 

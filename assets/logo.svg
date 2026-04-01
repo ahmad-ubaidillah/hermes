@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <rect x="120" y="100" width="20" height="20" fill="#58A6FF"/>
+    <rect x="140" y="100" width="20" height="20" fill="#58A6FF"/>
+    <rect x="160" y="100" width="20" height="20" fill="#58A6FF"/>
+    <rect x="180" y="100" width="20" height="20" fill="#58A6FF"/>
+    <rect x="180" y="120" width="20" height="20" fill="#58A6FF"/>
+    <rect x="160" y="140" width="20" height="20" fill="#58A6FF"/>
+    <rect x="140" y="160" width="20" height="20" fill="#58A6FF"/>
+    <rect x="120" y="180" width="20" height="20" fill="#58A6FF"/>
+    <rect x="140" y="200" width="20" height="20" fill="#58A6FF"/>
+    <rect x="160" y="200" width="20" height="20" fill="#58A6FF"/>
+    <rect x="180" y="200" width="20" height="20" fill="#58A6FF"/>
+    <rect x="120" y="200" width="20" height="20" fill="#58A6FF"/>
+    <rect x="80" y="100" width="20" height="20" fill="#58A6FF"/>
+    <rect x="60" y="120" width="20" height="20" fill="#58A6FF"/>
+    <rect x="40" y="140" width="20" height="20" fill="#58A6FF"/>
+    <rect x="40" y="160" width="20" height="20" fill="#58A6FF"/>
+    <rect x="260" y="160" width="20" height="20" fill="#58A6FF"/>
+    <rect x="260" y="140" width="20" height="20" fill="#58A6FF"/>
+    <rect x="240" y="120" width="20" height="20" fill="#58A6FF"/>
+    <rect x="220" y="100" width="20" height="20" fill="#58A6FF"/>
+    <rect x="60" y="180" width="20" height="20" fill="#58A6FF"/>
+    <rect x="80" y="200" width="20" height="20" fill="#58A6FF"/>
+    <rect x="240" y="180" width="20" height="20" fill="#58A6FF"/>
+    <rect x="220" y="200" width="20" height="20" fill="#58A6FF"/>
+  </g>
+</svg>
