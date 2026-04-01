@@ -7620,7 +7620,9 @@ def main(
     query: str = None,
     q: str = None,
     toolsets: str = None,
+    t: str = None,
     skills: str | list[str] | tuple[str, ...] = None,
+    s: str | list[str] | tuple[str, ...] = None,
     model: str = None,
     provider: str = None,
     api_key: str = None,
@@ -7644,8 +7646,10 @@ def main(
     Args:
         query: Single query to execute (then exit). Alias: -q
         q: Shorthand for --query
-        toolsets: Comma-separated list of toolsets to enable (e.g., "web,terminal")
-        skills: Comma-separated or repeated list of skills to preload for the session
+        toolsets: Comma-separated list of toolsets to enable (e.g., "web,terminal"). Alias: -t
+        t: Shorthand for --toolsets
+        skills: Comma-separated or repeated list of skills to preload for the session. Alias: -s
+        s: Shorthand for --skills
         model: Model to use (default: anthropic/claude-opus-4-20250514)
         provider: Inference provider ("auto", "openrouter", "nous", "openai-codex", "zai", "kimi-coding", "minimax", "minimax-cn")
         api_key: API key for authentication
@@ -7709,6 +7713,12 @@ def main(
     
     # Handle query shorthand
     query = query or q
+    
+    # Handle skills shorthand
+    skills = skills or s
+    
+    # Handle toolsets shorthand
+    toolsets = toolsets or t
     
     # Parse toolsets - handle both string and tuple/list inputs
     # Default to aizen-cli toolset which includes cronjob management tools
