@@ -31,7 +31,7 @@ class TestSkinConfig:
     def test_get_color_with_fallback(self):
         from aizen_cli.skin_engine import load_skin
         skin = load_skin("default")
-        assert skin.get_color("banner_title") == "#A78BFA"
+        assert skin.get_color("banner_title") == "#58A6FF"
         assert skin.get_color("nonexistent", "#000") == "#000"
 
     def test_get_branding_with_fallback(self):
@@ -43,14 +43,14 @@ class TestSkinConfig:
     def test_get_spinner_list_empty_for_default(self):
         from aizen_cli.skin_engine import load_skin
         skin = load_skin("default")
-        # Default skin has no custom spinner config
-        assert skin.get_spinner_list("waiting_faces") == []
-        assert skin.get_spinner_list("thinking_verbs") == []
+        # Default skin has RPG-style spinner config
+        assert skin.get_spinner_list("waiting_faces") == ["(⚔)", "(⛨)", "(▲)", "(z)", "(◆)"]
+        assert skin.get_spinner_list("thinking_verbs") == ["assigning", "reviewing", "repeating", "executing", "planning", "synthesizing", "forging", "channeling"]
 
     def test_get_spinner_wings_empty_for_default(self):
         from aizen_cli.skin_engine import load_skin
         skin = load_skin("default")
-        assert skin.get_spinner_wings() == []
+        assert skin.get_spinner_wings() == [('⟪z', 'z⟫'), ('⟪▲', '▲⟫'), ('⟪⚔', '⚔⟫'), ('⟪◆', '◆⟫')]
 
 
 class TestBuiltinSkins:
@@ -165,7 +165,7 @@ class TestUserSkins:
         assert skin.get_branding("agent_name") == "Custom Agent"
         assert skin.tool_prefix == "▸"
         # Should inherit defaults for unspecified colors
-        assert skin.get_color("banner_border") == "#7C3AED"  # from default
+        assert skin.get_color("banner_border") == "#30363D"  # from default
 
     def test_list_skins_includes_user_skins(self, tmp_path, monkeypatch):
         from aizen_cli.skin_engine import list_skins
@@ -200,7 +200,7 @@ class TestDisplayIntegration:
         from agent.display import get_skin_faces, KawaiiSpinner
         faces = get_skin_faces("waiting_faces", KawaiiSpinner.KAWAII_WAITING)
         # Default skin has no custom faces, so should return the default list
-        assert faces == KawaiiSpinner.KAWAII_WAITING
+        assert faces == ['(⚔)', '(⛨)', '(▲)', '(z)', '(◆)']
 
     def test_get_skin_faces_ares(self):
         from aizen_cli.skin_engine import set_active_skin
@@ -212,7 +212,7 @@ class TestDisplayIntegration:
     def test_get_skin_verbs_default(self):
         from agent.display import get_skin_verbs, KawaiiSpinner
         verbs = get_skin_verbs()
-        assert verbs == KawaiiSpinner.THINKING_VERBS
+        assert verbs == ['assigning', 'reviewing', 'repeating', 'executing', 'planning', 'synthesizing', 'forging', 'channeling']
 
     def test_get_skin_verbs_ares(self):
         from aizen_cli.skin_engine import set_active_skin

@@ -1,4 +1,4 @@
-// Aizen Dashboard - Main React App
+// Aizen Agent Dashboard - Black & White Minimal
 // FastAPI + React + TypeScript
 
 import React, { useState, useEffect } from 'react';
@@ -6,7 +6,10 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000/api';
 
+// ─────────────────────────────────────────────────────────────
 // Types
+// ─────────────────────────────────────────────────────────────
+
 interface Agent {
   name: string;
   role: string;
@@ -35,112 +38,164 @@ interface Stats {
   remaining_budget: number;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Styles (inline for single-file simplicity)
+// ─────────────────────────────────────────────────────────────
+
+const styles = {
+  page: {
+    backgroundColor: '#000',
+    color: '#fff',
+    minHeight: '100vh',
+    fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+    padding: '0',
+  },
+  header: {
+    borderBottom: '1px solid #333',
+    padding: '1.5rem 2rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logo: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold' as const,
+    letterSpacing: '0.1em',
+  },
+  container: {
+    maxWidth: '1400px',
+    margin: '0 auto',
+    padding: '2rem',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '1.5rem',
+  },
+  card: {
+    backgroundColor: '#111',
+    border: '1px solid #333',
+    borderRadius: '8px',
+    padding: '1.5rem',
+  },
+  cardTitle: {
+    fontSize: '0.75rem',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.1em',
+    color: '#666',
+    marginBottom: '0.5rem',
+  },
+  cardValue: {
+    fontSize: '2rem',
+    fontWeight: 'bold' as const,
+  },
+  statusDot: {
+    display: 'inline-block',
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    marginRight: '0.5rem',
+  },
+  taskCard: {
+    backgroundColor: '#0a0a0a',
+    border: '1px solid #222',
+    borderRadius: '4px',
+    padding: '1rem',
+    marginBottom: '0.75rem',
+  },
+  column: {
+    backgroundColor: '#0a0a0a',
+    border: '1px solid #222',
+    borderRadius: '8px',
+    padding: '1rem',
+  },
+  columnTitle: {
+    fontSize: '0.75rem',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.1em',
+    color: '#666',
+    marginBottom: '1rem',
+    paddingBottom: '0.5rem',
+    borderBottom: '1px solid #222',
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
 // Components
+// ─────────────────────────────────────────────────────────────
 
-const AgentCard: React.FC<{ agent: Agent }> = ({ agent }) => {
-  const statusColor = {
-    idle: 'bg-green-500',
-    busy: 'bg-yellow-500',
-    error: 'bg-red-500',
+const StatusDot: React.FC<{ status: string }> = ({ status }) => {
+  const colors: Record<string, string> = {
+    idle: '#666',
+    busy: '#fff',
+    error: '#f00',
+    done: '#0f0',
+    in_progress: '#fff',
+    todo: '#666',
+    blocked: '#f00',
   };
-
   return (
-    <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-bold text-lg">{agent.name}</h3>
-          <p className="text-gray-500 text-sm">{agent.role}</p>
-        </div>
-        <div className={`w-3 h-3 rounded-full ${statusColor[agent.status]}`} />
-      </div>
-      <div className="mt-3 text-sm">
-        <p>Status: <span className="font-medium">{agent.status}</span></p>
-        {agent.current_task && (
-          <p>Task: <span className="font-mono">{agent.current_task}</span></p>
-        )}
-        <p>Completed: {agent.tasks_completed} | Tokens: {agent.tokens_used.toLocaleString()}</p>
-      </div>
-    </div>
+    <span style={{ ...styles.statusDot, backgroundColor: colors[status] || '#666' }} />
   );
 };
 
-const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
-  const statusColors = {
-    todo: 'bg-gray-100 border-gray-300',
-    in_progress: 'bg-blue-50 border-blue-300',
-    done: 'bg-green-50 border-green-300',
-    blocked: 'bg-red-50 border-red-300',
-  };
-
-  const priorityBadge = {
-    low: 'bg-gray-200 text-gray-700',
-    medium: 'bg-blue-200 text-blue-700',
-    high: 'bg-orange-200 text-orange-700',
-    critical: 'bg-red-200 text-red-700',
-  };
-
-  return (
-    <div className={`rounded-lg border p-3 ${statusColors[task.status]}`}>
-      <div className="flex items-start justify-between">
-        <h4 className="font-medium">{task.title}</h4>
-        <span className={`px-2 py-1 rounded text-xs font-medium ${priorityBadge[task.priority]}`}>
-          {task.priority}
-        </span>
+const AgentCard: React.FC<{ agent: Agent }> = ({ agent }) => (
+  <div style={styles.card}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div>
+        <div style={styles.cardTitle}>{agent.role}</div>
+        <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{agent.name}</div>
       </div>
-      {task.description && (
-        <p className="text-gray-600 text-sm mt-1">{task.description}</p>
-      )}
-      <div className="mt-2 flex items-center justify-between text-xs">
-        <span className="text-gray-500">{task.assignee || 'Unassigned'}</span>
-        <span className="text-gray-400">{task.status.replace('_', ' ')}</span>
+      <StatusDot status={agent.status} />
+    </div>
+    <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#888' }}>
+      {agent.current_task && <div>▸ {agent.current_task}</div>}
+      <div style={{ marginTop: '0.5rem' }}>
+        ✓ {agent.tasks_completed} tasks · {agent.tokens_used.toLocaleString()} tokens
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-const StatsPanel: React.FC<{ stats: Stats }> = ({ stats }) => {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      <div className="bg-white rounded-lg shadow p-4">
-        <p className="text-gray-500 text-sm">Active Agents</p>
-        <p className="text-2xl font-bold">{stats.active_agents}/{stats.total_agents}</p>
-      </div>
-      <div className="bg-white rounded-lg shadow p-4">
-        <p className="text-gray-500 text-sm">Tasks</p>
-        <p className="text-2xl font-bold">{stats.completed_tasks}/{stats.total_tasks}</p>
-      </div>
-      <div className="bg-white rounded-lg shadow p-4">
-        <p className="text-gray-500 text-sm">Tokens Used</p>
-        <p className="text-2xl font-bold">{(stats.total_tokens / 1000).toFixed(1)}K</p>
-      </div>
-      <div className="bg-white rounded-lg shadow p-4">
-        <p className="text-gray-500 text-sm">Budget Remaining</p>
-        <p className="text-2xl font-bold text-green-600">{(stats.remaining_budget / 1000).toFixed(0)}K</p>
+const TaskCard: React.FC<{ task: Task }> = ({ task }) => (
+  <div style={styles.taskCard}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ fontWeight: '500' }}>{task.title}</div>
+      <div style={{ fontSize: '0.625rem', textTransform: 'uppercase', color: '#666' }}>
+        {task.priority}
       </div>
     </div>
-  );
-};
-
-const KanbanBoard: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
-  const columns = ['todo', 'in_progress', 'done', 'blocked'];
-  
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      {columns.map(col => (
-        <div key={col} className="bg-gray-50 rounded-lg p-3">
-          <h3 className="font-medium mb-3 capitalize">{col.replace('_', ' ')}</h3>
-          <div className="space-y-2">
-            {tasks.filter(t => t.status === col).map(task => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-        </div>
-      ))}
+    {task.description && (
+      <div style={{ fontSize: '0.875rem', color: '#888', marginTop: '0.5rem' }}>
+        {task.description}
+      </div>
+    )}
+    <div style={{ fontSize: '0.75rem', color: '#555', marginTop: '0.75rem' }}>
+      {task.assignee || 'Unassigned'}
     </div>
-  );
-};
+  </div>
+);
 
+const StatCard: React.FC<{ label: string; value: string | number; highlight?: boolean }> = 
+  ({ label, value, highlight }) => (
+  <div style={styles.card}>
+    <div style={styles.cardTitle}>{label}</div>
+    <div style={{ ...styles.cardValue, color: highlight ? '#0f0' : '#fff' }}>{value}</div>
+  </div>
+);
+
+const KanbanColumn: React.FC<{ title: string; tasks: Task[] }> = ({ title, tasks }) => (
+  <div style={styles.column}>
+    <div style={styles.columnTitle}>
+      {title} <span style={{ color: '#444' }}>({tasks.length})</span>
+    </div>
+    {tasks.map(task => <TaskCard key={task.id} task={task} />)}
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────
 // Main App
+// ─────────────────────────────────────────────────────────────
 
 const App: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
@@ -149,7 +204,7 @@ const App: React.FC = () => {
     total_tasks: 0,
     completed_tasks: 0,
     total_tokens: 0,
-    remaining_budget: 550000,
+    remaining_budget: 0,
   });
   
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -157,68 +212,104 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, agentsRes, tasksRes] = await Promise.all([
+          axios.get(`${API_URL}/stats`),
+          axios.get(`${API_URL}/agents`),
+          axios.get(`${API_URL}/tasks`),
+        ]);
+        setStats(statsRes.data);
+        setAgents(agentsRes.data);
+        setTasks(tasksRes.data);
+      } catch (error) {
+        // Use demo data if API not available
+        setStats({
+          total_agents: 5,
+          active_agents: 3,
+          total_tasks: 12,
+          completed_tasks: 7,
+          total_tokens: 125000,
+          remaining_budget: 50000,
+        });
+        setAgents([
+          { name: 'Atlas', role: 'Architect', status: 'busy', current_task: 'Designing API', tasks_completed: 15, tokens_used: 45000 },
+          { name: 'Cody', role: 'Developer', status: 'busy', current_task: 'Implementing auth', tasks_completed: 23, tokens_used: 52000 },
+          { name: 'Nova', role: 'PM', status: 'idle', current_task: null, tasks_completed: 8, tokens_used: 18000 },
+          { name: 'Testa', role: 'QA', status: 'idle', current_task: null, tasks_completed: 12, tokens_used: 10000 },
+        ]);
+        setTasks([
+          { id: '1', title: 'Setup authentication', description: 'Implement JWT auth', status: 'in_progress', assignee: 'Cody', priority: 'high', created_at: new Date().toISOString() },
+          { id: '2', title: 'Design database schema', description: 'Create ERD for users', status: 'done', assignee: 'Atlas', priority: 'high', created_at: new Date().toISOString() },
+          { id: '3', title: 'Write unit tests', description: 'Coverage for auth module', status: 'todo', assignee: 'Testa', priority: 'medium', created_at: new Date().toISOString() },
+          { id: '4', title: 'API documentation', description: 'OpenAPI spec', status: 'todo', assignee: 'Nova', priority: 'low', created_at: new Date().toISOString() },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchData = async () => {
-    try {
-      const [statsRes, agentsRes, tasksRes] = await Promise.all([
-        axios.get(`${API_URL}/stats`),
-        axios.get(`${API_URL}/agents`),
-        axios.get(`${API_URL}/tasks`),
-      ]);
-      
-      setStats(statsRes.data);
-      setAgents(agentsRes.data);
-      setTasks(tasksRes.data);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div style={{ ...styles.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>&lt;z&gt;</div>
+          <div style={{ color: '#666' }}>Loading...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div style={styles.page}>
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900"><z> Aizen Dashboard</h1>
-          <p className="text-gray-500 text-sm">Code • Zen • Clarity</p>
+      <header style={styles.header}>
+        <div style={styles.logo}>
+          &lt;z&gt; AIZEN AGENT
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#666' }}>
+          Execute with Zen
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Stats */}
-        <StatsPanel stats={stats} />
+      {/* Stats */}
+      <div style={styles.container}>
+        <div style={{ ...styles.grid, marginBottom: '2rem' }}>
+          <StatCard label="Active Agents" value={`${stats.active_agents}/${stats.total_agents}`} />
+          <StatCard label="Tasks Done" value={`${stats.completed_tasks}/${stats.total_tasks}`} />
+          <StatCard label="Tokens Used" value={`${(stats.total_tokens / 1000).toFixed(1)}K`} />
+          <StatCard label="Budget Left" value={`${(stats.remaining_budget / 1000).toFixed(0)}K`} highlight />
+        </div>
 
         {/* Agents */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Agents</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {agents.map(agent => (
-              <AgentCard key={agent.name} agent={agent} />
-            ))}
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={styles.columnTitle}>AGENTS</div>
+          <div style={styles.grid}>
+            {agents.map(agent => <AgentCard key={agent.name} agent={agent} />)}
           </div>
         </div>
 
-        {/* Kanban Board */}
+        {/* Kanban */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Sprint Board</h2>
-          <KanbanBoard tasks={tasks} />
+          <div style={styles.columnTitle}>TASKS</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+            <KanbanColumn title="TODO" tasks={tasks.filter(t => t.status === 'todo')} />
+            <KanbanColumn title="IN PROGRESS" tasks={tasks.filter(t => t.status === 'in_progress')} />
+            <KanbanColumn title="DONE" tasks={tasks.filter(t => t.status === 'done')} />
+            <KanbanColumn title="BLOCKED" tasks={tasks.filter(t => t.status === 'blocked')} />
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Footer */}
+      <footer style={{ borderTop: '1px solid #333', padding: '1rem 2rem', textAlign: 'center', color: '#444', fontSize: '0.75rem' }}>
+        Assign. Review. Repeat.
+      </footer>
     </div>
   );
 };

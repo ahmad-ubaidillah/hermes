@@ -219,6 +219,73 @@ def build_tool_preview(tool_name: str, args: dict, max_len: int | None = None) -
 
 
 # =========================================================================
+
+
+# =========================================================================
+# Typing Animation for RPG/Visual Novel Style
+# =========================================================================
+
+class TypingAnimation:
+    """Character-by-character typing animation for RPG/Visual Novel feel."""
+    
+    # 8-bit style avatar for Aizen
+    AVATAR = """
+         ▄▀▀▀▀▀▄  
+        ▐  ◕  ◕ ▌  
+        ▐    0  ▌
+         ▀▄▀▄▀▄▀ 
+"""
+    
+    def __init__(self, delay: float = 0.02, print_fn=None):
+        self.delay = delay
+        self.print_fn = print_fn or print
+        
+    def type_text(self, text: str, prefix: str = "Aizen: "):
+        """Type text character by character."""
+        import time
+        full_text = prefix + text
+        for i, char in enumerate(full_text):
+            self.print_fn(char, end='', flush=True)
+            time.sleep(self.delay)
+        self.print_fn()  # Newline at end
+        
+    def type_with_avatar(self, text: str, show_avatar: bool = True):
+        """Type text with 8-bit avatar displayed first."""
+        import time
+        if show_avatar:
+            # Clear and show avatar
+            self.print_fn("\033[2J\033[H", end='')  # Clear screen
+            for line in self.AVATAR.strip().split('\n'):
+                self.print_fn(f"  {line}")
+            self.print_fn()
+        self.type_text(text)
+        
+    @staticmethod
+    def format_rpg_dialog(text: str, speaker: str = "Aizen") -> str:
+        """Format text in RPG dialog box style."""
+        width = 60
+        border = "─" * (width - 2)
+        lines = []
+        words = text.split()
+        current_line = ""
+        
+        for word in words:
+            if len(current_line) + len(word) + 1 <= width - 4:
+                current_line += (" " if current_line else "") + word
+            else:
+                lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+        
+        result = f"╭{border}╮\n"
+        result += f"│ {speaker:^{width-4}} │\n"
+        result += f"├{border}┤\n"
+        for line in lines:
+            result += f"│ {line:<{width-4}} │\n"
+        result += f"╰{border}╯"
+        return result
+
 # KawaiiSpinner
 # =========================================================================
 
@@ -408,6 +475,142 @@ class KawaiiSpinner:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
         return False
+
+
+# =========================================================================
+# Typing Animation Effect (RPG-style)
+# =========================================================================
+
+class TypingAnimation:
+    """Character-by-character typing animation for responses.
+    
+    Creates a visual novel / RPG game feel when displaying AI responses.
+    """
+    
+    # OpenCode-style colors
+    ACCENT = "\033[38;5;75m"  # Cyan/blue
+    TEXT = "\033[38;5;252m"   # Light gray
+    DIM = "\033[38;5;246m"    # Muted gray
+    RESET = "\033[0m"
+    
+    def __init__(self, char_delay: float = 0.008, print_fn=None):
+        """Initialize typing animation.
+        
+        Args:
+            char_delay: Seconds between characters (default 8ms for natural feel)
+            print_fn: Optional print function to use (for testing or custom output)
+        """
+        self.char_delay = char_delay
+        self._print_fn = print_fn or print
+        self._out = sys.stdout
+    
+    def _write(self, text: str, flush: bool = True):
+        """Write text using the configured print function."""
+        if self._print_fn is not None:
+            self._print_fn(text, end='', flush=flush)
+        else:
+            try:
+                self._out.write(text)
+                if flush:
+                    self._out.flush()
+            except (ValueError, OSError):
+                pass
+    
+    def type_text(self, text: str, prefix: str = "", color: bool = True):
+        """Type out text character by character.
+        
+        Args:
+            text: The text to animate
+            prefix: Optional prefix to add before each line
+            color: Whether to apply ANSI colors
+        """
+        if not text:
+            return
+        
+        lines = text.split('\n')
+        
+        for i, line in enumerate(lines):
+            # Add prefix for subsequent lines
+            if i > 0 and prefix:
+                self._write('\n')
+            
+            # Type each character
+            for char in line:
+                self._write(char)
+                # Small delay for typing effect
+                time.sleep(self.char_delay)
+            
+            # Newline at end of each line (except last if no trailing newline)
+            if i < len(lines) - 1:
+                self._write('\n')
+        
+        # Final newline
+        self._write('\n')
+    
+    def type_with_avatar(self, text: str, avatar_lines: list = None):
+        """Type text with an 8-bit avatar displayed on the left.
+        
+        Args:
+            text: The response text to animate
+            avatar_lines: List of avatar ASCII art lines (uses default if None)
+        """
+        if avatar_lines is None:
+            avatar_lines = [
+                "     ▄▀▀▀▀▀▄    ",
+                "    ▐ ◕ ◕  ▌   ",
+                "    ▐  ▼   ▌   ",
+                "     ▀▄▀▀▀▄▀    ",
+                "      ▐▌ ▐▌     ",
+                "     ▄▀   ▀▄    ",
+            ]
+        
+        text_lines = text.split('\n')
+        max_avatar = len(avatar_lines)
+        
+        # First, show avatar with first few text lines
+        for i in range(max_avatar):
+            avatar_line = avatar_lines[i] if i < len(avatar_lines) else " " * 16
+            text_line = text_lines[i] if i < len(text_lines) else ""
+            
+            # Avatar in accent color
+            colored_avatar = f"{self.ACCENT}{avatar_line}{self.RESET}"
+            
+            self._write(f"{colored_avatar}  {self.TEXT}")
+            
+            # Type text line
+            for char in text_line:
+                self._write(char)
+                time.sleep(self.char_delay)
+            
+            self._write(f"{self.RESET}\n")
+        
+        # Remaining text lines (no avatar)
+        for i in range(max_avatar, len(text_lines)):
+            self._write(" " * 18)  # Indent to align with text
+            for char in text_lines[i]:
+                self._write(char)
+                time.sleep(self.char_delay)
+            self._write("\n")
+
+
+def animated_print(text: str, style: str = "typing", delay: float = 0.008):
+    """Convenience function for animated text printing.
+    
+    Args:
+        text: Text to print
+        style: Animation style - "typing", "avatar", or "none"
+        delay: Character delay in seconds
+    """
+    if style == "none" or not sys.stdout.isatty():
+        print(text)
+        return
+    
+    anim = TypingAnimation(char_delay=delay)
+    
+    if style == "avatar":
+        anim.type_with_avatar(text)
+    else:
+        anim.type_text(text)
 
 
 # =========================================================================

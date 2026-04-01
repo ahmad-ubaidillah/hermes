@@ -1,8 +1,16 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Aizen Agent" width="100%">
+
+```
+         ▄▀▀▀▀▀▄  
+        ▐  ◕  ◕ ▌  
+        ▐    0  ▌     <z> AIZEN AGENT
+         ▀▄▀▄▀▄▀      Execute with Zen
+                        Assign. Review. Repeat.
+```
+
 </p>
 
-# Aizen Agent <z>
+# <z> Aizen Agent
 
 <p align="center">
   <a href="https://github.com/ahmad-ubaidillah/aizen"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/aizen-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
@@ -10,53 +18,38 @@
   <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
 </p>
 
-**Code • Zen • Clarity - Autonomous AI Team Platform**
-
-Fork of [Aizen Agent](https://github.com/NousResearch/aizen-agent) by [Nous Research](https://nousresearch.com) with enhanced multi-agent capabilities, smart routing, and enterprise features.
+**Execute with Zen • Assign. Review. Repeat. — Autonomous AI Team Platform**
 
 ---
 
-## What's New in v3.0
+## What is Aizen Agent?
+
+Aizen Agent is an autonomous AI team platform that helps you build software with minimal human intervention. 
 
 | Feature | Description |
 |---------|-------------|
+| **<z> Agent** | Chat with Aizen - your AI coding companion |
 | **IntentGate** | Smart intent classification - routes tasks to appropriate agents |
 | **Parallel Agents** | Run 5+ agents concurrently with priority queues |
 | **48 Lifecycle Hooks** | Fine-grained control over agent lifecycle |
 | **Hash-Anchored Edit** | Zero stale-line file editing |
-| **LSP Integration** | IDE precision - go to definition, find references |
 | **Web Dashboard** | FastAPI + React dashboard for monitoring |
-| **Observability** | OpenTelemetry tracing, metrics, logging |
-
-| **REPL Debug Mode** | Interactive Python REPL for debugging agent state |
-| **Remote Bridge** | WebSocket + REST API for remote agent access |
-| **Skill Marketplace** | Browse, install, and manage skills locally |
-| **Admin Dashboard** | Single-file Vue 3 dashboard for monitoring |
-| **Graceful Shutdown** | Safe cleanup on SIGTERM/SIGINT |
-| **Process Supervisor** | Auto-restart and health monitoring |
+| **Skill System** | Modular skills for different workflows |
 
 ---
 
 ## Quick Start
 
 ```bash
+# Install
+pip install aizen-agent
+
 # Chat with Aizen
 aizen
 
 # Use free models via OpenCode
 aizen --model opencode/qwen3.6-plus-free
-
-# Start REPL for debugging
-python repl.py
-
-# Start remote bridge
-python -m bridge.server
-
-# Open admin dashboard
-open dashboard/index.html
 ```
-
----
 
 ---
 
@@ -64,21 +57,20 @@ open dashboard/index.html
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    HERMES v3.0                              │
+│                    AIZEN AGENT v3.0                         │
 ├─────────────────────────────────────────────────────────────┤
-│  User Input                                                 │
-│      │                                                      │
-│      ▼                                                      │
-│  ┌─────────┐    ┌──────────┐    ┌──────────┐              │
-│  │ Intent  │───▶│ Parallel │───▶│   Web    │              │
-│  │  Gate   │    │  Agents  │    │Dashboard │              │
-│  └─────────┘    └──────────┘    └──────────┘              │
-│      │              │               │                      │
-│      ▼              ▼               ▼                      │
-│  ┌─────────┐    ┌──────────┐    ┌──────────┐              │
-│  │  Hooks  │    │ HashEdit │    │Observabil│              │
-│  │ (48)    │    │ + LSP    │    │  -ity    │              │
-│  └─────────┘    └──────────┘    └──────────┘              │
+│                                                             │
+│     ┌─────────┐     ┌──────────┐     ┌──────────┐         │
+│     │  User   │────▶│  <z>     │────▶│  Agents  │         │
+│     │ Input   │     │  Aizen   │     │  (5+)    │         │
+│     └─────────┘     └──────────┘     └──────────┘         │
+│                           │                                 │
+│                           ▼                                 │
+│     ┌─────────┐     ┌──────────┐     ┌──────────┐         │
+│     │  Hooks  │◀───▶│  Skills  │◀───▶│  Tools   │         │
+│     │  (48)   │     │ (100+)   │     │  (20+)   │         │
+│     └─────────┘     └──────────┘     └──────────┘         │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -89,242 +81,118 @@ open dashboard/index.html
 ### Method 1: Quick Install (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
-source ~/.bashrc
+# Clone and install
+git clone https://github.com/ahmad-ubaidillah/aizen-agent.git
+cd aizen-agent
+pip install -e ".[cli]"
 ```
 
-### Method 2: Git Clone
+### Method 2: Development Install
 
 ```bash
-git clone https://github.com/ahmad-ubaidillah/aizen.git ~/.aizen/aizen-agent
-cd ~/.aizen/aizen-agent
-python -m venv venv
-source venv/bin/activate
-pip install -e ".[all]"
-
-# Create aizen command
-echo 'source ~/.aizen/aizen-agent/venv/bin/activate && python ~/.aizen/aizen-agent/cli.py "$@"' > ~/.local/bin/aizen
-chmod +x ~/.local/bin/aizen
+# Clone with all dependencies
+git clone https://github.com/ahmad-ubaidillah/aizen-agent.git
+cd aizen-agent
+pip install -e ".[dev,cli]"
 ```
 
-### Method 3: pip (Coming Soon)
+---
 
-```bash
-pip install aizen-agent
+## Configuration
+
+Create `~/.aizen/config.yaml`:
+
+```yaml
+# Model configuration
+model: opencode/qwen3.6-plus-free
+provider: opencode
+
+# Display settings
+display:
+  tool_progress: true
+  skin: default
+
+# Agent settings
+max_iterations: 90
 ```
 
-### Method 4: Docker
+---
+
+## Usage Examples
 
 ```bash
-docker pull ghcr.io/ahmad-ubaidillah/aizen:latest
-docker run -it -v ~/.aizen:/root/.aizen aizen:latest
-```
-
-### Method 5: Development
-
-```bash
-git clone https://github.com/ahmad-ubaidillah/aizen.git
-cd aizen
-python -m venv venv
-source venv/bin/activate
-pip install -e ".[dev]"
-pre-commit install
-```
-
-### Install Options
-
-```bash
-# Skip setup wizard
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --skip-setup
-
-# Minimal install (no OpenCode, no dashboard)
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --minimal
-
-# Install specific branch
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --branch develop
-
-# Custom install directory
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --dir /opt/aizen
-```
-
-### Post-Installation
-
-After installation, you can:
-
-```bash
-# Start chatting with Aizen
+# Basic chat
 aizen
 
-# Run setup wizard to configure
-aizen setup
+# With specific model
+aizen --model openai/gpt-4
 
-# Start web dashboard
-aizen-dashboard
+# Debug mode
+aizen --debug
 
-# Or manually
-python -m web.server --port 8000
-
-# Use OpenCode for free AI coding
-opencode run "implement feature X"
-
-# Check installation
-aizen --version
-aizen doctor
+# Run skill
+aizen /skill codebase-inspection
 ```
 
-### Use v3.0 Features
+---
 
-```python
-# Intent Classification
-from routing import IntentGate
+## Skills
 
-gate = IntentGate()
-result = gate.analyze("implement user authentication")
-print(result.verbalize())
-# I detect **coding** intent — detected 'implement' indicates coding.
+Aizen comes with 100+ built-in skills:
 
-# Parallel Agent Execution
-from lifecycle import BackgroundAgentPool
+| Category | Skills |
+|----------|--------|
+| **DevOps** | `arch-dev-setup`, `pre-commit-checks`, `hermes-autostart` |
+| **GitHub** | `github-pr-workflow`, `github-issues`, `code-review` |
+| **Creative** | `ascii-art`, `excalidraw`, `songwriting` |
+| **MLOps** | `unsloth`, `axolotl`, `lm-evaluation-harness` |
+| **System** | `chroma-vector-db`, `local-task-board`, `linux-scripts` |
 
-pool = BackgroundAgentPool()
-task_ids = await pool.spawn_parallel([
-    {"agent": "Dev", "prompt": "Implement auth"},
-    {"agent": "QA", "prompt": "Write tests"},
-    {"agent": "Sec", "prompt": "Security review"},
-])
+Browse all skills: `aizen /skills`
 
-# Lifecycle Hooks
-from lifecycle import hooks, HookEvent
+---
 
-@hooks.on(HookEvent.TOOL_BEFORE)
-def validate_access(ctx):
-    if "dangerous" in ctx.data.get("tool", ""):
-        ctx.stop("Blocked dangerous tool")
-    return ctx
-```
+## Team Agents
 
-### Run Web Dashboard
+Aizen Agent includes specialized AI agents:
+
+| Agent | Role | Focus |
+|-------|------|-------|
+| **Aizen** | CEO | Decision making, coordination |
+| **Atlas** | Architect | System design, tech decisions |
+| **Cody** | Developer | Implementation, coding |
+| **Nova** | PM | Requirements, backlog |
+| **Testa** | QA | Testing, bug reports |
+
+---
+
+## Migration from Hermes
+
+If you used Hermes Agent before, run the migration script:
 
 ```bash
-# Start backend
-python -m web.backend.main
-
-# Open http://localhost:8000 for dashboard
-# Open http://localhost:8000/docs for API docs
+python scripts/migrate_hermes_to_aizen.py
 ```
+
+This will:
+- Move `~/.hermes/` to `~/.aizen/`
+- Update all config references
+- Warn about deprecated modules (honcho, firecrawl)
 
 ---
 
-## Module Structure
+## License
 
-```
-aizen-agent/
-├── routing/                    # Intent classification
-│   ├── __init__.py
-│   └── intent_gate.py          # Smart task routing
-│
-├── lifecycle/                  # Agent lifecycle management
-│   ├── __init__.py
-│   ├── background_agents.py    # Parallel agent pool
-│   ├── parallel_pool.py        # Enhanced pool with priorities
-│   └── hooks.py                # 48 lifecycle hooks
-│
-├── tools/                      # Extended tools
-│   ├── hash_edit.py            # Zero stale-line editing
-│   └── lsp_client.py           # Language Server Protocol
-│
-├── web/                        # Web interface
-│   ├── backend/main.py         # FastAPI REST + WebSocket
-│   └── frontend/               # React dashboard
-│
-├── orchestration.py            # Main pipeline
-├── observability.py            # OpenTelemetry integration
-│
-└── docs/                       # Documentation
-    ├── README.md
-    ├── API.md
-    ├── HOOKS.md
-    └── DEPLOYMENT.md
-```
+MIT License - see [LICENSE](LICENSE)
 
 ---
 
-## IntentGate - Smart Routing
+## Credits
 
-Classifies user intent and routes to appropriate agent:
-
-| Intent | Detection | Agent | Workflow |
-|--------|-----------|-------|----------|
-| `quick_task` | "quick", "show", "list" | Flash | Direct |
-| `coding` | "implement", "create", "build" | Dev | Sprint |
-| `architecture` | "design", "structure" | Arch | Planning |
-| `debugging` | "fix", "error", "bug" | Dev | Sprint |
-| `deployment` | "deploy", "release" | Ops | Deploy |
-| `review` | "review", "check" | QA | Review |
-| `research` | "research", "analyze" | Research | Research |
-
-```python
-from routing import IntentGate
-
-gate = IntentGate()
-result = gate.analyze("fix the login bug")
-
-print(f"Intent: {result.intent.value}")
-print(f"Agent: {result.recommended_agent}")
-print(f"Workflow: {result.recommended_workflow}")
-print(f"Confidence: {result.confidence}")
-```
+Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com)
 
 ---
 
-## Parallel Agents
-
-Run multiple agents concurrently:
-
-```python
-from lifecycle import BackgroundAgentPool
-
-pool = BackgroundAgentPool()
-
-# Spawn 3 agents in parallel
-task_ids = await pool.spawn_parallel([
-    {"agent": "Dev", "prompt": "Implement user authentication"},
-    {"agent": "QA", "prompt": "Write tests for auth module"},
-    {"agent": "Sec", "prompt": "Security review of auth flow"},
-])
-
-# Wait for all to complete
-results = await pool.wait_all(list(task_ids.values()))
-
-for agent, result in results.items():
-    print(f"{agent}: {result.status}")
-```
-
----
-
-## Lifecycle Hooks (48 hooks)
-
-Fine-grained control over agent lifecycle:
-
-### Hook Categories
-
-| Category | Count | Events |
-|----------|-------|--------|
-| Session | 23 | created, deleted, idle, error, resumed, ... |
-| Tool | 12 | before, after, error, retry, timeout, ... |
-| Agent | 6 | spawn, complete, error, timeout, ... |
-| Sprint | 5 | start, end, task.assigned, task.completed, ... |
-| Intent | 3 | classified, ambiguous, routed |
-| Message | 4 | before, after, transform, validated |
-| Continuation | 3 | check, trigger, limit |
-| Skill | 2 | loaded, unloaded |
-
-### Usage
-
-```python
-from lifecycle import hooks, HookEvent
-
-# Validate file access
-@hooks.on(HookEvent.TOOL_BEFORE)
-def validate_file_access(ctx):
-    tool = ctx.data.get("tool", "")
+<p align="center">
+  <b>Execute with Zen • Assign. Review. Repeat.</b>
+</p>
