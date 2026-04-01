@@ -1,4 +1,4 @@
-// Hermes Dashboard - Main React App
+// Aizen Dashboard - Main React App
 // FastAPI + React + TypeScript
 
 import React, { useState, useEffect } from 'react';
@@ -193,8 +193,8 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Hermes Dashboard</h1>
-          <p className="text-gray-500 text-sm">v3.0 - Autonomous AI Team</p>
+          <h1 className="text-2xl font-bold text-gray-900"><z> Aizen Dashboard</h1>
+          <p className="text-gray-500 text-sm">Code • Zen • Clarity</p>
         </div>
       </header>
 
