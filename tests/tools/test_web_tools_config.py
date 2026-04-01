@@ -297,10 +297,11 @@ class TestBackendSelection:
             assert _get_backend() == "firecrawl"
 
     def test_fallback_no_keys_defaults_to_firecrawl(self):
-        """No keys, no config → 'firecrawl' (will fail at client init)."""
+        """No keys, no config → 'firecrawl' when ddgs not available (will fail at client init)."""
         from tools.web_tools import _get_backend
 
-        with patch("tools.web_tools._load_web_config", return_value={}):
+        with patch("tools.web_tools._load_web_config", return_value={}), \
+             patch("tools.web_tools._ddgs_available", return_value=False):
             assert _get_backend() == "firecrawl"
 
     def test_invalid_config_falls_through_to_fallback(self):
@@ -403,10 +404,12 @@ class TestCheckWebApiKey:
             assert check_web_api_key() is True
 
     def test_no_keys_returns_false(self):
+        """Returns False when no API keys set and ddgs library not installed."""
         from tools.web_tools import check_web_api_key
 
-        # Returns False when no API keys set and ddgs library not installed
-        assert check_web_api_key() is False
+        with patch("tools.web_tools._ddgs_available", return_value=False):
+            # Returns False when no API keys set and ddgs library not installed
+            assert check_web_api_key() is False
 
     def test_both_keys_returns_true(self):
         with patch.dict(
