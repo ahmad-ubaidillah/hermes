@@ -29,7 +29,6 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Optional, Any, List
 
-
 # ---------------------------------------------------------------------------
 # SSL certificate auto-detection for NixOS and other non-standard systems.
 # Must run BEFORE any HTTP library (discord, aiohttp, etc.) is imported.
@@ -71,7 +70,6 @@ def _ensure_ssl_certs() -> None:
         if os.path.exists(candidate):
             os.environ["SSL_CERT_FILE"] = candidate
             return
-
 
 _ensure_ssl_certs()
 
@@ -234,13 +232,11 @@ from gateway.session import (
 from gateway.delivery import DeliveryRouter
 from gateway.platforms.base import BasePlatformAdapter, MessageEvent, MessageType
 
-
 def _normalize_whatsapp_identifier(value: str) -> str:
     """Strip WhatsApp JID/LID syntax down to its stable numeric identifier."""
     return (
         str(value or "").strip().replace("+", "", 1).split(":", 1)[0].split("@", 1)[0]
     )
-
 
 def _expand_whatsapp_auth_aliases(identifier: str) -> set:
     """Resolve WhatsApp phone/LID aliases using bridge session mapping files."""
@@ -273,7 +269,6 @@ def _expand_whatsapp_auth_aliases(identifier: str) -> set:
 
     return resolved
 
-
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -286,7 +281,6 @@ _DEFAULT_MAX_MESSAGE_LENGTH = 102_400
 # Control characters that should be stripped from incoming messages.
 # Allow: TAB (\x09), LF (\x0a), CR (\x0d) — these are normal text whitespace.
 _CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
-
 
 def _get_max_message_length(config: Optional[dict] = None) -> int:
     """Read max_message_length from config, falling back to the default."""
@@ -302,7 +296,6 @@ def _get_max_message_length(config: Optional[dict] = None) -> int:
                     pass
     return _DEFAULT_MAX_MESSAGE_LENGTH
 
-
 def _sanitize_message(text: str, config: Optional[dict] = None) -> str:
     """Strip control characters and null bytes from a message.
 
@@ -315,7 +308,6 @@ def _sanitize_message(text: str, config: Optional[dict] = None) -> str:
             return text  # user disabled sanitization
     return _CONTROL_CHAR_RE.sub("", text)
 
-
 def _validate_message_length(text: str, max_length: int) -> Optional[str]:
     """Return an error string if the message exceeds max_length, else None."""
     if max_length <= 0:
@@ -327,7 +319,6 @@ def _validate_message_length(text: str, max_length: int) -> Optional[str]:
             f"Please split your message into smaller parts."
         )
     return None
-
 
 def _validate_message(
     event: "MessageEvent", config: Optional[dict] = None
@@ -350,13 +341,11 @@ def _validate_message(
 
     return None
 
-
 # Sentinel placed into _running_agents immediately when a session starts
 # processing, *before* any await.  Prevents a second message for the same
 # session from bypassing the "already running" guard during the async gap
 # between the guard check and actual agent creation.
 _AGENT_PENDING_SENTINEL = object()
-
 
 def _resolve_runtime_agent_kwargs() -> dict:
     """Resolve provider credentials for gateway-created AIAgent instances."""
@@ -380,7 +369,6 @@ def _resolve_runtime_agent_kwargs() -> dict:
         "command": runtime.get("command"),
         "args": list(runtime.get("args") or []),
     }
-
 
 def _check_unavailable_skill(command_name: str) -> str | None:
     """Check if a command matches a known-but-inactive skill.
@@ -427,11 +415,9 @@ def _check_unavailable_skill(command_name: str) -> str | None:
         pass
     return None
 
-
 def _platform_config_key(platform: "Platform") -> str:
     """Map a Platform enum to its config.yaml key (LOCAL→"cli", rest→enum value)."""
     return "cli" if platform == Platform.LOCAL else platform.value
-
 
 def _load_gateway_config() -> dict:
     """Load and parse ~/.hermes/config.yaml, returning {} on any error."""
@@ -448,7 +434,6 @@ def _load_gateway_config() -> dict:
         )
     return {}
 
-
 def _resolve_gateway_model(config: dict | None = None) -> str:
     """Read model from config.yaml — single source of truth.
 
@@ -463,7 +448,6 @@ def _resolve_gateway_model(config: dict | None = None) -> str:
     elif isinstance(model_cfg, dict):
         return model_cfg.get("default") or model_cfg.get("model") or ""
     return ""
-
 
 def _resolve_hermes_bin() -> Optional[list[str]]:
     """Resolve the Hermes update command as argv parts.
@@ -490,7 +474,6 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
         pass
 
     return None
-
 
 class GatewayRunner:
     """
@@ -559,13 +542,6 @@ class GatewayRunner:
         # Track platforms that failed to connect for background reconnection.
         # Key: Platform enum, Value: {"config": platform_config, "attempts": int, "next_retry": float}
         self._failed_platforms: Dict[Platform, Dict[str, Any]] = {}
-
-        # Persistent Honcho managers keyed by gateway session key.
-        # This preserves write_frequency="session" semantics across short-lived
-        # per-message AIAgent instances.
-        self._honcho_managers: Dict[str, Any] = {}
-        self._honcho_configs: Dict[str, Any] = {}
-
         # Ensure tirith security scanner is available (downloads if needed)
         try:
             from tools.tirith_security import ensure_installed
@@ -605,63 +581,6 @@ class GatewayRunner:
 
         # Track background tasks to prevent garbage collection mid-execution
         self._background_tasks: set = set()
-
-    def _get_or_create_gateway_honcho(self, session_key: str):
-        """Return a persistent Honcho manager/config pair for this gateway session."""
-        if not hasattr(self, "_honcho_managers"):
-            self._honcho_managers = {}
-        if not hasattr(self, "_honcho_configs"):
-            self._honcho_configs = {}
-
-        if session_key in self._honcho_managers:
-            return self._honcho_managers[session_key], self._honcho_configs.get(
-                session_key
-            )
-
-        try:
-            from honcho_integration.client import HonchoClientConfig, get_honcho_client
-            from honcho_integration.session import HonchoSessionManager
-
-            hcfg = HonchoClientConfig.from_global_config()
-            if not hcfg.enabled or not (hcfg.api_key or hcfg.base_url):
-                return None, hcfg
-
-            client = get_honcho_client(hcfg)
-            manager = HonchoSessionManager(
-                honcho=client,
-                config=hcfg,
-                context_tokens=hcfg.context_tokens,
-            )
-            self._honcho_managers[session_key] = manager
-            self._honcho_configs[session_key] = hcfg
-            return manager, hcfg
-        except Exception as e:
-            logger.debug("Gateway Honcho init failed for %s: %s", session_key, e)
-            return None, None
-
-    def _shutdown_gateway_honcho(self, session_key: str) -> None:
-        """Flush and close the persistent Honcho manager for a gateway session."""
-        managers = getattr(self, "_honcho_managers", None)
-        configs = getattr(self, "_honcho_configs", None)
-        if managers is None or configs is None:
-            return
-
-        manager = managers.pop(session_key, None)
-        configs.pop(session_key, None)
-        if not manager:
-            return
-        try:
-            manager.shutdown()
-        except Exception as e:
-            logger.debug("Gateway Honcho shutdown failed for %s: %s", session_key, e)
-
-    def _shutdown_all_gateway_honcho(self) -> None:
-        """Flush and close all persistent Honcho managers."""
-        managers = getattr(self, "_honcho_managers", None)
-        if not managers:
-            return
-        for session_key in list(managers.keys()):
-            self._shutdown_gateway_honcho(session_key)
 
     # -- Setup skill availability ----------------------------------------
 
@@ -726,7 +645,6 @@ class GatewayRunner:
     def _flush_memories_for_session(
         self,
         old_session_id: str,
-        honcho_session_key: Optional[str] = None,
     ):
         """Prompt the agent to save memories/skills before context is lost.
 
@@ -762,7 +680,6 @@ class GatewayRunner:
                 quiet_mode=True,
                 enabled_toolsets=["memory", "skills"],
                 session_id=old_session_id,
-                honcho_session_key=honcho_session_key,
             )
             # Fully silence the flush agent — quiet_mode only suppresses init
             # messages; tool call output still leaks to the terminal through
@@ -826,17 +743,10 @@ class GatewayRunner:
             tmp_agent.run_conversation(
                 user_message=flush_prompt,
                 conversation_history=msgs,
-                sync_honcho=False,
             )
             logger.info(
                 "Pre-reset memory flush completed for session %s", old_session_id
             )
-            # Flush any queued Honcho writes before the session is dropped
-            if getattr(tmp_agent, "_honcho", None):
-                try:
-                    tmp_agent._honcho.shutdown()
-                except Exception:
-                    pass
         except Exception as e:
             logger.debug(
                 "Pre-reset memory flush failed for session %s: %s", old_session_id, e
@@ -845,7 +755,6 @@ class GatewayRunner:
     async def _async_flush_memories(
         self,
         old_session_id: str,
-        honcho_session_key: Optional[str] = None,
     ):
         """Run the sync memory flush in a thread pool so it won't block the event loop."""
         loop = asyncio.get_event_loop()
@@ -853,8 +762,7 @@ class GatewayRunner:
             None,
             self._flush_memories_for_session,
             old_session_id,
-            honcho_session_key,
-        )
+            )
 
     @property
     def should_exit_cleanly(self) -> bool:
@@ -1469,7 +1377,6 @@ class GatewayRunner:
                     )
                     try:
                         await self._async_flush_memories(entry.session_id, key)
-                        self._shutdown_gateway_honcho(key)
                         self.session_store._pre_flushed_sessions.add(entry.session_id)
                     except Exception as e:
                         logger.debug(
@@ -1636,7 +1543,6 @@ class GatewayRunner:
         self._running_agents.clear()
         self._pending_messages.clear()
         self._pending_approvals.clear()
-        self._shutdown_all_gateway_honcho()
         self._shutdown_event.set()
 
         from gateway.status import remove_pid_file, write_runtime_status
@@ -3414,8 +3320,6 @@ class GatewayRunner:
                 _flush_task.add_done_callback(self._background_tasks.discard)
         except Exception as e:
             logger.debug("Gateway memory flush on reset failed: %s", e)
-
-        self._shutdown_gateway_honcho(session_key)
         self._evict_cached_agent(session_key)
 
         # Reset the session
@@ -4634,7 +4538,6 @@ class GatewayRunner:
                     user_message=btw_prompt,
                     conversation_history=history_snapshot,
                     task_id=task_id,
-                    sync_honcho=False,
                 )
 
             loop = asyncio.get_event_loop()
@@ -5027,8 +4930,6 @@ class GatewayRunner:
             _flush_task.add_done_callback(self._background_tasks.discard)
         except Exception as e:
             logger.debug("Memory flush on resume failed: %s", e)
-
-        self._shutdown_gateway_honcho(session_key)
 
         # Clear any running agent for this session key
         if session_key in self._running_agents:
@@ -6176,9 +6077,6 @@ class GatewayRunner:
                 }
 
             pr = self._provider_routing
-            honcho_manager, honcho_config = self._get_or_create_gateway_honcho(
-                session_key
-            )
             reasoning_config = self._load_reasoning_config()
             self._reasoning_config = reasoning_config
             # Set up streaming consumer if enabled
@@ -6258,9 +6156,6 @@ class GatewayRunner:
                     provider_data_collection=pr.get("data_collection"),
                     session_id=session_id,
                     platform=platform_key,
-                    honcho_session_key=session_key,
-                    honcho_manager=honcho_manager,
-                    honcho_config=honcho_config,
                     session_db=self._session_db,
                     fallback_model=self._fallback_model,
                 )
@@ -6733,7 +6628,6 @@ class GatewayRunner:
 
         return response
 
-
 def _start_cron_ticker(stop_event: threading.Event, adapters=None, interval: int = 60):
     """
     Background thread that ticks the cron scheduler at a regular interval.
@@ -6788,7 +6682,6 @@ def _start_cron_ticker(stop_event: threading.Event, adapters=None, interval: int
 
         stop_event.wait(timeout=interval)
     logger.info("Cron ticker stopped")
-
 
 async def start_gateway(
     config: Optional[GatewayConfig] = None, replace: bool = False
@@ -6977,7 +6870,6 @@ async def start_gateway(
 
     return True
 
-
 def main():
     """CLI entry point for the gateway."""
     import argparse
@@ -7003,7 +6895,6 @@ def main():
     success = asyncio.run(start_gateway(config))
     if not success:
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

@@ -8,6 +8,13 @@ import sys
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Check if FastAPI is available
+try:
+    import fastapi
+    HAS_FASTAPI = True
+except ImportError:
+    HAS_FASTAPI = False
+
 
 class TestBridgeTypes:
     """Test bridge type definitions."""
@@ -57,6 +64,7 @@ class TestBridgeConfig:
         assert isinstance(secret, str)
 
 
+@pytest.mark.skipif(not HAS_FASTAPI, reason="FastAPI not installed")
 class TestBridgeServer:
     """Test bridge server functionality."""
     

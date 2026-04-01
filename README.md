@@ -1,32 +1,32 @@
-     1|<p align="center">
-     2|  <img src="assets/banner.png" alt="Hermes Agent" width="100%">
-     3|</p>
-     4|
-     5|# Hermes Agent v3.0 ☤
-     6|
-     7|<p align="center">
-     8|  <a href="https://github.com/ahmad-ubaidillah/hermes"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/hermes-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
-     9|  <a href="https://github.com/ahmad-ubaidillah/hermes/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-    10|  <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
-    11|</p>
-    12|
-    13|**Autonomous AI Team Platform - Free + Powerful**
-    14|
-    15|Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com) with enhanced multi-agent capabilities, smart routing, and enterprise features.
-    16|
-    17|---
-    18|
-    19|## What's New in v3.0
-    20|
-    21|| Feature | Description |
-    22||---------|-------------|
-    23|| **IntentGate** | Smart intent classification - routes tasks to appropriate agents |
-    24|| **Parallel Agents** | Run 5+ agents concurrently with priority queues |
-    25|| **48 Lifecycle Hooks** | Fine-grained control over agent lifecycle |
-    26|| **Hash-Anchored Edit** | Zero stale-line file editing |
-    27|| **LSP Integration** | IDE precision - go to definition, find references |
-    28|| **Web Dashboard** | FastAPI + React dashboard for monitoring |
-    29|| **Observability** | OpenTelemetry tracing, metrics, logging |
+<p align="center">
+  <img src="assets/banner.png" alt="Hermes Agent" width="100%">
+</p>
+
+# Hermes Agent v3.0 ☤
+
+<p align="center">
+  <a href="https://github.com/ahmad-ubaidillah/hermes"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/hermes-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+  <a href="https://github.com/ahmad-ubaidillah/hermes/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
+</p>
+
+**Autonomous AI Team Platform - Free + Powerful**
+
+Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com) with enhanced multi-agent capabilities, smart routing, and enterprise features.
+
+---
+
+## What's New in v3.0
+
+| Feature | Description |
+|---------|-------------|
+| **IntentGate** | Smart intent classification - routes tasks to appropriate agents |
+| **Parallel Agents** | Run 5+ agents concurrently with priority queues |
+| **48 Lifecycle Hooks** | Fine-grained control over agent lifecycle |
+| **Hash-Anchored Edit** | Zero stale-line file editing |
+| **LSP Integration** | IDE precision - go to definition, find references |
+| **Web Dashboard** | FastAPI + React dashboard for monitoring |
+| **Observability** | OpenTelemetry tracing, metrics, logging |
 
 | **REPL Debug Mode** | Interactive Python REPL for debugging agent state |
 | **Remote Bridge** | WebSocket + REST API for remote agent access |
@@ -58,276 +58,273 @@ open dashboard/index.html
 
 ---
 
+---
 
-    30|
-    31|---
-    32|
-    33|## Architecture
-    34|
-    35|```
-    36|┌─────────────────────────────────────────────────────────────┐
-    37|│                    HERMES v3.0                              │
-    38|├─────────────────────────────────────────────────────────────┤
-    39|│  User Input                                                 │
-    40|│      │                                                      │
-    41|│      ▼                                                      │
-    42|│  ┌─────────┐    ┌──────────┐    ┌──────────┐              │
-    43|│  │ Intent  │───▶│ Parallel │───▶│   Web    │              │
-    44|│  │  Gate   │    │  Agents  │    │Dashboard │              │
-    45|│  └─────────┘    └──────────┘    └──────────┘              │
-    46|│      │              │               │                      │
-    47|│      ▼              ▼               ▼                      │
-    48|│  ┌─────────┐    ┌──────────┐    ┌──────────┐              │
-    49|│  │  Hooks  │    │ HashEdit │    │Observabil│              │
-    50|│  │ (48)    │    │ + LSP    │    │  -ity    │              │
-    51|│  └─────────┘    └──────────┘    └──────────┘              │
-    52|└─────────────────────────────────────────────────────────────┘
-    53|```
-    54|
-    55|---
-    56|
-    57|## Installation
-    58|
-    59|### Method 1: Quick Install (Recommended)
-    60|
-    61|```bash
-    62|curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash
-    63|source ~/.bashrc
-    64|```
-    65|
-    66|### Method 2: Git Clone
-    67|
-    68|```bash
-    69|git clone https://github.com/ahmad-ubaidillah/hermes.git ~/.hermes/hermes-agent
-    70|cd ~/.hermes/hermes-agent
-    71|python -m venv venv
-    72|source venv/bin/activate
-    73|pip install -e ".[all]"
-    74|
-    75|# Create hermes command
-    76|echo 'source ~/.hermes/hermes-agent/venv/bin/activate && python ~/.hermes/hermes-agent/cli.py "$@"' > ~/.local/bin/hermes
-    77|chmod +x ~/.local/bin/hermes
-    78|```
-    79|
-    80|### Method 3: pip (Coming Soon)
-    81|
-    82|```bash
-    83|pip install hermes-agent
-    84|```
-    85|
-    86|### Method 4: Docker
-    87|
-    88|```bash
-    89|docker pull ghcr.io/ahmad-ubaidillah/hermes:latest
-    90|docker run -it -v ~/.hermes:/root/.hermes hermes:latest
-    91|```
-    92|
-    93|### Method 5: Development
-    94|
-    95|```bash
-    96|git clone https://github.com/ahmad-ubaidillah/hermes.git
-    97|cd hermes
-    98|python -m venv venv
-    99|source venv/bin/activate
-   100|pip install -e ".[dev]"
-   101|pre-commit install
-   102|```
-   103|
-   104|### Install Options
-   105|
-   106|```bash
-   107|# Skip setup wizard
-   108|curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --skip-setup
-   109|
-   110|# Minimal install (no OpenCode, no dashboard)
-   111|curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --minimal
-   112|
-   113|# Install specific branch
-   114|curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --branch develop
-   115|
-   116|# Custom install directory
-   117|curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --dir /opt/hermes
-   118|```
-   119|
-   120|### Post-Installation
-   121|
-   122|After installation, you can:
-   123|
-   124|```bash
-   125|# Start chatting with Hermes
-   126|hermes
-   127|
-   128|# Run setup wizard to configure
-   129|hermes setup
-   130|
-   131|# Start web dashboard
-   132|hermes-dashboard
-   133|
-   134|# Or manually
-   135|python -m web.server --port 8000
-   136|
-   137|# Use OpenCode for free AI coding
-   138|opencode run "implement feature X"
-   139|
-   140|# Check installation
-   141|hermes --version
-   142|hermes doctor
-   143|```
-   144|
-   145|### Use v3.0 Features
-   146|
-   147|```python
-   148|# Intent Classification
-   149|from routing import IntentGate
-   150|
-   151|gate = IntentGate()
-   152|result = gate.analyze("implement user authentication")
-   153|print(result.verbalize())
-   154|# I detect **coding** intent — detected 'implement' indicates coding.
-   155|
-   156|# Parallel Agent Execution
-   157|from lifecycle import BackgroundAgentPool
-   158|
-   159|pool = BackgroundAgentPool()
-   160|task_ids = await pool.spawn_parallel([
-   161|    {"agent": "Dev", "prompt": "Implement auth"},
-   162|    {"agent": "QA", "prompt": "Write tests"},
-   163|    {"agent": "Sec", "prompt": "Security review"},
-   164|])
-   165|
-   166|# Lifecycle Hooks
-   167|from lifecycle import hooks, HookEvent
-   168|
-   169|@hooks.on(HookEvent.TOOL_BEFORE)
-   170|def validate_access(ctx):
-   171|    if "dangerous" in ctx.data.get("tool", ""):
-   172|        ctx.stop("Blocked dangerous tool")
-   173|    return ctx
-   174|```
-   175|
-   176|### Run Web Dashboard
-   177|
-   178|```bash
-   179|# Start backend
-   180|python -m web.backend.main
-   181|
-   182|# Open http://localhost:8000 for dashboard
-   183|# Open http://localhost:8000/docs for API docs
-   184|```
-   185|
-   186|---
-   187|
-   188|## Module Structure
-   189|
-   190|```
-   191|hermes-agent/
-   192|├── routing/                    # Intent classification
-   193|│   ├── __init__.py
-   194|│   └── intent_gate.py          # Smart task routing
-   195|│
-   196|├── lifecycle/                  # Agent lifecycle management
-   197|│   ├── __init__.py
-   198|│   ├── background_agents.py    # Parallel agent pool
-   199|│   ├── parallel_pool.py        # Enhanced pool with priorities
-   200|│   └── hooks.py                # 48 lifecycle hooks
-   201|│
-   202|├── tools/                      # Extended tools
-   203|│   ├── hash_edit.py            # Zero stale-line editing
-   204|│   └── lsp_client.py           # Language Server Protocol
-   205|│
-   206|├── web/                        # Web interface
-   207|│   ├── backend/main.py         # FastAPI REST + WebSocket
-   208|│   └── frontend/               # React dashboard
-   209|│
-   210|├── orchestration.py            # Main pipeline
-   211|├── observability.py            # OpenTelemetry integration
-   212|│
-   213|└── docs/                       # Documentation
-   214|    ├── README.md
-   215|    ├── API.md
-   216|    ├── HOOKS.md
-   217|    └── DEPLOYMENT.md
-   218|```
-   219|
-   220|---
-   221|
-   222|## IntentGate - Smart Routing
-   223|
-   224|Classifies user intent and routes to appropriate agent:
-   225|
-   226|| Intent | Detection | Agent | Workflow |
-   227||--------|-----------|-------|----------|
-   228|| `quick_task` | "quick", "show", "list" | Flash | Direct |
-   229|| `coding` | "implement", "create", "build" | Dev | Sprint |
-   230|| `architecture` | "design", "structure" | Arch | Planning |
-   231|| `debugging` | "fix", "error", "bug" | Dev | Sprint |
-   232|| `deployment` | "deploy", "release" | Ops | Deploy |
-   233|| `review` | "review", "check" | QA | Review |
-   234|| `research` | "research", "analyze" | Research | Research |
-   235|
-   236|```python
-   237|from routing import IntentGate
-   238|
-   239|gate = IntentGate()
-   240|result = gate.analyze("fix the login bug")
-   241|
-   242|print(f"Intent: {result.intent.value}")
-   243|print(f"Agent: {result.recommended_agent}")
-   244|print(f"Workflow: {result.recommended_workflow}")
-   245|print(f"Confidence: {result.confidence}")
-   246|```
-   247|
-   248|---
-   249|
-   250|## Parallel Agents
-   251|
-   252|Run multiple agents concurrently:
-   253|
-   254|```python
-   255|from lifecycle import BackgroundAgentPool
-   256|
-   257|pool = BackgroundAgentPool()
-   258|
-   259|# Spawn 3 agents in parallel
-   260|task_ids = await pool.spawn_parallel([
-   261|    {"agent": "Dev", "prompt": "Implement user authentication"},
-   262|    {"agent": "QA", "prompt": "Write tests for auth module"},
-   263|    {"agent": "Sec", "prompt": "Security review of auth flow"},
-   264|])
-   265|
-   266|# Wait for all to complete
-   267|results = await pool.wait_all(list(task_ids.values()))
-   268|
-   269|for agent, result in results.items():
-   270|    print(f"{agent}: {result.status}")
-   271|```
-   272|
-   273|---
-   274|
-   275|## Lifecycle Hooks (48 hooks)
-   276|
-   277|Fine-grained control over agent lifecycle:
-   278|
-   279|### Hook Categories
-   280|
-   281|| Category | Count | Events |
-   282||----------|-------|--------|
-   283|| Session | 23 | created, deleted, idle, error, resumed, ... |
-   284|| Tool | 12 | before, after, error, retry, timeout, ... |
-   285|| Agent | 6 | spawn, complete, error, timeout, ... |
-   286|| Sprint | 5 | start, end, task.assigned, task.completed, ... |
-   287|| Intent | 3 | classified, ambiguous, routed |
-   288|| Message | 4 | before, after, transform, validated |
-   289|| Continuation | 3 | check, trigger, limit |
-   290|| Skill | 2 | loaded, unloaded |
-   291|
-   292|### Usage
-   293|
-   294|```python
-   295|from lifecycle import hooks, HookEvent
-   296|
-   297|# Validate file access
-   298|@hooks.on(HookEvent.TOOL_BEFORE)
-   299|def validate_file_access(ctx):
-   300|    tool = ctx.data.get("tool", "")
-   301|
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    HERMES v3.0                              │
+├─────────────────────────────────────────────────────────────┤
+│  User Input                                                 │
+│      │                                                      │
+│      ▼                                                      │
+│  ┌─────────┐    ┌──────────┐    ┌──────────┐              │
+│  │ Intent  │───▶│ Parallel │───▶│   Web    │              │
+│  │  Gate   │    │  Agents  │    │Dashboard │              │
+│  └─────────┘    └──────────┘    └──────────┘              │
+│      │              │               │                      │
+│      ▼              ▼               ▼                      │
+│  ┌─────────┐    ┌──────────┐    ┌──────────┐              │
+│  │  Hooks  │    │ HashEdit │    │Observabil│              │
+│  │ (48)    │    │ + LSP    │    │  -ity    │              │
+│  └─────────┘    └──────────┘    └──────────┘              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Installation
+
+### Method 1: Quick Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash
+source ~/.bashrc
+```
+
+### Method 2: Git Clone
+
+```bash
+git clone https://github.com/ahmad-ubaidillah/hermes.git ~/.hermes/hermes-agent
+cd ~/.hermes/hermes-agent
+python -m venv venv
+source venv/bin/activate
+pip install -e ".[all]"
+
+# Create hermes command
+echo 'source ~/.hermes/hermes-agent/venv/bin/activate && python ~/.hermes/hermes-agent/cli.py "$@"' > ~/.local/bin/hermes
+chmod +x ~/.local/bin/hermes
+```
+
+### Method 3: pip (Coming Soon)
+
+```bash
+pip install hermes-agent
+```
+
+### Method 4: Docker
+
+```bash
+docker pull ghcr.io/ahmad-ubaidillah/hermes:latest
+docker run -it -v ~/.hermes:/root/.hermes hermes:latest
+```
+
+### Method 5: Development
+
+```bash
+git clone https://github.com/ahmad-ubaidillah/hermes.git
+cd hermes
+python -m venv venv
+source venv/bin/activate
+pip install -e ".[dev]"
+pre-commit install
+```
+
+### Install Options
+
+```bash
+# Skip setup wizard
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --skip-setup
+
+# Minimal install (no OpenCode, no dashboard)
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --minimal
+
+# Install specific branch
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --branch develop
+
+# Custom install directory
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --dir /opt/hermes
+```
+
+### Post-Installation
+
+After installation, you can:
+
+```bash
+# Start chatting with Hermes
+hermes
+
+# Run setup wizard to configure
+hermes setup
+
+# Start web dashboard
+hermes-dashboard
+
+# Or manually
+python -m web.server --port 8000
+
+# Use OpenCode for free AI coding
+opencode run "implement feature X"
+
+# Check installation
+hermes --version
+hermes doctor
+```
+
+### Use v3.0 Features
+
+```python
+# Intent Classification
+from routing import IntentGate
+
+gate = IntentGate()
+result = gate.analyze("implement user authentication")
+print(result.verbalize())
+# I detect **coding** intent — detected 'implement' indicates coding.
+
+# Parallel Agent Execution
+from lifecycle import BackgroundAgentPool
+
+pool = BackgroundAgentPool()
+task_ids = await pool.spawn_parallel([
+    {"agent": "Dev", "prompt": "Implement auth"},
+    {"agent": "QA", "prompt": "Write tests"},
+    {"agent": "Sec", "prompt": "Security review"},
+])
+
+# Lifecycle Hooks
+from lifecycle import hooks, HookEvent
+
+@hooks.on(HookEvent.TOOL_BEFORE)
+def validate_access(ctx):
+    if "dangerous" in ctx.data.get("tool", ""):
+        ctx.stop("Blocked dangerous tool")
+    return ctx
+```
+
+### Run Web Dashboard
+
+```bash
+# Start backend
+python -m web.backend.main
+
+# Open http://localhost:8000 for dashboard
+# Open http://localhost:8000/docs for API docs
+```
+
+---
+
+## Module Structure
+
+```
+hermes-agent/
+├── routing/                    # Intent classification
+│   ├── __init__.py
+│   └── intent_gate.py          # Smart task routing
+│
+├── lifecycle/                  # Agent lifecycle management
+│   ├── __init__.py
+│   ├── background_agents.py    # Parallel agent pool
+│   ├── parallel_pool.py        # Enhanced pool with priorities
+│   └── hooks.py                # 48 lifecycle hooks
+│
+├── tools/                      # Extended tools
+│   ├── hash_edit.py            # Zero stale-line editing
+│   └── lsp_client.py           # Language Server Protocol
+│
+├── web/                        # Web interface
+│   ├── backend/main.py         # FastAPI REST + WebSocket
+│   └── frontend/               # React dashboard
+│
+├── orchestration.py            # Main pipeline
+├── observability.py            # OpenTelemetry integration
+│
+└── docs/                       # Documentation
+    ├── README.md
+    ├── API.md
+    ├── HOOKS.md
+    └── DEPLOYMENT.md
+```
+
+---
+
+## IntentGate - Smart Routing
+
+Classifies user intent and routes to appropriate agent:
+
+| Intent | Detection | Agent | Workflow |
+|--------|-----------|-------|----------|
+| `quick_task` | "quick", "show", "list" | Flash | Direct |
+| `coding` | "implement", "create", "build" | Dev | Sprint |
+| `architecture` | "design", "structure" | Arch | Planning |
+| `debugging` | "fix", "error", "bug" | Dev | Sprint |
+| `deployment` | "deploy", "release" | Ops | Deploy |
+| `review` | "review", "check" | QA | Review |
+| `research` | "research", "analyze" | Research | Research |
+
+```python
+from routing import IntentGate
+
+gate = IntentGate()
+result = gate.analyze("fix the login bug")
+
+print(f"Intent: {result.intent.value}")
+print(f"Agent: {result.recommended_agent}")
+print(f"Workflow: {result.recommended_workflow}")
+print(f"Confidence: {result.confidence}")
+```
+
+---
+
+## Parallel Agents
+
+Run multiple agents concurrently:
+
+```python
+from lifecycle import BackgroundAgentPool
+
+pool = BackgroundAgentPool()
+
+# Spawn 3 agents in parallel
+task_ids = await pool.spawn_parallel([
+    {"agent": "Dev", "prompt": "Implement user authentication"},
+    {"agent": "QA", "prompt": "Write tests for auth module"},
+    {"agent": "Sec", "prompt": "Security review of auth flow"},
+])
+
+# Wait for all to complete
+results = await pool.wait_all(list(task_ids.values()))
+
+for agent, result in results.items():
+    print(f"{agent}: {result.status}")
+```
+
+---
+
+## Lifecycle Hooks (48 hooks)
+
+Fine-grained control over agent lifecycle:
+
+### Hook Categories
+
+| Category | Count | Events |
+|----------|-------|--------|
+| Session | 23 | created, deleted, idle, error, resumed, ... |
+| Tool | 12 | before, after, error, retry, timeout, ... |
+| Agent | 6 | spawn, complete, error, timeout, ... |
+| Sprint | 5 | start, end, task.assigned, task.completed, ... |
+| Intent | 3 | classified, ambiguous, routed |
+| Message | 4 | before, after, transform, validated |
+| Continuation | 3 | check, trigger, limit |
+| Skill | 2 | loaded, unloaded |
+
+### Usage
+
+```python
+from lifecycle import hooks, HookEvent
+
+# Validate file access
+@hooks.on(HookEvent.TOOL_BEFORE)
+def validate_file_access(ctx):
+    tool = ctx.data.get("tool", "")
