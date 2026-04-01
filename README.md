@@ -2,7 +2,7 @@
   <img src="assets/banner.png" alt="Aizen Agent" width="100%">
 </p>
 
-# Aizen Agent v3.0 ☤
+# Aizen Agent <z>
 
 <p align="center">
   <a href="https://github.com/ahmad-ubaidillah/aizen"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/aizen-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
 </p>
 
-**Autonomous AI Team Platform - Free + Powerful**
+**Code • Zen • Clarity - Autonomous AI Team Platform**
 
 Fork of [Aizen Agent](https://github.com/NousResearch/aizen-agent) by [Nous Research](https://nousresearch.com) with enhanced multi-agent capabilities, smart routing, and enterprise features.
 
