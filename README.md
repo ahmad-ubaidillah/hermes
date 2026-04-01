@@ -8,7 +8,7 @@
    /   |  /  _/__  /  / ____/ | / /  /   | / ____/ ____/ | / /_  __/
   / /| |  / /   / /  / __/ /  |/ /  / /| |/ / __/ __/ /  |/ / / /   
  / ___ |_/ /   / /__/ /___/ /|  /  / ___ / /_/ / /___/ /|  / / /    
-/_/  |_/___/  /____/_____/_/ |_/  /_/  |_\____/_____/_/ |_/ /_/     
+/_/  |_/___/  /____/_____/_/ |_/  /_/  |_\\____/_____/_/ |_/ /_/     
   </pre>
 </p>
 
@@ -51,37 +51,14 @@ Aizen Agent is an autonomous AI team platform that helps you build software with
 ## Quick Start
 
 ```bash
-# Install
+# Install (one line!)
 curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
 
 # Chat with Aizen
 aizen
 
-# Use free models
+# Use free models via OpenCode
 aizen --model opencode/qwen3.6-plus-free
-```
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AIZEN AGENT v3.0                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│     ┌─────────┐     ┌──────────┐     ┌──────────┐         │
-│     │  User   │────▶│  <z>     │────▶│  Agents  │         │
-│     │ Input   │     │  Aizen   │     │  (5+)    │         │
-│     └─────────┘     └──────────┘     └──────────┘         │
-│                           │                                 │
-│                           ▼                                 │
-│     ┌─────────┐     ┌──────────┐     ┌──────────┐         │
-│     │  Hooks  │◀───▶│  Skills  │◀───▶│  Tools   │         │
-│     │  (48)   │     │ (100+)   │     │  (20+)   │         │
-│     └─────────┘     └──────────┘     └──────────┘         │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -93,6 +70,15 @@ aizen --model opencode/qwen3.6-plus-free
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
 ```
+
+This will:
+- Install uv (fast Python package manager)
+- Clone Aizen to `~/.aizen/aizen-agent`
+- Create Python 3.11 virtual environment
+- Install all dependencies
+- Check for OpenCode (install if missing)
+- Create `aizen` command
+- Run setup wizard
 
 ### Manual Install
 
@@ -110,12 +96,13 @@ aizen setup
 
 ## Configuration
 
-Create `~/.aizen/config.yaml`:
+Run `aizen setup` to configure interactively, or create `~/.aizen/config.yaml`:
 
 ```yaml
-# Model configuration
-model: opencode/qwen3.6-plus-free
-provider: opencode
+# Model configuration (choose one)
+model: opencode/qwen3.6-plus-free  # Free via OpenCode
+# model: openai/gpt-4             # Via OpenAI
+# model: anthropic/claude-opus-4  # Via OpenRouter
 
 # Display settings
 display:
@@ -135,7 +122,10 @@ max_iterations: 90
 aizen
 
 # With specific model
-aizen --model openai/gpt-4
+aizen --model opencode/mimo-v2-omni-free
+
+# Quick query
+aizen -q "what files are in this directory?"
 
 # Debug mode
 aizen --debug
@@ -143,6 +133,19 @@ aizen --debug
 # Run skill
 aizen /skill codebase-inspection
 ```
+
+---
+
+## Free Models (via OpenCode)
+
+Aizen auto-detects OpenCode credentials for seamless free model access:
+
+| Model | Description |
+|-------|-------------|
+| `opencode/qwen3.6-plus-free` | Fast, capable coding |
+| `opencode/mimo-v2-omni-free` | Multimodal |
+| `opencode/minimax-m2.5-free` | Long context |
+| `opencode/nemotron-3-super-free` | NVIDIA |
 
 ---
 
@@ -189,5 +192,5 @@ Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Re
 ---
 
 <p align="center">
-  <b>Execute with Zen • Assign. Review. Repeat.</b>
+  <b>Execute with Zen ⚕ Assign. Review. Repeat.</b>
 </p>
