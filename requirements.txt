@@ -19,6 +19,7 @@ PyJWT[crypto]
 # Web tools
 firecrawl-py
 parallel-web>=0.4.2
+ddgs>=2.0.0  # Free DuckDuckGo search fallback (no API key needed)
 
 # Image generation
 fal-client

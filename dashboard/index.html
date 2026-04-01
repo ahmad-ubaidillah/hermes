@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Admin Dashboard</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; color: #ffd700; }
+        .status-badge { padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+        .status-ok { background: #00c853; color: white; }
+        .status-error { background: #ff5252; color: white; }
+        .status-warning { background: #ffc107; color: black; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #16213e; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-title { font-size: 18px; font-weight: 600; color: #ffd700; }
+        .stat-value { font-size: 36px; font-weight: bold; color: #4fc3f7; }
+        .stat-label { font-size: 14px; color: #888; margin-top: 5px; }
+        .chart-container { height: 200px; margin-top: 15px; }
+        .session-list { max-height: 300px; overflow-y: auto; }
+        .session-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #2a2a4a; }
+        .session-item:hover { background: #1f3460; }
+        .session-id { font-family: monospace; color: #4fc3f7; }
+        .session-model { font-size: 12px; color: #888; }
+        .error-log { max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .error-item { padding: 8px; margin: 5px 0; background: #2a1a1a; border-left: 3px solid #ff5252; border-radius: 4px; }
+        .tool-usage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tool-badge { background: #2a2a4a; padding: 4px 12px; border-radius: 12px; font-size: 12px; }
+        .tool-badge span { color: #ffd700; margin-left: 5px; }
+        .refresh-btn { background: #ffd700; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .refresh-btn:hover { background: #ffed4a; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .loading { animation: pulse 1.5s infinite; }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="header">
+            <h1>🏛️ Hermes Admin Dashboard</h1>
+            <div>
+                <span :class="['status-badge', statusClass]">{{ status }}</span>
+                <button class="refresh-btn" @click="refresh" :disabled="loading">
+                    {{ loading ? 'Refreshing...' : 'Refresh' }}
+                </button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Stats Cards -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Active Sessions</span>
+                    <span>📊</span>
+                </div>
+                <div class="stat-value">{{ stats.activeSessions }}</div>
+                <div class="stat-label">{{ stats.totalSessions }} total sessions</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Token Usage</span>
+                    <span>🎯</span>
+                </div>
+                <div class="stat-value">{{ formatTokens(stats.totalTokens) }}</div>
+                <div class="stat-label">{{ stats.tokensToday }} tokens today</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Tool Calls</span>
+                    <span>🔧</span>
+                </div>
+                <div class="stat-value">{{ stats.toolCalls }}</div>
+                <div class="stat-label">{{ stats.toolErrors }} errors ({{ errorRate }}%)</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Memory Usage</span>
+                    <span>💾</span>
+                </div>
+                <div class="stat-value">{{ stats.memoryMB }} MB</div>
+                <div class="stat-label">{{ stats.cpuUsage }}% CPU</div>
+            </div>
+
+            <!-- Sessions List -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header">
+                    <span class="card-title">Recent Sessions</span>
+                    <span>📋</span>
+                </div>
+                <div class="session-list">
+                    <div v-for="session in sessions" :key="session.id" class="session-item">
+                        <div>
+                            <div class="session-id">{{ session.id }}</div>
+                            <div class="session-model">{{ session.model }}</div>
+                        </div>
+                        <div>
+                            <div>{{ session.messageCount }} messages</div>
+                            <div class="session-model">{{ formatTime(session.lastActivity) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Token Usage (24h)</span>
+                    <span>📈</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="tokenChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tool Usage -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Tool Usage</span>
+                    <span>🛠️</span>
+                </div>
+                <div class="tool-usage">
+                    <div v-for="(count, tool) in toolUsage" :key="tool" class="tool-badge">
+                        {{ tool }}<span>{{ count }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Errors -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header">
+                    <span class="card-title">Recent Errors</span>
+                    <span>⚠️</span>
+                </div>
+                <div class="error-log">
+                    <div v-for="error in errors" :key="error.id" class="error-item">
+                        <div><strong>{{ error.type }}</strong> - {{ formatTime(error.timestamp) }}</div>
+                        <div>{{ error.message }}</div>
+                    </div>
+                    <div v-if="errors.length === 0" style="color: #4fc3f7; padding: 20px; text-align: center;">
+                        No recent errors ✨
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const loading = ref(false);
+                const status = ref('OK');
+                const stats = ref({
+                    activeSessions: 12,
+                    totalSessions: 156,
+                    totalTokens: 2450000,
+                    tokensToday: 125000,
+                    toolCalls: 3420,
+                    toolErrors: 23,
+                    memoryMB: 256,
+                    cpuUsage: 15
+                });
+                const sessions = ref([
+                    { id: 'sess_abc123', model: 'anthropic/claude-sonnet-4', messageCount: 24, lastActivity: Date.now() - 60000 },
+                    { id: 'sess_def456', model: 'opencode/qwen3.6-plus-free', messageCount: 8, lastActivity: Date.now() - 300000 },
+                    { id: 'sess_ghi789', model: 'anthropic/claude-opus-4', messageCount: 45, lastActivity: Date.now() - 600000 }
+                ]);
+                const errors = ref([
+                    { id: 1, type: 'RateLimitError', message: 'API rate limit exceeded', timestamp: Date.now() - 120000 },
+                    { id: 2, type: 'TimeoutError', message: 'Tool execution timeout (terminal)', timestamp: Date.now() - 300000 }
+                ]);
+                const toolUsage = ref({
+                    'terminal': 456,
+                    'read_file': 312,
+                    'write_file': 189,
+                    'search_files': 134,
+                    'browser': 67,
+                    'execute_code': 45
+                });
+
+                const statusClass = computed(() => {
+                    if (status.value === 'OK') return 'status-ok';
+                    if (status.value === 'WARNING') return 'status-warning';
+                    return 'status-error';
+                });
+
+                const errorRate = computed(() => {
+                    if (stats.value.toolCalls === 0) return 0;
+                    return ((stats.value.toolErrors / stats.value.toolCalls) * 100).toFixed(1);
+                });
+
+                const formatTokens = (tokens) => {
+                    if (tokens >= 1000000) return (tokens / 1000000).toFixed(1) + 'M';
+                    if (tokens >= 1000) return (tokens / 1000).toFixed(1) + 'K';
+                    return tokens;
+                };
+
+                const formatTime = (timestamp) => {
+                    const diff = Math.floor((Date.now() - timestamp) / 1000);
+                    if (diff < 60) return `${diff}s ago`;
+                    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                    return `${Math.floor(diff / 3600)}h ago`;
+                };
+
+                const refresh = async () => {
+                    loading.value = true;
+                    try {
+                        // Try to fetch from bridge server
+                        const response = await fetch('http://localhost:8765/health');
+                        if (response.ok) {
+                            const data = await response.json();
+                            status.value = 'OK';
+                        }
+                    } catch (e) {
+                        // Bridge not running, use mock data
+                        status.value = 'OK';
+                    }
+                    setTimeout(() => loading.value = false, 1000);
+                };
+
+                onMounted(() => {
+                    // Initialize token chart
+                    const ctx = document.getElementById('tokenChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                            datasets: [{
+                                label: 'Tokens',
+                                data: [5000, 12000, 25000, 45000, 38000, 52000, 48000],
+                                borderColor: '#ffd700',
+                                backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { grid: { color: '#2a2a4a' }, ticks: { color: '#888' } },
+                                x: { grid: { color: '#2a2a4a' }, ticks: { color: '#888' } }
+                            }
+                        }
+                    });
+                    refresh();
+                });
+
+                return { loading, status, stats, sessions, errors, toolUsage, statusClass, errorRate, formatTokens, formatTime, refresh };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

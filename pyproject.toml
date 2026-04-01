@@ -30,6 +30,8 @@ dependencies = [
   "firecrawl-py>=4.16.0,<5",
   "parallel-web>=0.4.2,<1",
   "fal-client>=0.13.1,<1",
+  # Web search fallback (free, no API key needed)
+  "ddgs>=2.0.0,<3",
   # Text-to-speech (Edge TTS is free, no API key needed)
   "edge-tts>=7.2.7,<8",
   # Skills Hub (GitHub App JWT auth — optional, only needed for bot identity)
@@ -108,5 +110,6 @@ include = ["agent", "tools", "tools.*", "hermes_cli", "gateway", "gateway.*", "c
 testpaths = ["tests"]
 markers = [
     "integration: marks tests requiring external services (API keys, Modal, etc.)",
+    "load: marks load/performance tests (run separately from unit tests)",
 ]
 addopts = "-m 'not integration' -n auto"

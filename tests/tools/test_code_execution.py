@@ -114,7 +114,7 @@ class TestExecuteCode(unittest.TestCase):
             # Use real execution but mock the tool dispatcher
             pass
         # Actually run with full integration, mocking at the model_tools level
-        with patch("model_tools.handle_function_call", side_effect=_mock_handle_function_call):
+        with patch("tools.model_tools.handle_function_call", side_effect=_mock_handle_function_call):
             result = execute_code(
                 code=code,
                 task_id="test-task",
@@ -214,7 +214,7 @@ raise RuntimeError("deliberate crash")
     def test_timeout_enforcement(self):
         """Script that sleeps too long is killed."""
         code = "import time; time.sleep(999)"
-        with patch("model_tools.handle_function_call", side_effect=_mock_handle_function_call):
+        with patch("tools.model_tools.handle_function_call", side_effect=_mock_handle_function_call):
             # Override config to use a very short timeout
             with patch("tools.code_execution_tool._load_config", return_value={"timeout": 2, "max_tool_calls": 50}):
                 result = json.loads(execute_code(
@@ -553,7 +553,7 @@ class TestEnvVarFiltering(unittest.TestCase):
         try:
             if extra_env:
                 os.environ.update(extra_env)
-            with patch("model_tools.handle_function_call", return_value='{}'), \
+            with patch("tools.model_tools.handle_function_call", return_value='{}'), \
                  patch("tools.code_execution_tool._load_config",
                        return_value={"timeout": 10, "max_tool_calls": 50}):
                 raw = execute_code(code, task_id="test-env",
@@ -659,7 +659,7 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
             "from hermes_tools import terminal, web_search, read_file\n"
             "print('all imports ok')\n"
         )
-        with patch("model_tools.handle_function_call",
+        with patch("tools.model_tools.handle_function_call",
                     return_value=json.dumps({"ok": True})):
             result = json.loads(execute_code(code, task_id="test-none",
                                              enabled_tools=None))
@@ -673,7 +673,7 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
             "from hermes_tools import terminal, web_search\n"
             "print('imports ok')\n"
         )
-        with patch("model_tools.handle_function_call",
+        with patch("tools.model_tools.handle_function_call",
                     return_value=json.dumps({"ok": True})):
             result = json.loads(execute_code(code, task_id="test-empty",
                                              enabled_tools=[]))
@@ -688,7 +688,7 @@ class TestExecuteCodeEdgeCases(unittest.TestCase):
             "from hermes_tools import terminal\n"
             "print('fallback ok')\n"
         )
-        with patch("model_tools.handle_function_call",
+        with patch("tools.model_tools.handle_function_call",
                     return_value=json.dumps({"ok": True})):
             result = json.loads(execute_code(
                 code, task_id="test-nonoverlap",
@@ -738,7 +738,7 @@ class TestInterruptHandling(unittest.TestCase):
         t.start()
 
         try:
-            with patch("model_tools.handle_function_call",
+            with patch("tools.model_tools.handle_function_call",
                         return_value=json.dumps({"ok": True})), \
                  patch("tools.code_execution_tool._load_config",
                        return_value={"timeout": 30, "max_tool_calls": 50}):
@@ -758,7 +758,7 @@ class TestHeadTailTruncation(unittest.TestCase):
     """Tests for head+tail truncation of large stdout in execute_code."""
 
     def _run(self, code):
-        with patch("model_tools.handle_function_call", side_effect=_mock_handle_function_call):
+        with patch("tools.model_tools.handle_function_call", side_effect=_mock_handle_function_call):
             result = execute_code(
                 code=code,
                 task_id="test-task",

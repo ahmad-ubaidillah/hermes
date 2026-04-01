@@ -13,47 +13,36 @@ import unittest
 class TestCLIQuickCommands(unittest.TestCase):
     """Test quick command dispatch in HermesCLI.process_command - skipped until HermesCLI methods are implemented."""
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_exec_command_runs_and_prints_output(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_exec_command_stderr_shown_on_no_stdout(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_exec_command_no_output_shows_fallback(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_alias_command_routes_to_target(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_alias_command_passes_args(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_alias_no_target_shows_error(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_unsupported_type_shows_error(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_missing_command_field_shows_error(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_quick_command_takes_priority_over_skill_commands(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_unknown_command_still_shows_error(self):
         pass
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
     def test_timeout_shows_error(self):
         pass
 

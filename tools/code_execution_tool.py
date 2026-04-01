@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import platform
+import shutil
 import signal
 import socket
 import subprocess
@@ -40,21 +41,34 @@ SANDBOX_AVAILABLE = sys.platform != "win32"
 
 # The 7 tools allowed inside the sandbox. The intersection of this list
 # and the session's enabled tools determines which stubs are generated.
-SANDBOX_ALLOWED_TOOLS = frozenset([
-    "web_search",
-    "web_extract",
-    "read_file",
-    "write_file",
-    "search_files",
-    "patch",
-    "terminal",
-])
+SANDBOX_ALLOWED_TOOLS = frozenset(
+    [
+        "web_search",
+        "web_extract",
+        "read_file",
+        "write_file",
+        "search_files",
+        "patch",
+        "terminal",
+    ]
+)
 
 # Resource limit defaults (overridable via config.yaml → code_execution.*)
-DEFAULT_TIMEOUT = 300        # 5 minutes
+DEFAULT_TIMEOUT = 300  # 5 minutes
 DEFAULT_MAX_TOOL_CALLS = 50
-MAX_STDOUT_BYTES = 50_000    # 50 KB
-MAX_STDERR_BYTES = 10_000    # 10 KB
+MAX_STDOUT_BYTES = 50_000  # 50 KB
+MAX_STDERR_BYTES = 10_000  # 10 KB
+
+# Docker sandbox defaults
+DEFAULT_DOCKER_CPU = 0.5
+DEFAULT_DOCKER_MEMORY = "256m"
+DEFAULT_DOCKER_PIDS_LIMIT = 64
+DEFAULT_DOCKER_NETWORK = "none"
+DEFAULT_DOCKER_DISK_READ_BPS = "10mb"
+DEFAULT_DOCKER_DISK_WRITE_BPS = "10mb"
+DEFAULT_DOCKER_IMAGE = "python:3.11-slim"
+DEFAULT_DOCKER_TMPFS_SIZE = "64m"
+DEFAULT_DOCKER_ROOTFS_SIZE = "128m"
 
 
 def check_sandbox_requirements() -> bool:
@@ -223,7 +237,7 @@ def _rpc_server_loop(
     server_sock: socket.socket,
     task_id: str,
     tool_call_log: list,
-    tool_call_counter: list,   # mutable [int] so the thread can increment
+    tool_call_counter: list,  # mutable [int] so the thread can increment
     max_tool_calls: int,
     allowed_tools: frozenset,
 ):
@@ -270,23 +284,27 @@ def _rpc_server_loop(
                 # Enforce the allow-list
                 if tool_name not in allowed_tools:
                     available = ", ".join(sorted(allowed_tools))
-                    resp = json.dumps({
-                        "error": (
-                            f"Tool '{tool_name}' is not available in execute_code. "
-                            f"Available: {available}"
-                        )
-                    })
+                    resp = json.dumps(
+                        {
+                            "error": (
+                                f"Tool '{tool_name}' is not available in execute_code. "
+                                f"Available: {available}"
+                            )
+                        }
+                    )
                     conn.sendall((resp + "\n").encode())
                     continue
 
                 # Enforce tool call limit
                 if tool_call_counter[0] >= max_tool_calls:
-                    resp = json.dumps({
-                        "error": (
-                            f"Tool call limit reached ({max_tool_calls}). "
-                            "No more tool calls allowed in this execution."
-                        )
-                    })
+                    resp = json.dumps(
+                        {
+                            "error": (
+                                f"Tool call limit reached ({max_tool_calls}). "
+                                "No more tool calls allowed in this execution."
+                            )
+                        }
+                    )
                     conn.sendall((resp + "\n").encode())
                     continue
 
@@ -319,11 +337,13 @@ def _rpc_server_loop(
 
                 # Log for observability
                 args_preview = str(tool_args)[:80]
-                tool_call_log.append({
-                    "tool": tool_name,
-                    "args_preview": args_preview,
-                    "duration": round(call_duration, 2),
-                })
+                tool_call_log.append(
+                    {
+                        "tool": tool_name,
+                        "args_preview": args_preview,
+                        "duration": round(call_duration, 2),
+                    }
+                )
 
                 conn.sendall((result + "\n").encode())
 
@@ -343,14 +363,17 @@ def _rpc_server_loop(
 # Main entry point
 # ---------------------------------------------------------------------------
 
+
 def execute_code(
     code: str,
     task_id: Optional[str] = None,
     enabled_tools: Optional[List[str]] = None,
 ) -> str:
     """
-    Run a Python script in a sandboxed child process with RPC access
+    Run a Python script in a sandboxed environment with RPC access
     to a subset of Hermes tools.
+
+    Dispatches to subprocess (default) or Docker mode based on config.
 
     Args:
         code:          Python source code to execute.
@@ -362,54 +385,401 @@ def execute_code(
         JSON string with execution results.
     """
     if not SANDBOX_AVAILABLE:
-        return json.dumps({
-            "error": "execute_code is not available on Windows. Use normal tool calls instead."
-        })
+        return json.dumps(
+            {
+                "error": "execute_code is not available on Windows. Use normal tool calls instead."
+            }
+        )
 
     if not code or not code.strip():
         return json.dumps({"error": "No code provided."})
 
-    # Import interrupt event from terminal_tool (cooperative cancellation)
-    from tools.terminal_tool import _interrupt_event
-
-    # Resolve config
     _cfg = _load_config()
-    timeout = _cfg.get("timeout", DEFAULT_TIMEOUT)
-    max_tool_calls = _cfg.get("max_tool_calls", DEFAULT_MAX_TOOL_CALLS)
 
-    # Determine which tools the sandbox can call
     session_tools = set(enabled_tools) if enabled_tools else set()
     sandbox_tools = frozenset(SANDBOX_ALLOWED_TOOLS & session_tools)
-
     if not sandbox_tools:
         sandbox_tools = SANDBOX_ALLOWED_TOOLS
 
-    # --- Set up temp directory with hermes_tools.py and script.py ---
+    mode = _cfg.get("mode", "subprocess")
+    if mode == "docker":
+        return _execute_in_docker(code, task_id, sandbox_tools, _cfg)
+    return _execute_subprocess(code, task_id, sandbox_tools, _cfg)
+
+
+def _find_docker() -> Optional[str]:
+    """Locate the docker CLI binary."""
+    return shutil.which("docker")
+
+
+def _cleanup_docker_container(docker_exe: str, container_id: str):
+    """Kill and remove a Docker container, suppressing errors."""
+    try:
+        subprocess.run(
+            [docker_exe, "kill", container_id],
+            capture_output=True,
+            timeout=10,
+        )
+    except Exception:
+        pass
+    try:
+        subprocess.run(
+            [docker_exe, "rm", "-f", container_id],
+            capture_output=True,
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+
+def _execute_in_docker(
+    code: str,
+    task_id: Optional[str],
+    sandbox_tools: frozenset,
+    cfg: dict,
+) -> str:
+    """Run Python code inside a hardened Docker container with RPC access."""
+    from tools.terminal_tool import _interrupt_event
+
+    docker_exe = _find_docker()
+    if not docker_exe:
+        logger.warning(
+            "Docker mode requested but docker CLI not found; falling back to subprocess"
+        )
+        return _execute_subprocess(code, task_id, sandbox_tools, cfg)
+
+    import shutil as _shutil
+
+    timeout = cfg.get("timeout", DEFAULT_TIMEOUT)
+    max_tool_calls = cfg.get("max_tool_calls", DEFAULT_MAX_TOOL_CALLS)
+    docker_cpu = cfg.get("docker_cpu", DEFAULT_DOCKER_CPU)
+    docker_memory = cfg.get("docker_memory", DEFAULT_DOCKER_MEMORY)
+    docker_pids_limit = cfg.get("docker_pids_limit", DEFAULT_DOCKER_PIDS_LIMIT)
+    docker_network = cfg.get("docker_network", DEFAULT_DOCKER_NETWORK)
+    docker_disk_read_bps = cfg.get("docker_disk_read_bps", DEFAULT_DOCKER_DISK_READ_BPS)
+    docker_disk_write_bps = cfg.get(
+        "docker_disk_write_bps", DEFAULT_DOCKER_DISK_WRITE_BPS
+    )
+    docker_image = cfg.get("docker_image", DEFAULT_DOCKER_IMAGE)
+
+    tmpdir = tempfile.mkdtemp(prefix="hermes_docker_")
+    container_id: Optional[str] = None
+    exec_start = time.monotonic()
+    tool_call_log: list = []
+    tool_call_counter = [0]
+    server_sock = None
+    status = "success"
+
+    try:
+        tools_src = generate_hermes_tools_module(list(sandbox_tools))
+        with open(os.path.join(tmpdir, "hermes_tools.py"), "w") as f:
+            f.write(tools_src)
+        with open(os.path.join(tmpdir, "script.py"), "w") as f:
+            f.write(code)
+
+        # TCP RPC server (UDS cannot cross container boundaries)
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_sock.bind(("127.0.0.1", 0))
+        server_sock.listen(1)
+        rpc_port = server_sock.getsockname()[1]
+
+        rpc_thread = threading.Thread(
+            target=_rpc_server_loop,
+            args=(
+                server_sock,
+                task_id,
+                tool_call_log,
+                tool_call_counter,
+                max_tool_calls,
+                sandbox_tools,
+            ),
+            daemon=True,
+        )
+        rpc_thread.start()
+
+        # Build Docker command
+        container_name = f"hermes-exec-{uuid.uuid4().hex[:12]}"
+        cmd = [
+            docker_exe,
+            "run",
+            "-d",
+            "--name",
+            container_name,
+            "--read-only",
+            "--cap-drop",
+            "ALL",
+            "--security-opt",
+            "no-new-privileges",
+            "--pids-limit",
+            str(docker_pids_limit),
+            "--cpus",
+            str(docker_cpu),
+            "--memory",
+            str(docker_memory),
+            "--network",
+            docker_network,
+            "--tmpfs",
+            f"/tmp:rw,nosuid,size={DEFAULT_DOCKER_TMPFS_SIZE}",
+            "--tmpfs",
+            f"/root:rw,exec,size={DEFAULT_DOCKER_ROOTFS_SIZE}",
+            "-v",
+            f"{tmpdir}:/sandbox:ro",
+            "-w",
+            "/sandbox",
+        ]
+
+        if docker_disk_read_bps:
+            cmd.extend(["--device-read-bps", f"/dev/sda:{docker_disk_read_bps}"])
+        if docker_disk_write_bps:
+            cmd.extend(["--device-write-bps", f"/dev/sda:{docker_disk_write_bps}"])
+
+        if docker_network == "none":
+            cmd.extend(["--add-host", "host.docker.internal:host-gateway"])
+
+        cmd.extend([docker_image, "python", "/sandbox/script.py"])
+
+        # Build child env (same filtering as subprocess mode)
+        child_env = _build_child_env()
+        child_env["HERMES_RPC_HOST"] = "host.docker.internal"
+        child_env["HERMES_RPC_PORT"] = str(rpc_port)
+        # Convert RPC stubs to use TCP when these vars are present
+        child_env["HERMES_RPC_MODE"] = "tcp"
+
+        # Pass env via -e flags
+        for k, v in child_env.items():
+            cmd.extend(["-e", f"{k}={v}"])
+
+        logger.debug("Docker run command: %s", " ".join(cmd))
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=120, check=True
+        )
+        container_id = result.stdout.strip()
+
+        # Poll for container exit
+        deadline = time.monotonic() + timeout
+        while True:
+            if _interrupt_event.is_set():
+                _cleanup_docker_container(docker_exe, container_id)
+                container_id = None
+                status = "interrupted"
+                break
+            if time.monotonic() > deadline:
+                _cleanup_docker_container(docker_exe, container_id)
+                container_id = None
+                status = "timeout"
+                break
+            inspect = subprocess.run(
+                [docker_exe, "inspect", "-f", "{{.State.Running}}", container_id],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if inspect.stdout.strip() == "false":
+                break
+            time.sleep(0.3)
+
+        # Collect stdout/stderr from container logs
+        stdout_text = ""
+        stderr_text = ""
+        if container_id:
+            try:
+                logs = subprocess.run(
+                    [docker_exe, "logs", container_id],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                stdout_text = logs.stdout or ""
+                stderr_text = logs.stderr or ""
+            except Exception as e:
+                stderr_text = f"Could not retrieve container logs: {e}"
+
+        exit_code = -1
+        if container_id:
+            try:
+                inspect = subprocess.run(
+                    [docker_exe, "inspect", "-f", "{{.State.ExitCode}}", container_id],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                exit_code = int(inspect.stdout.strip())
+            except Exception:
+                pass
+
+        # Truncate stdout
+        from tools.ansi_strip import strip_ansi
+
+        stdout_text = strip_ansi(stdout_text)
+        stderr_text = strip_ansi(stderr_text)
+
+        total_stdout = len(stdout_text)
+        if total_stdout > MAX_STDOUT_BYTES:
+            head = stdout_text[: int(MAX_STDOUT_BYTES * 0.4)]
+            tail = stdout_text[-(MAX_STDOUT_BYTES - len(head)) :]
+            omitted = total_stdout - len(head) - len(tail)
+            truncated_notice = (
+                f"\n\n... [OUTPUT TRUNCATED - {omitted:,} chars omitted "
+                f"out of {total_stdout:,} total] ...\n\n"
+            )
+            stdout_text = head + truncated_notice + tail
+
+        duration = round(time.monotonic() - exec_start, 2)
+
+        server_sock.close()
+        server_sock = None
+        rpc_thread.join(timeout=3)
+
+        result_dict: Dict[str, Any] = {
+            "status": status,
+            "output": stdout_text,
+            "tool_calls_made": tool_call_counter[0],
+            "duration_seconds": duration,
+        }
+
+        if status == "timeout":
+            result_dict["error"] = f"Script timed out after {timeout}s and was killed."
+        elif status == "interrupted":
+            result_dict["output"] = (
+                stdout_text + "\n[execution interrupted — user sent a new message]"
+            )
+        elif exit_code != 0:
+            result_dict["status"] = "error"
+            result_dict["error"] = stderr_text or f"Script exited with code {exit_code}"
+            if stderr_text:
+                result_dict["output"] = stdout_text + "\n--- stderr ---\n" + stderr_text
+
+        return json.dumps(result_dict, ensure_ascii=False)
+
+    except subprocess.TimeoutExpired:
+        duration = round(time.monotonic() - exec_start, 2)
+        if container_id:
+            _cleanup_docker_container(docker_exe, container_id)
+        return json.dumps(
+            {
+                "status": "timeout",
+                "error": f"Script timed out after {timeout}s and was killed.",
+                "tool_calls_made": tool_call_counter[0],
+                "duration_seconds": duration,
+            }
+        )
+    except Exception as exc:
+        duration = round(time.monotonic() - exec_start, 2)
+        logger.error(
+            "execute_code (docker) failed after %ss with %d tool calls: %s: %s",
+            duration,
+            tool_call_counter[0],
+            type(exc).__name__,
+            exc,
+            exc_info=True,
+        )
+        if container_id:
+            _cleanup_docker_container(docker_exe, container_id)
+        return json.dumps(
+            {
+                "status": "error",
+                "error": str(exc),
+                "tool_calls_made": tool_call_counter[0],
+                "duration_seconds": duration,
+            },
+            ensure_ascii=False,
+        )
+    finally:
+        if server_sock is not None:
+            try:
+                server_sock.close()
+            except OSError:
+                pass
+        if container_id and docker_exe:
+            _cleanup_docker_container(docker_exe, container_id)
+        _shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def _build_child_env() -> dict:
+    """Build a filtered environment for the sandboxed process."""
+    _SAFE_ENV_PREFIXES = (
+        "PATH",
+        "HOME",
+        "USER",
+        "LANG",
+        "LC_",
+        "TERM",
+        "TMPDIR",
+        "TMP",
+        "TEMP",
+        "SHELL",
+        "LOGNAME",
+        "XDG_",
+        "PYTHONPATH",
+        "VIRTUAL_ENV",
+        "CONDA",
+    )
+    _SECRET_SUBSTRINGS = (
+        "KEY",
+        "TOKEN",
+        "SECRET",
+        "PASSWORD",
+        "CREDENTIAL",
+        "PASSWD",
+        "AUTH",
+    )
+    try:
+        from tools.env_passthrough import is_env_passthrough as _is_passthrough
+    except Exception:
+        _is_passthrough = lambda _: False
+    child_env = {}
+    for k, v in os.environ.items():
+        if _is_passthrough(k):
+            child_env[k] = v
+            continue
+        if any(s in k.upper() for s in _SECRET_SUBSTRINGS):
+            continue
+        if any(k.startswith(p) for p in _SAFE_ENV_PREFIXES):
+            child_env[k] = v
+    child_env["PYTHONDONTWRITEBYTECODE"] = "1"
+    _hermes_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _existing_pp = child_env.get("PYTHONPATH", "")
+    child_env["PYTHONPATH"] = _hermes_root + (
+        os.pathsep + _existing_pp if _existing_pp else ""
+    )
+    _tz_name = os.getenv("HERMES_TIMEZONE", "").strip()
+    if _tz_name:
+        child_env["TZ"] = _tz_name
+    return child_env
+
+
+def _execute_subprocess(
+    code: str,
+    task_id: Optional[str],
+    sandbox_tools: frozenset,
+    cfg: dict,
+) -> str:
+    """Run Python code in a sandboxed subprocess with RPC access to Hermes tools.
+
+    This is the original execution path — unchanged from the prior implementation.
+    """
+    from tools.terminal_tool import _interrupt_event
+
+    timeout = cfg.get("timeout", DEFAULT_TIMEOUT)
+    max_tool_calls = cfg.get("max_tool_calls", DEFAULT_MAX_TOOL_CALLS)
+
     tmpdir = tempfile.mkdtemp(prefix="hermes_sandbox_")
-    # Use /tmp on macOS to avoid the long /var/folders/... path that pushes
-    # Unix domain socket paths past the 104-byte macOS AF_UNIX limit.
-    # On Linux, tempfile.gettempdir() already returns /tmp.
     _sock_tmpdir = "/tmp" if sys.platform == "darwin" else tempfile.gettempdir()
     sock_path = os.path.join(_sock_tmpdir, f"hermes_rpc_{uuid.uuid4().hex}.sock")
 
     tool_call_log: list = []
-    tool_call_counter = [0]  # mutable so the RPC thread can increment
+    tool_call_counter = [0]
     exec_start = time.monotonic()
     server_sock = None
 
     try:
-        # Write the auto-generated hermes_tools module
-        # sandbox_tools is already the correct set (intersection with session
-        # tools, or SANDBOX_ALLOWED_TOOLS as fallback — see lines above).
         tools_src = generate_hermes_tools_module(list(sandbox_tools))
         with open(os.path.join(tmpdir, "hermes_tools.py"), "w") as f:
             f.write(tools_src)
 
-        # Write the user's script
         with open(os.path.join(tmpdir, "script.py"), "w") as f:
             f.write(code)
 
-        # --- Start UDS server ---
         server_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server_sock.bind(sock_path)
         server_sock.listen(1)
@@ -417,53 +787,19 @@ def execute_code(
         rpc_thread = threading.Thread(
             target=_rpc_server_loop,
             args=(
-                server_sock, task_id, tool_call_log,
-                tool_call_counter, max_tool_calls, sandbox_tools,
+                server_sock,
+                task_id,
+                tool_call_log,
+                tool_call_counter,
+                max_tool_calls,
+                sandbox_tools,
             ),
             daemon=True,
         )
         rpc_thread.start()
 
-        # --- Spawn child process ---
-        # Build a minimal environment for the child. We intentionally exclude
-        # API keys and tokens to prevent credential exfiltration from LLM-
-        # generated scripts. The child accesses tools via RPC, not direct API.
-        # Exception: env vars declared by loaded skills (via env_passthrough
-        # registry) or explicitly allowed by the user in config.yaml
-        # (terminal.env_passthrough) are passed through.
-        _SAFE_ENV_PREFIXES = ("PATH", "HOME", "USER", "LANG", "LC_", "TERM",
-                              "TMPDIR", "TMP", "TEMP", "SHELL", "LOGNAME",
-                              "XDG_", "PYTHONPATH", "VIRTUAL_ENV", "CONDA")
-        _SECRET_SUBSTRINGS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL",
-                              "PASSWD", "AUTH")
-        try:
-            from tools.env_passthrough import is_env_passthrough as _is_passthrough
-        except Exception:
-            _is_passthrough = lambda _: False  # noqa: E731
-        child_env = {}
-        for k, v in os.environ.items():
-            # Passthrough vars (skill-declared or user-configured) always pass.
-            if _is_passthrough(k):
-                child_env[k] = v
-                continue
-            # Block vars with secret-like names.
-            if any(s in k.upper() for s in _SECRET_SUBSTRINGS):
-                continue
-            # Allow vars with known safe prefixes.
-            if any(k.startswith(p) for p in _SAFE_ENV_PREFIXES):
-                child_env[k] = v
+        child_env = _build_child_env()
         child_env["HERMES_RPC_SOCKET"] = sock_path
-        child_env["PYTHONDONTWRITEBYTECODE"] = "1"
-        # Ensure the hermes-agent root is importable in the sandbox so
-        # repo-root modules are available to child scripts.
-        _hermes_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        _existing_pp = child_env.get("PYTHONPATH", "")
-        child_env["PYTHONPATH"] = _hermes_root + (os.pathsep + _existing_pp if _existing_pp else "")
-        # Inject user's configured timezone so datetime.now() in sandboxed
-        # code reflects the correct wall-clock time.
-        _tz_name = os.getenv("HERMES_TIMEZONE", "").strip()
-        if _tz_name:
-            child_env["TZ"] = _tz_name
 
         proc = subprocess.Popen(
             [sys.executable, "script.py"],
@@ -475,19 +811,13 @@ def execute_code(
             preexec_fn=None if _IS_WINDOWS else os.setsid,
         )
 
-        # --- Poll loop: watch for exit, timeout, and interrupt ---
         deadline = time.monotonic() + timeout
         stderr_chunks: list = []
 
-        # Background readers to avoid pipe buffer deadlocks.
-        # For stdout we use a head+tail strategy: keep the first HEAD_BYTES
-        # and a rolling window of the last TAIL_BYTES so the final print()
-        # output is never lost.  Stderr keeps head-only (errors appear early).
-        _STDOUT_HEAD_BYTES = int(MAX_STDOUT_BYTES * 0.4)   # 40% head
-        _STDOUT_TAIL_BYTES = MAX_STDOUT_BYTES - _STDOUT_HEAD_BYTES  # 60% tail
+        _STDOUT_HEAD_BYTES = int(MAX_STDOUT_BYTES * 0.4)
+        _STDOUT_TAIL_BYTES = MAX_STDOUT_BYTES - _STDOUT_HEAD_BYTES
 
         def _drain(pipe, chunks, max_bytes):
-            """Simple head-only drain (used for stderr)."""
             total = 0
             try:
                 while True:
@@ -501,12 +831,14 @@ def execute_code(
             except (ValueError, OSError) as e:
                 logger.debug("Error reading process output: %s", e, exc_info=True)
 
-        stdout_total_bytes = [0]  # mutable ref for total bytes seen
+        stdout_total_bytes = [0]
 
-        def _drain_head_tail(pipe, head_chunks, tail_chunks, head_bytes, tail_bytes, total_ref):
-            """Drain stdout keeping both head and tail data."""
+        def _drain_head_tail(
+            pipe, head_chunks, tail_chunks, head_bytes, tail_bytes, total_ref
+        ):
             head_collected = 0
             from collections import deque
+
             tail_buf = deque()
             tail_collected = 0
             try:
@@ -515,24 +847,20 @@ def execute_code(
                     if not data:
                         break
                     total_ref[0] += len(data)
-                    # Fill head buffer first
                     if head_collected < head_bytes:
                         keep = min(len(data), head_bytes - head_collected)
                         head_chunks.append(data[:keep])
                         head_collected += keep
-                        data = data[keep:]  # remaining goes to tail
+                        data = data[keep:]
                         if not data:
                             continue
-                    # Everything past head goes into rolling tail buffer
                     tail_buf.append(data)
                     tail_collected += len(data)
-                    # Evict old tail data to stay within tail_bytes budget
                     while tail_collected > tail_bytes and tail_buf:
                         oldest = tail_buf.popleft()
                         tail_collected -= len(oldest)
             except (ValueError, OSError):
                 pass
-            # Transfer final tail to output list
             tail_chunks.extend(tail_buf)
 
         stdout_head_chunks: list = []
@@ -540,12 +868,20 @@ def execute_code(
 
         stdout_reader = threading.Thread(
             target=_drain_head_tail,
-            args=(proc.stdout, stdout_head_chunks, stdout_tail_chunks,
-                  _STDOUT_HEAD_BYTES, _STDOUT_TAIL_BYTES, stdout_total_bytes),
-            daemon=True
+            args=(
+                proc.stdout,
+                stdout_head_chunks,
+                stdout_tail_chunks,
+                _STDOUT_HEAD_BYTES,
+                _STDOUT_TAIL_BYTES,
+                stdout_total_bytes,
+            ),
+            daemon=True,
         )
         stderr_reader = threading.Thread(
-            target=_drain, args=(proc.stderr, stderr_chunks, MAX_STDERR_BYTES), daemon=True
+            target=_drain,
+            args=(proc.stderr, stderr_chunks, MAX_STDERR_BYTES),
+            daemon=True,
         )
         stdout_reader.start()
         stderr_reader.start()
@@ -562,7 +898,6 @@ def execute_code(
                 break
             time.sleep(0.2)
 
-        # Wait for readers to finish draining
         stdout_reader.join(timeout=3)
         stderr_reader.join(timeout=3)
 
@@ -570,7 +905,6 @@ def execute_code(
         stdout_tail = b"".join(stdout_tail_chunks).decode("utf-8", errors="replace")
         stderr_text = b"".join(stderr_chunks).decode("utf-8", errors="replace")
 
-        # Assemble stdout with head+tail truncation
         total_stdout = stdout_total_bytes[0]
         if total_stdout > MAX_STDOUT_BYTES and stdout_tail:
             omitted = total_stdout - len(stdout_head) - len(stdout_tail)
@@ -585,18 +919,15 @@ def execute_code(
         exit_code = proc.returncode if proc.returncode is not None else -1
         duration = round(time.monotonic() - exec_start, 2)
 
-        # Wait for RPC thread to finish
-        server_sock.close()  # break accept() so thread exits promptly
-        server_sock = None  # prevent double close in finally
+        server_sock.close()
+        server_sock = None
         rpc_thread.join(timeout=3)
 
-        # Strip ANSI escape sequences so the model never sees terminal
-        # formatting — prevents it from copying escapes into file writes.
         from tools.ansi_strip import strip_ansi
+
         stdout_text = strip_ansi(stdout_text)
         stderr_text = strip_ansi(stderr_text)
 
-        # Build response
         result: Dict[str, Any] = {
             "status": status,
             "output": stdout_text,
@@ -607,11 +938,12 @@ def execute_code(
         if status == "timeout":
             result["error"] = f"Script timed out after {timeout}s and was killed."
         elif status == "interrupted":
-            result["output"] = stdout_text + "\n[execution interrupted — user sent a new message]"
+            result["output"] = (
+                stdout_text + "\n[execution interrupted — user sent a new message]"
+            )
         elif exit_code != 0:
             result["status"] = "error"
             result["error"] = stderr_text or f"Script exited with code {exit_code}"
-            # Include stderr in output so the LLM sees the traceback
             if stderr_text:
                 result["output"] = stdout_text + "\n--- stderr ---\n" + stderr_text
 
@@ -627,26 +959,29 @@ def execute_code(
             exc,
             exc_info=True,
         )
-        return json.dumps({
-            "status": "error",
-            "error": str(exc),
-            "tool_calls_made": tool_call_counter[0],
-            "duration_seconds": duration,
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "status": "error",
+                "error": str(exc),
+                "tool_calls_made": tool_call_counter[0],
+                "duration_seconds": duration,
+            },
+            ensure_ascii=False,
+        )
 
     finally:
-        # Cleanup temp dir and socket
         if server_sock is not None:
             try:
                 server_sock.close()
             except OSError as e:
                 logger.debug("Server socket close error: %s", e)
         import shutil
+
         shutil.rmtree(tmpdir, ignore_errors=True)
         try:
             os.unlink(sock_path)
         except OSError:
-            pass  # already cleaned up or never created
+            pass
 
 
 def _kill_process_group(proc, escalate: bool = False):
@@ -674,7 +1009,9 @@ def _kill_process_group(proc, escalate: bool = False):
                 else:
                     os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
             except (ProcessLookupError, PermissionError) as e:
-                logger.debug("Could not kill process group with SIGKILL: %s", e, exc_info=True)
+                logger.debug(
+                    "Could not kill process group with SIGKILL: %s", e, exc_info=True
+                )
                 try:
                     proc.kill()
                 except Exception as e2:
@@ -685,6 +1022,7 @@ def _load_config() -> dict:
     """Load code_execution config from CLI_CONFIG if available."""
     try:
         from cli import CLI_CONFIG
+
         return CLI_CONFIG.get("code_execution", {})
     except Exception:
         return {}
@@ -697,31 +1035,47 @@ def _load_config() -> dict:
 # Per-tool documentation lines for the execute_code description.
 # Ordered to match the canonical display order.
 _TOOL_DOC_LINES = [
-    ("web_search",
-     "  web_search(query: str, limit: int = 5) -> dict\n"
-     "    Returns {\"data\": {\"web\": [{\"url\", \"title\", \"description\"}, ...]}}"),
-    ("web_extract",
-     "  web_extract(urls: list[str]) -> dict\n"
-     "    Returns {\"results\": [{\"url\", \"title\", \"content\", \"error\"}, ...]} where content is markdown"),
-    ("read_file",
-     "  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n"
-     "    Lines are 1-indexed. Returns {\"content\": \"...\", \"total_lines\": N}"),
-    ("write_file",
-     "  write_file(path: str, content: str) -> dict\n"
-     "    Always overwrites the entire file."),
-    ("search_files",
-     "  search_files(pattern: str, target=\"content\", path=\".\", file_glob=None, limit=50) -> dict\n"
-     "    target: \"content\" (search inside files) or \"files\" (find files by name). Returns {\"matches\": [...]}"),
-    ("patch",
-     "  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n"
-     "    Replaces old_string with new_string in the file."),
-    ("terminal",
-     "  terminal(command: str, timeout=None, workdir=None) -> dict\n"
-     "    Foreground only (no background/pty). Returns {\"output\": \"...\", \"exit_code\": N}"),
+    (
+        "web_search",
+        "  web_search(query: str, limit: int = 5) -> dict\n"
+        '    Returns {"data": {"web": [{"url", "title", "description"}, ...]}}',
+    ),
+    (
+        "web_extract",
+        "  web_extract(urls: list[str]) -> dict\n"
+        '    Returns {"results": [{"url", "title", "content", "error"}, ...]} where content is markdown',
+    ),
+    (
+        "read_file",
+        "  read_file(path: str, offset: int = 1, limit: int = 500) -> dict\n"
+        '    Lines are 1-indexed. Returns {"content": "...", "total_lines": N}',
+    ),
+    (
+        "write_file",
+        "  write_file(path: str, content: str) -> dict\n"
+        "    Always overwrites the entire file.",
+    ),
+    (
+        "search_files",
+        '  search_files(pattern: str, target="content", path=".", file_glob=None, limit=50) -> dict\n'
+        '    target: "content" (search inside files) or "files" (find files by name). Returns {"matches": [...]}',
+    ),
+    (
+        "patch",
+        "  patch(path: str, old_string: str, new_string: str, replace_all: bool = False) -> dict\n"
+        "    Replaces old_string with new_string in the file.",
+    ),
+    (
+        "terminal",
+        "  terminal(command: str, timeout=None, workdir=None) -> dict\n"
+        '    Foreground only (no background/pty). Returns {"output": "...", "exit_code": N}',
+    ),
 ]
 
 
-def build_execute_code_schema(enabled_sandbox_tools: set = None) -> dict:
+def build_execute_code_schema(
+    enabled_sandbox_tools: Optional[frozenset] = None,
+) -> dict:
     """Build the execute_code schema with description listing only enabled tools.
 
     When tools are disabled via ``hermes tools`` (e.g. web is turned off),
@@ -730,6 +1084,8 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None) -> dict:
     """
     if enabled_sandbox_tools is None:
         enabled_sandbox_tools = SANDBOX_ALLOWED_TOOLS
+    else:
+        enabled_sandbox_tools = frozenset(enabled_sandbox_tools)
 
     # Build tool documentation lines for only the enabled tools
     tool_lines = "\n".join(
@@ -737,7 +1093,9 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None) -> dict:
     )
 
     # Build example import list from enabled tools
-    import_examples = [n for n in ("web_search", "terminal") if n in enabled_sandbox_tools]
+    import_examples = [
+        n for n in ("web_search", "terminal") if n in enabled_sandbox_tools
+    ]
     if not import_examples:
         import_examples = sorted(enabled_sandbox_tools)[:2]
     if import_examples:
@@ -800,7 +1158,8 @@ registry.register(
     handler=lambda args, **kw: execute_code(
         code=args.get("code", ""),
         task_id=kw.get("task_id"),
-        enabled_tools=kw.get("enabled_tools")),
+        enabled_tools=kw.get("enabled_tools"),
+    ),
     check_fn=check_sandbox_requirements,
     emoji="🐍",
 )

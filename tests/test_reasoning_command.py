@@ -23,7 +23,7 @@ class TestParseReasoningConfig(unittest.TestCase):
     """Verify _parse_reasoning_config handles all effort levels."""
 
     def _parse(self, effort):
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
 
         return parse_reasoning_effort(effort)
 
@@ -104,7 +104,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_effort_level_sets_config(self):
         """Setting an effort level should update reasoning_config."""
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         arg = "high"
@@ -113,7 +113,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
         self.assertEqual(stub.reasoning_config, {"enabled": True, "effort": "high"})
 
     def test_effort_none_disables_reasoning(self):
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         parsed = parse_reasoning_effort("none")
@@ -122,7 +122,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_invalid_argument_rejected(self):
         """Invalid arguments should be rejected (parsed returns None)."""
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         arg = "high"
@@ -132,7 +132,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_effort_none_disables_reasoning_2(self):
         """Duplicate test removed - keeping only the one at line 115"""
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         parsed = parse_reasoning_effort("none")
@@ -141,7 +141,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_invalid_argument_rejected_2(self):
         """Duplicate test removed - keeping only the one above"""
-        from hermes_constants import parse_reasoning_effort
+        from core.hermes_constants import parse_reasoning_effort
 
         parsed = parse_reasoning_effort("turbo")
         self.assertIsNone(parsed)
@@ -324,7 +324,6 @@ class TestReasoningCallback(unittest.TestCase):
         # No exception = pass
 
 
-@unittest.skip("HermesCLI reasoning preview methods not yet implemented in cli_fast.py")
 class TestReasoningPreviewBuffering(unittest.TestCase):
     """Tests for HermesCLI reasoning preview buffering - skipped until methods are implemented."""
 
@@ -663,9 +662,6 @@ class TestReasoningDeltasFiredFlag(unittest.TestCase):
         self.assertEqual(captured, ["Let me merge the PR."])
 
 
-@unittest.skip(
-    "HermesCLI streaming reasoning methods not yet implemented in cli_fast.py"
-)
 class TestReasoningShownThisTurnFlag(unittest.TestCase):
     """Post-response reasoning display tests - skipped until HermesCLI methods are implemented."""
 
