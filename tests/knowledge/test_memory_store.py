@@ -1,5 +1,5 @@
 """
-Tests for Hermes Memory Store
+Tests for Aizen Memory Store
 
 Tests for:
 - Memory creation (static/dynamic)
@@ -290,20 +290,20 @@ class TestContextInjection:
     def test_format_for_injection(self, store):
         """Test formatting memories for injection."""
         store.add("User's name is Ahmad", is_static=True)
-        store.add("Working on Hermes", is_static=False)
+        store.add("Working on Aizen", is_static=False)
         
         context = store.format_for_injection()
         
-        assert "<hermes-memory" in context
-        assert "</hermes-memory>" in context
+        assert "<aizen-memory" in context
+        assert "</aizen-memory>" in context
         assert "readonly" in context
         assert "User's name is Ahmad" in context
-        assert "Working on Hermes" in context
+        assert "Working on Aizen" in context
     
     def test_format_with_query(self, store):
         """Test formatting with search query."""
         store.add("User prefers dark mode", is_static=True)
-        store.add("Current project is Hermes", is_static=False)
+        store.add("Current project is Aizen", is_static=False)
         
         context = store.format_for_injection(query="project")
         

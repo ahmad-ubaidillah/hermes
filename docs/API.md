@@ -1,4 +1,4 @@
-# API Reference - Hermes v3.0
+# API Reference - Aizen v3.0
 
 ## Base URL
 

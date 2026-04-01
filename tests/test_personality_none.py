@@ -11,9 +11,9 @@ import yaml
 
 class TestCLIPersonalityNone(unittest.TestCase):
     def _make_cli(self, personalities=None):
-        from cli import HermesCLI
+        from cli import AizenCLI
 
-        cli = HermesCLI.__new__(HermesCLI)
+        cli = AizenCLI.__new__(AizenCLI)
         cli.personalities = personalities or {
             "helpful": "You are helpful.",
             "concise": "You are concise.",
@@ -24,7 +24,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         return cli
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_none_clears_system_prompt(self):
         cli = self._make_cli()
@@ -33,7 +33,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         assert cli.system_prompt == ""
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_default_clears_system_prompt(self):
         cli = self._make_cli()
@@ -42,7 +42,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         assert cli.system_prompt == ""
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_neutral_clears_system_prompt(self):
         cli = self._make_cli()
@@ -51,7 +51,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         assert cli.system_prompt == ""
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_none_forces_agent_reinit(self):
         cli = self._make_cli()
@@ -60,7 +60,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         assert cli.agent is None
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_none_saves_to_config(self):
         cli = self._make_cli()
@@ -69,7 +69,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         mock_save.assert_called_once_with("agent.system_prompt", "")
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_known_personality_still_works(self):
         cli = self._make_cli()
@@ -78,7 +78,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         assert cli.system_prompt == "You are helpful."
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_unknown_personality_shows_none_in_available(self, capsys):
         cli = self._make_cli()
@@ -87,7 +87,7 @@ class TestCLIPersonalityNone(unittest.TestCase):
         assert "none" in output.lower()
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_list_shows_none_option(self):
         cli = self._make_cli()
@@ -129,7 +129,7 @@ class TestGatewayPersonalityNone:
         config_file = tmp_path / "config.yaml"
         config_file.write_text(yaml.dump(config_data))
 
-        with patch("gateway.run._hermes_home", tmp_path):
+        with patch("gateway.run._aizen_home", tmp_path):
             event = self._make_event("none")
             result = await runner._handle_personality_command(event)
 
@@ -143,7 +143,7 @@ class TestGatewayPersonalityNone:
         config_file = tmp_path / "config.yaml"
         config_file.write_text(yaml.dump(config_data))
 
-        with patch("gateway.run._hermes_home", tmp_path):
+        with patch("gateway.run._aizen_home", tmp_path):
             event = self._make_event("default")
             result = await runner._handle_personality_command(event)
 
@@ -156,7 +156,7 @@ class TestGatewayPersonalityNone:
         config_file = tmp_path / "config.yaml"
         config_file.write_text(yaml.dump(config_data))
 
-        with patch("gateway.run._hermes_home", tmp_path):
+        with patch("gateway.run._aizen_home", tmp_path):
             event = self._make_event("")
             result = await runner._handle_personality_command(event)
 
@@ -169,7 +169,7 @@ class TestGatewayPersonalityNone:
         config_file = tmp_path / "config.yaml"
         config_file.write_text(yaml.dump(config_data))
 
-        with patch("gateway.run._hermes_home", tmp_path):
+        with patch("gateway.run._aizen_home", tmp_path):
             event = self._make_event("nonexistent")
             result = await runner._handle_personality_command(event)
 
@@ -180,9 +180,9 @@ class TestPersonalityDictFormat(unittest.TestCase):
     """Test dict-format custom personalities with description, tone, style."""
 
     def _make_cli(self, personalities):
-        from cli import HermesCLI
+        from cli import AizenCLI
 
-        cli = HermesCLI.__new__(HermesCLI)
+        cli = AizenCLI.__new__(AizenCLI)
         cli.personalities = personalities
         cli.system_prompt = ""
         cli.agent = None
@@ -190,7 +190,7 @@ class TestPersonalityDictFormat(unittest.TestCase):
         return cli
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_dict_personality_uses_system_prompt(self):
         cli = self._make_cli(
@@ -208,7 +208,7 @@ class TestPersonalityDictFormat(unittest.TestCase):
         assert "You are an expert programmer." in cli.system_prompt
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_dict_personality_includes_tone(self):
         cli = self._make_cli(
@@ -224,7 +224,7 @@ class TestPersonalityDictFormat(unittest.TestCase):
         assert "Tone: technical and precise" in cli.system_prompt
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_dict_personality_includes_style(self):
         cli = self._make_cli(
@@ -240,7 +240,7 @@ class TestPersonalityDictFormat(unittest.TestCase):
         assert "Style: use code examples" in cli.system_prompt
 
     @unittest.skip(
-        "HermesCLI._handle_personality_command not yet implemented in cli_fast.py"
+        "AizenCLI._handle_personality_command not yet implemented in cli_fast.py"
     )
     def test_string_personality_still_works(self):
         cli = self._make_cli({"helper": "You are helpful."})
@@ -249,12 +249,12 @@ class TestPersonalityDictFormat(unittest.TestCase):
         assert cli.system_prompt == "You are helpful."
 
     @unittest.skip(
-        "HermesCLI._resolve_personality_prompt not yet implemented in cli_fast.py"
+        "AizenCLI._resolve_personality_prompt not yet implemented in cli_fast.py"
     )
     def test_resolve_prompt_dict_no_tone_no_style(self):
-        from cli import HermesCLI
+        from cli import AizenCLI
 
-        result = HermesCLI._resolve_personality_prompt(
+        result = AizenCLI._resolve_personality_prompt(
             {
                 "description": "A helper",
                 "system_prompt": "You are helpful.",
@@ -263,10 +263,10 @@ class TestPersonalityDictFormat(unittest.TestCase):
         assert result == "You are helpful."
 
     @unittest.skip(
-        "HermesCLI._resolve_personality_prompt not yet implemented in cli_fast.py"
+        "AizenCLI._resolve_personality_prompt not yet implemented in cli_fast.py"
     )
     def test_resolve_prompt_string(self):
-        from cli import HermesCLI
+        from cli import AizenCLI
 
-        result = HermesCLI._resolve_personality_prompt("You are helpful.")
+        result = AizenCLI._resolve_personality_prompt("You are helpful.")
         assert result == "You are helpful."

@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def _make_cli(config_overrides=None, env_overrides=None, **kwargs):
-    """Create a HermesCLI instance with minimal mocking."""
+    """Create a AizenCLI instance with minimal mocking."""
     import cli as _cli_mod
-    from cli import HermesCLI
+    from cli import AizenCLI
 
     _clean_config = {
         "model": {
@@ -42,7 +42,7 @@ def _make_cli(config_overrides=None, env_overrides=None, **kwargs):
             else:
                 _clean_config[k] = v
 
-    clean_env = {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""}
+    clean_env = {"LLM_MODEL": "", "AIZEN_MAX_ITERATIONS": ""}
     if env_overrides:
         clean_env.update(env_overrides)
     with (
@@ -50,7 +50,7 @@ def _make_cli(config_overrides=None, env_overrides=None, **kwargs):
         patch.dict("os.environ", clean_env, clear=False),
         patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}),
     ):
-        return HermesCLI(**kwargs)
+        return AizenCLI(**kwargs)
 
 
 def _simple_history():
@@ -139,71 +139,71 @@ class TestDisplayResumedHistory(unittest.TestCase):
         cli_obj._display_resumed_history()
         return buf.getvalue()
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_simple_history_shows_user_and_assistant(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_system_messages_hidden(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_tool_messages_hidden(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_tool_calls_shown_as_summary(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_long_user_message_truncated(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_long_assistant_message_truncated(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_multiline_assistant_truncated(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_large_history_shows_truncation_indicator(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_multimodal_content_handled(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_empty_history_no_output(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_minimal_config_suppresses_display(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_panel_has_title(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_assistant_with_no_content_no_tools_skipped(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_only_system_messages_no_output(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_reasoning_scratchpad_stripped(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_pure_reasoning_message_skipped(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_assistant_with_text_and_tool_calls(self):
         pass
 
@@ -211,31 +211,31 @@ class TestDisplayResumedHistory(unittest.TestCase):
 class TestPreloadResumedSession(unittest.TestCase):
     """_preload_resumed_session() loads session from DB early."""
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_returns_false_when_not_resumed(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_returns_false_when_no_session_db(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_returns_false_when_session_not_found(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_returns_false_when_session_has_no_messages(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_loads_session_successfully(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_reopens_session_in_db(self):
         pass
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_singular_user_message_grammar(self):
         pass
 
@@ -243,7 +243,7 @@ class TestPreloadResumedSession(unittest.TestCase):
 class TestInitAgentSkipsPreloaded(unittest.TestCase):
     """_init_agent() should skip DB load when history is already populated."""
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_init_agent_skips_db_when_preloaded(self):
         pass
 
@@ -252,13 +252,13 @@ class TestResumeDisplayConfig(unittest.TestCase):
     """resume_display config option defaults and behavior."""
 
     def test_default_config_has_resume_display(self):
-        """DEFAULT_CONFIG in hermes_cli/config.py includes resume_display."""
-        from hermes_cli.config import DEFAULT_CONFIG
+        """DEFAULT_CONFIG in aizen_cli/config.py includes resume_display."""
+        from aizen_cli.config import DEFAULT_CONFIG
 
         display = DEFAULT_CONFIG.get("display", {})
         assert "resume_display" in display
         assert display["resume_display"] == "full"
 
-    @unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+    @unittest.skip("AizenCLI not fully implemented in cli_fast.py")
     def test_cli_defaults_have_resume_display(self):
         pass

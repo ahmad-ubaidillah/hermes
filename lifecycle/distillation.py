@@ -1,5 +1,5 @@
 """
-Signal Distillation for Hermes - Save 80-90% tokens on terminal output.
+Signal Distillation for Aizen - Save 80-90% tokens on terminal output.
 
 This module implements OMNI-style signal distillation:
 1. Classify content type (git, test, build, etc)

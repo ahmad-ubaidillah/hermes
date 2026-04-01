@@ -1,4 +1,4 @@
-# Hermes v3.0 Implementation Summary
+# Aizen v3.0 Implementation Summary
 
 **Date:** 2026-03-31
 **Version:** 3.0.0
@@ -9,7 +9,7 @@
 ## Project Structure
 
 ```
-~/.hermes/hermes-agent/
+~/.aizen/aizen-agent/
 │
 ├── docs/                          # Documentation
 │   ├── README.md                  # Main documentation
@@ -72,11 +72,11 @@
 
 ```bash
 # Test all modules
-cd ~/.hermes/hermes-agent
+cd ~/.aizen/aizen-agent
 python -c "from routing import IntentGate; print('Routing OK')"
 python -c "from lifecycle import BackgroundAgentPool, hooks; print('Lifecycle OK')"
 python -c "from observability import Observability; print('Observability OK')"
-python -c "from orchestration import HermesPipeline; print('Orchestration OK')"
+python -c "from orchestration import AizenPipeline; print('Orchestration OK')"
 
 # Run tests
 python -m routing.intent_gate        # IntentGate test
@@ -126,14 +126,14 @@ from v3_init import (
     BackgroundAgentPool,
     ParallelAgentPool,
     hooks, HookEvent,
-    HermesPipeline,
+    AizenPipeline,
     Observability,
 )
 
 # Or import individually
 from routing import IntentGate
 from lifecycle import BackgroundAgentPool, hooks, HookEvent
-from orchestration import HermesPipeline
+from orchestration import AizenPipeline
 from observability import Observability
 ```
 
@@ -160,4 +160,4 @@ print(f"Duration: {result.duration}s")
 
 ---
 
-**Hermes v3.0** - Free + Autonomous + Enterprise
+**Aizen v3.0** - Free + Autonomous + Enterprise

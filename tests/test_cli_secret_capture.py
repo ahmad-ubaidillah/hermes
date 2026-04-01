@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import cli as cli_module
 import tools.skills_tool as skills_tool_module
-from cli import HermesCLI
-from hermes_cli.callbacks import prompt_for_secret
+from cli import AizenCLI
+from aizen_cli.callbacks import prompt_for_secret
 from tools.skills_tool import set_secret_capture_callback
 
 
@@ -29,7 +29,7 @@ class _FakeApp:
 
 
 def _make_cli_stub(with_app=False):
-    cli = HermesCLI.__new__(HermesCLI)
+    cli = AizenCLI.__new__(AizenCLI)
     cli._app = _FakeApp() if with_app else None
     cli._last_invalidate = 0.0
     cli._secret_state = None
@@ -37,12 +37,12 @@ def _make_cli_stub(with_app=False):
     return cli
 
 
-@unittest.skip("HermesCLI._secret_capture_callback not yet implemented in cli_fast.py")
+@unittest.skip("AizenCLI._secret_capture_callback not yet implemented in cli_fast.py")
 def test_secret_capture_callback_can_be_completed_from_cli_state_machine():
     cli = _make_cli_stub(with_app=True)
     results = []
 
-    with patch("hermes_cli.callbacks.save_env_value_secure") as save_secret:
+    with patch("aizen_cli.callbacks.save_env_value_secure") as save_secret:
         save_secret.return_value = {
             "success": True,
             "stored_as": "TENOR_API_KEY",
@@ -69,7 +69,7 @@ def test_secret_capture_callback_can_be_completed_from_cli_state_machine():
     assert results[0]["skipped"] is False
 
 
-@unittest.skip("HermesCLI._cancel_secret_capture not yet implemented in cli_fast.py")
+@unittest.skip("AizenCLI._cancel_secret_capture not yet implemented in cli_fast.py")
 def test_cancel_secret_capture_marks_setup_skipped():
     cli = _make_cli_stub()
     cli._secret_state = {
@@ -90,8 +90,8 @@ def test_secret_capture_uses_getpass_without_tui():
     cli = _make_cli_stub()
 
     with (
-        patch("hermes_cli.callbacks.getpass.getpass", return_value="secret-value"),
-        patch("hermes_cli.callbacks.save_env_value_secure") as save_secret,
+        patch("aizen_cli.callbacks.getpass.getpass", return_value="secret-value"),
+        patch("aizen_cli.callbacks.save_env_value_secure") as save_secret,
     ):
         save_secret.return_value = {
             "success": True,
@@ -106,7 +106,7 @@ def test_secret_capture_uses_getpass_without_tui():
 
 
 @unittest.skip(
-    "HermesCLI._clear_secret_input_buffer not yet implemented in cli_fast.py"
+    "AizenCLI._clear_secret_input_buffer not yet implemented in cli_fast.py"
 )
 def test_secret_capture_timeout_clears_hidden_input_buffer():
     cli = _make_cli_stub(with_app=True)
@@ -118,9 +118,9 @@ def test_secret_capture_timeout_clears_hidden_input_buffer():
     cli._clear_secret_input_buffer = clear_buffer
 
     with (
-        patch("hermes_cli.callbacks.queue.Queue.get", side_effect=queue.Empty),
+        patch("aizen_cli.callbacks.queue.Queue.get", side_effect=queue.Empty),
         patch(
-            "hermes_cli.callbacks._time.monotonic",
+            "aizen_cli.callbacks._time.monotonic",
             side_effect=[0, 121],
         ),
     ):
@@ -133,7 +133,7 @@ def test_secret_capture_timeout_clears_hidden_input_buffer():
 
 
 @unittest.skip(
-    "HermesCLI not fully implemented in cli_fast.py - uses HermesCLI constructor"
+    "AizenCLI not fully implemented in cli_fast.py - uses AizenCLI constructor"
 )
 def test_cli_chat_registers_secret_capture_callback():
     pass

@@ -32,7 +32,7 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from core.hermes_constants import get_hermes_home
+from core.aizen_constants import get_aizen_home
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +53,8 @@ DEFAULT_LOCAL_MODEL = "base"
 DEFAULT_LOCAL_STT_LANGUAGE = "en"
 DEFAULT_STT_MODEL = os.getenv("STT_OPENAI_MODEL", "whisper-1")
 DEFAULT_GROQ_STT_MODEL = os.getenv("STT_GROQ_MODEL", "whisper-large-v3-turbo")
-LOCAL_STT_COMMAND_ENV = "HERMES_LOCAL_STT_COMMAND"
-LOCAL_STT_LANGUAGE_ENV = "HERMES_LOCAL_STT_LANGUAGE"
+LOCAL_STT_COMMAND_ENV = "AIZEN_LOCAL_STT_COMMAND"
+LOCAL_STT_LANGUAGE_ENV = "AIZEN_LOCAL_STT_LANGUAGE"
 COMMON_LOCAL_BIN_DIRS = ("/opt/homebrew/bin", "/usr/local/bin")
 
 GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
@@ -78,14 +78,14 @@ _local_model_name: Optional[str] = None
 
 
 def get_stt_model_from_config() -> Optional[str]:
-    """Read the STT model name from ~/.hermes/config.yaml.
+    """Read the STT model name from ~/.aizen/config.yaml.
 
     Returns the value of ``stt.model`` if present, otherwise ``None``.
     Silently returns ``None`` on any error (missing file, bad YAML, etc.).
     """
     try:
         import yaml
-        cfg_path = get_hermes_home() / "config.yaml"
+        cfg_path = get_aizen_home() / "config.yaml"
         if cfg_path.exists():
             with open(cfg_path) as f:
                 data = yaml.safe_load(f) or {}
@@ -98,7 +98,7 @@ def get_stt_model_from_config() -> Optional[str]:
 def _load_stt_config() -> dict:
     """Load the ``stt`` section from user config, falling back to defaults."""
     try:
-        from hermes_cli.config import load_config
+        from aizen_cli.config import load_config
         return load_config().get("stt", {})
     except Exception:
         return {}
@@ -186,7 +186,7 @@ def _get_provider(stt_config: dict) -> str:
                 return "local_command"
             logger.warning(
                 "STT provider 'local' configured but unavailable "
-                "(install faster-whisper or set HERMES_LOCAL_STT_COMMAND)"
+                "(install faster-whisper or set AIZEN_LOCAL_STT_COMMAND)"
             )
             return "none"
 
@@ -338,7 +338,7 @@ def _transcribe_local_command(file_path: str, model_name: str) -> Dict[str, Any]
     normalized_model = _normalize_local_command_model(model_name)
 
     try:
-        with tempfile.TemporaryDirectory(prefix="hermes-local-stt-") as output_dir:
+        with tempfile.TemporaryDirectory(prefix="aizen-local-stt-") as output_dir:
             prepared_input, prep_error = _prepare_local_audio(file_path, output_dir)
             if prep_error:
                 return {"success": False, "transcript": "", "error": prep_error}

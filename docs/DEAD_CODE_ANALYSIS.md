@@ -1,4 +1,4 @@
-# Hermes Dead Code & Unusable Modules Analysis
+# Aizen Dead Code & Unusable Modules Analysis
 
 **Generated:** 2025-04-01  
 **Purpose:** Identify unused modules, dead code, and API-dependent modules with local alternatives
@@ -7,7 +7,7 @@
 
 ## Summary
 
-This document maps dead code, unusable modules, and API-dependent features that have local alternatives in the Hermes codebase.
+This document maps dead code, unusable modules, and API-dependent features that have local alternatives in the Aizen codebase.
 
 ### Quick Stats
 - **Dead Skills:** 13+ directories
@@ -140,7 +140,7 @@ Honcho is a cloud-based memory service from NousResearch. It has extensive code 
 |------|-------|-------------|
 | `run_agent.py` | ~300+ | Honcho integration code |
 | `agent/display.py` | ~10 | Honcho session URL helpers |
-| `hermes_cli/config.py` | ~20 | HONCHO_API_KEY config |
+| `aizen_cli/config.py` | ~20 | HONCHO_API_KEY config |
 | `docs/honcho-integration-spec.md` | ~400 | Integration spec |
 | `docs/honcho-integration-spec.html` | ~700 | HTML version |
 

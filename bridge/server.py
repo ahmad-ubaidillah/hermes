@@ -1,7 +1,7 @@
-"""Hermes Bridge Server - FastAPI + WebSocket remote bridge.
+"""Aizen Bridge Server - FastAPI + WebSocket remote bridge.
 
 Starts a bridge server that allows remote clients to interact with
-Hermes Agent via REST API and WebSocket connections.
+Aizen Agent via REST API and WebSocket connections.
 
 Usage:
     python -m bridge.server                    # Default settings
@@ -240,8 +240,8 @@ def verify_api_key_header(x_api_key: Optional[str] = None) -> bool:
 # FastAPI App
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="Hermes Bridge",
-    description="WebSocket bridge for remote Hermes Agent access",
+    title="Aizen Bridge",
+    description="WebSocket bridge for remote Aizen Agent access",
     version="1.0.0",
 )
 
@@ -353,9 +353,9 @@ async def get_session(session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Try to get session from Hermes DB
+    # Try to get session from Aizen DB
     try:
-        from core.hermes_state import SessionDB
+        from core.aizen_state import SessionDB
 
         db = SessionDB()
         db_session = db.get_session(session_id)
@@ -369,7 +369,7 @@ async def get_session(session_id: str):
 
 @app.get("/tools")
 async def list_tools():
-    """List available Hermes tools."""
+    """List available Aizen tools."""
     try:
         from tools.registry import registry
 
@@ -392,7 +392,7 @@ async def list_tools():
 async def list_models():
     """List available models."""
     try:
-        from hermes_cli.models import OPENROUTER_MODELS
+        from aizen_cli.models import OPENROUTER_MODELS
 
         models = [{"id": mid, "description": desc} for mid, desc in OPENROUTER_MODELS]
         return {"models": models, "count": len(models), "default": config.default_model}
@@ -548,7 +548,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
 
             elif msg_type == "models_list":
                 try:
-                    from hermes_cli.models import OPENROUTER_MODELS
+                    from aizen_cli.models import OPENROUTER_MODELS
 
                     models = [mid for mid, _ in OPENROUTER_MODELS]
                     await websocket.send_json(
@@ -589,7 +589,7 @@ def main():
     import argparse
 
     global config
-    parser = argparse.ArgumentParser(description="Hermes Bridge Server")
+    parser = argparse.ArgumentParser(description="Aizen Bridge Server")
     parser.add_argument("--host", default=None, help="Bind address")
     parser.add_argument("--port", type=int, default=None, help="Listen port")
     parser.add_argument("--jwt-secret", default=None, help="JWT signing secret")
@@ -616,7 +616,7 @@ def main():
     if args.debug:
         config.debug = True
 
-    logger.info("Starting Hermes Bridge Server v1.0.0")
+    logger.info("Starting Aizen Bridge Server v1.0.0")
     logger.info("Config: %s", config.bind_address)
     logger.info(
         "Auth: %s",

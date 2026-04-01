@@ -1,9 +1,9 @@
-"""OpenCode Collaboration Tool for Hermes Agent
+"""OpenCode Collaboration Tool for Aizen Agent
 
-Enables bidirectional collaboration between Hermes Agent and OpenCode:
+Enables bidirectional collaboration between Aizen Agent and OpenCode:
 - Delegate coding tasks to OpenCode
 - Share tool results and context
-- Switch models between Hermes and OpenCode providers
+- Switch models between Aizen and OpenCode providers
 - Real-time collaboration via MCP bridge
 """
 
@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional
 
 from tools.registry import registry
 
-from hermes_logging import get_logger, get_request_id
+from aizen_logging import get_logger, get_request_id
 
 logger = get_logger(__name__)
 
@@ -61,7 +61,7 @@ def _run_opencode_command(
     cmd = [binary] + args
     env = os.environ.copy()
     env["OPENCODE_NON_INTERACTIVE"] = "1"
-    env["HERMES_REQUEST_ID"] = get_request_id()
+    env["AIZEN_REQUEST_ID"] = get_request_id()
 
     try:
         result = subprocess.run(

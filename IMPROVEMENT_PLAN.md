@@ -1,4 +1,4 @@
-     1|     1|     1|     1|     1|# Hermes Agent — Improvement Plan
+     1|     1|     1|     1|     1|# Aizen Agent — Improvement Plan
      2|     2|     2|     2|     2|
      3|     3|     3|     3|     3|## Phase 1: Foundation (Weeks 1-2) — Critical ✅ COMPLETE
      4|     4|     4|     4|     4|
@@ -50,7 +50,7 @@
     50|    50|    50|    50|    50|## Phase 2: Testing & Quality (Weeks 3-4) — High Priority
     51|    51|    51|    51|    51|
     52|    52|    52|    52|    52|### 2.1 Unskip Tests & Implement Missing Methods
-    53|    53|    53|    53|    53|- [x] **T2.1.1** — Create hermes_cli/cli_fast.py (re-export from cli.py)
+    53|    53|    53|    53|    53|- [x] **T2.1.1** — Create aizen_cli/cli_fast.py (re-export from cli.py)
     54|    54|    54|    54|    54|- [x] **T2.1.2** — Unskip tests (4 files unskipped: test_cli_skin_integration, test_quick_commands, test_worktree_security, test_reasoning_command)
     55|    55|    55|    55|    55|
     56|    56|    56|    56|    56|### 2.2 Integration Testing
@@ -112,8 +112,8 @@
    112|   112|   112|   112|   112|## Phase 4: Developer Experience (Weeks 7-8) — Medium Priority
    113|   113|   113|   113|   113|
    114|   114|   114|   114|   114|### 4.1 Embedding API
-   115|   115|   115|   115|   115|- [x] **T4.1.1** — Create Python SDK for embedding Hermes (sdk.py)
-   116|   116|   116|   116|   116|  - `from hermes import Agent; agent = Agent(model="..."); response = agent.chat("...")`
+   115|   115|   115|   115|   115|- [x] **T4.1.1** — Create Python SDK for embedding Aizen (sdk.py)
+   116|   116|   116|   116|   116|  - `from aizen import Agent; agent = Agent(model="..."); response = agent.chat("...")`
    117|   117|   117|   117|   117|  - Async support: `await agent.achat("...")`
    118|   118|   118|   118|   118|  - Streaming responses: `for chunk in agent.stream("...")`
    119|   119|   119|   119|   119|  - Tool registration API: `agent.register_tool(my_tool)`
@@ -256,7 +256,7 @@
    256|   249|   249|   249|   249|- T1.3.2: Config migration system
    257|   250|   250|   250|   250|
    258|   251|   251|   251|   251|### Phase 2 - Testing (Partial)
-   259|   252|   252|   252|- T2.1.1: Created hermes_cli/cli_fast.py
+   259|   252|   252|   252|- T2.1.1: Created aizen_cli/cli_fast.py
    260|   253|   253|   253|- T2.1.2: Unskipped 4 test files
    261|   254|   254|   254|- T2.2.1: Created tests/integration/test_real_api.py (8 tests, @pytest.mark.integration)
    262|   255|- T2.2.2: Created tests/load/test_load.py (8 tests for concurrent sessions, memory, latency)

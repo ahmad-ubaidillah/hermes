@@ -1,4 +1,4 @@
-# Deployment Guide - Hermes v3.0
+# Deployment Guide - Aizen v3.0
 
 ---
 
@@ -15,8 +15,8 @@
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/ahmad-ubaidillah/hermes.git
-cd hermes
+git clone https://github.com/ahmad-ubaidillah/aizen.git
+cd aizen
 ```
 
 ### 2. Install Dependencies
@@ -35,10 +35,10 @@ cd ../..
 
 ```bash
 # Create config directory
-mkdir -p ~/.hermes
+mkdir -p ~/.aizen
 
 # Copy example config
-cp config.example.yaml ~/.hermes/config.yaml
+cp config.example.yaml ~/.aizen/config.yaml
 ```
 
 ### 4. Run
@@ -77,23 +77,23 @@ CMD ["python", "-m", "web.backend.main"]
 ```
 
 ```bash
-docker build -t hermes:v3.0 .
-docker run -p 8000:8000 hermes:v3.0
+docker build -t aizen:v3.0 .
+docker run -p 8000:8000 aizen:v3.0
 ```
 
 ### Option 2: Systemd Service
 
 ```ini
-# /etc/systemd/system/hermes.service
+# /etc/systemd/system/aizen.service
 [Unit]
-Description=Hermes AI Agent
+Description=Aizen AI Agent
 After=network.target
 
 [Service]
 Type=simple
-User=hermes
-WorkingDirectory=/opt/hermes
-ExecStart=/opt/hermes/venv/bin/python -m web.backend.main
+User=aizen
+WorkingDirectory=/opt/aizen
+ExecStart=/opt/aizen/venv/bin/python -m web.backend.main
 Restart=on-failure
 
 [Install]
@@ -102,17 +102,17 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable hermes
-sudo systemctl start hermes
+sudo systemctl enable aizen
+sudo systemctl start aizen
 ```
 
 ### Option 3: Nginx Reverse Proxy
 
 ```nginx
-# /etc/nginx/sites-available/hermes
+# /etc/nginx/sites-available/aizen
 server {
     listen 80;
-    server_name hermes.example.com;
+    server_name aizen.example.com;
 
     location / {
         proxy_pass http://127.0.0.1:8000;
@@ -158,7 +158,7 @@ agents:
 observability:
   tracing:
     enabled: true
-    export_file: ~/.hermes/traces.jsonl
+    export_file: ~/.aizen/traces.jsonl
   metrics:
     enabled: true
     prometheus_port: 9090
@@ -198,10 +198,10 @@ curl http://localhost:8000/health
 
 ```bash
 # View logs
-tail -f ~/.hermes/logs/hermes.log
+tail -f ~/.aizen/logs/aizen.log
 
 # View traces
-tail -f ~/.hermes/traces.jsonl
+tail -f ~/.aizen/traces.jsonl
 ```
 
 ---
@@ -218,7 +218,7 @@ tail -f ~/.hermes/traces.jsonl
            ┌───────────────┼───────────────┐
            │               │               │
      ┌─────▼─────┐   ┌─────▼─────┐   ┌─────▼─────┐
-     │  Hermes   │   │  Hermes   │   │  Hermes   │
+     │  Aizen   │   │  Aizen   │   │  Aizen   │
      │  Node 1   │   │  Node 2   │   │  Node 3   │
      └───────────┘   └───────────┘   └───────────┘
            │               │               │
@@ -293,10 +293,10 @@ async def list_tasks(request: Request):
 
 ```bash
 # Backup data
-tar -czf hermes-backup-$(date +%Y%m%d).tar.gz ~/.hermes/
+tar -czf aizen-backup-$(date +%Y%m%d).tar.gz ~/.aizen/
 
 # Backup to S3
-aws s3 cp hermes-backup.tar.gz s3://your-bucket/backups/
+aws s3 cp aizen-backup.tar.gz s3://your-bucket/backups/
 ```
 
 ---
@@ -327,8 +327,8 @@ ulimit -v 4194304  # 4GB
 
 ```bash
 # Check permissions
-ls -la ~/.hermes/
+ls -la ~/.aizen/
 
 # Fix permissions
-chmod 755 ~/.hermes/
+chmod 755 ~/.aizen/
 ```

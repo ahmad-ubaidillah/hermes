@@ -3,19 +3,19 @@
 import unittest
 from unittest.mock import patch
 
-from cli import HermesCLI
+from cli import AizenCLI
 
 
 class TestCLILoadingIndicator(unittest.TestCase):
     def _make_cli(self):
-        cli_obj = HermesCLI.__new__(HermesCLI)
+        cli_obj = AizenCLI.__new__(AizenCLI)
         cli_obj._app = None
         cli_obj._last_invalidate = 0.0
         cli_obj._command_running = False
         cli_obj._command_status = ""
         return cli_obj
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_skills_command_sets_busy_state_and_prints_status(self, capsys):
         cli_obj = self._make_cli()
         seen = {}
@@ -44,7 +44,7 @@ class TestCLILoadingIndicator(unittest.TestCase):
         assert cli_obj._command_status == ""
         assert invalidate_mock.call_count == 2
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_reload_mcp_sets_busy_state_and_prints_status(self, capsys):
         cli_obj = self._make_cli()
         seen = {}

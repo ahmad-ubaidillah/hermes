@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 import pytest
 
 from tools.mcp_oauth import (
-    HermesTokenStorage,
+    AizenTokenStorage,
     build_oauth_auth,
     remove_oauth_tokens,
     _find_free_port,
@@ -17,13 +17,13 @@ from tools.mcp_oauth import (
 
 
 # ---------------------------------------------------------------------------
-# HermesTokenStorage
+# AizenTokenStorage
 # ---------------------------------------------------------------------------
 
-class TestHermesTokenStorage:
+class TestAizenTokenStorage:
     def test_roundtrip_tokens(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("test-server")
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
+        storage = AizenTokenStorage("test-server")
 
         import asyncio
 
@@ -46,15 +46,15 @@ class TestHermesTokenStorage:
         assert data["access_token"] == "abc123"
 
     def test_roundtrip_client_info(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("test-server")
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
+        storage = AizenTokenStorage("test-server")
         import asyncio
 
         assert asyncio.run(storage.get_client_info()) is None
 
         mock_client = MagicMock()
         mock_client.model_dump.return_value = {
-            "client_id": "hermes-123",
+            "client_id": "aizen-123",
             "client_secret": "secret",
         }
         asyncio.run(storage.set_client_info(mock_client))
@@ -63,8 +63,8 @@ class TestHermesTokenStorage:
         assert client_path.exists()
 
     def test_remove_cleans_up(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("test-server")
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
+        storage = AizenTokenStorage("test-server")
 
         # Create files
         d = tmp_path / "mcp-tokens"
@@ -138,28 +138,28 @@ class TestPathTraversal:
     """Verify server_name is sanitized to prevent path traversal."""
 
     def test_path_traversal_blocked(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("../../.ssh/config")
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
+        storage = AizenTokenStorage("../../.ssh/config")
         path = storage._tokens_path()
         # Should stay within mcp-tokens directory
         assert "mcp-tokens" in str(path)
         assert ".ssh" not in str(path.resolve())
 
     def test_dots_and_slashes_sanitized(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("../../../etc/passwd")
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
+        storage = AizenTokenStorage("../../../etc/passwd")
         path = storage._tokens_path()
         resolved = path.resolve()
         assert resolved.is_relative_to((tmp_path / "mcp-tokens").resolve())
 
     def test_normal_name_unchanged(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("my-mcp-server")
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
+        storage = AizenTokenStorage("my-mcp-server")
         assert "my-mcp-server.json" in str(storage._tokens_path())
 
     def test_special_chars_sanitized(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("server@host:8080/path")
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
+        storage = AizenTokenStorage("server@host:8080/path")
         path = storage._tokens_path()
         assert "@" not in path.name
         assert ":" not in path.name
@@ -222,7 +222,7 @@ class TestOAuthPortSharing:
 
 class TestRemoveOAuthTokens:
     def test_removes_files(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
         d = tmp_path / "mcp-tokens"
         d.mkdir()
         (d / "myserver.json").write_text("{}")
@@ -234,5 +234,5 @@ class TestRemoveOAuthTokens:
         assert not (d / "myserver.client.json").exists()
 
     def test_no_error_when_files_missing(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("AIZEN_HOME", str(tmp_path))
         remove_oauth_tokens("nonexistent")  # should not raise

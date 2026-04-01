@@ -2,12 +2,12 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 import unittest
 
-from cli import HermesCLI, _rich_text_from_ansi
-from hermes_cli.skin_engine import get_active_skin, set_active_skin
+from cli import AizenCLI, _rich_text_from_ansi
+from aizen_cli.skin_engine import get_active_skin, set_active_skin
 
 
 def _make_cli_stub():
-    cli = HermesCLI.__new__(HermesCLI)
+    cli = AizenCLI.__new__(AizenCLI)
     cli._sudo_state = None
     cli._secret_state = None
     cli._approval_state = None
@@ -31,7 +31,7 @@ def _make_cli_stub():
 
 
 class TestCliSkinPromptIntegration(unittest.TestCase):
-    """Tests for HermesCLI skin integration."""
+    """Tests for AizenCLI skin integration."""
 
     def test_default_prompt_fragments_use_default_symbol(self):
         cli = _make_cli_stub()
@@ -53,7 +53,7 @@ class TestCliSkinPromptIntegration(unittest.TestCase):
         cli = _make_cli_stub()
         cli._secret_state = {"response_queue": object()}
         with patch(
-            "hermes_cli.skin_engine.get_active_prompt_symbol", return_value="⚔ "
+            "aizen_cli.skin_engine.get_active_prompt_symbol", return_value="⚔ "
         ):
             assert cli._get_tui_prompt_fragments() == [("class:sudo-prompt", "🔑 ⚔ ")]
 

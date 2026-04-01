@@ -60,10 +60,10 @@ def _normalize_forward_env_names(forward_env: list[str] | None) -> list[str]:
     return normalized
 
 
-def _load_hermes_env_vars() -> dict[str, str]:
-    """Load ~/.hermes/.env values without failing Docker command execution."""
+def _load_aizen_env_vars() -> dict[str, str]:
+    """Load ~/.aizen/.env values without failing Docker command execution."""
     try:
-        from hermes_cli.config import load_env
+        from aizen_cli.config import load_env
 
         return load_env() or {}
     except Exception:
@@ -249,7 +249,7 @@ class DockerEnvironment(BaseEnvironment):
             resource_args.append("--network=none")
 
         # Persistent workspace via bind mounts from a configurable host directory
-        # (TERMINAL_SANDBOX_DIR, default ~/.hermes/sandboxes/). Non-persistent
+        # (TERMINAL_SANDBOX_DIR, default ~/.aizen/sandboxes/). Non-persistent
         # mode uses tmpfs (ephemeral, fast, gone on cleanup).
         from tools.environments.base import get_sandbox_dir
 
@@ -353,7 +353,7 @@ class DockerEnvironment(BaseEnvironment):
         self._docker_exe = find_docker() or "docker"
 
         # Start the container directly via `docker run -d`.
-        container_name = f"hermes-{uuid.uuid4().hex[:8]}"
+        container_name = f"aizen-{uuid.uuid4().hex[:8]}"
         run_cmd = [
             self._docker_exe, "run", "-d",
             "--name", container_name,
@@ -447,11 +447,11 @@ class DockerEnvironment(BaseEnvironment):
             forward_keys |= get_all_passthrough()
         except Exception:
             pass
-        hermes_env = _load_hermes_env_vars() if forward_keys else {}
+        aizen_env = _load_aizen_env_vars() if forward_keys else {}
         for key in sorted(forward_keys):
             value = os.getenv(key)
             if value is None:
-                value = hermes_env.get(key)
+                value = aizen_env.get(key)
             if value is not None:
                 cmd.extend(["-e", f"{key}={value}"])
         cmd.extend([self._container_id, "bash", "-lc", exec_command])

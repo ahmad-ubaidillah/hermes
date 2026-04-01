@@ -46,16 +46,16 @@ import fire
 from datetime import datetime
 from pathlib import Path
 
-from core.hermes_constants import get_hermes_home
+from core.aizen_constants import get_aizen_home
 
-# Load .env from ~/.hermes/.env first, then project root as dev fallback.
+# Load .env from ~/.aizen/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
-from hermes_cli.env_loader import load_hermes_dotenv
+from aizen_cli.env_loader import load_aizen_dotenv
 
-_hermes_home = get_hermes_home()
+_aizen_home = get_aizen_home()
 _project_env = Path(__file__).parent / ".env"
-_loaded_env_paths = load_hermes_dotenv(
-    hermes_home=_hermes_home, project_env=_project_env
+_loaded_env_paths = load_aizen_dotenv(
+    aizen_home=_aizen_home, project_env=_project_env
 )
 if _loaded_env_paths:
     for _env_path in _loaded_env_paths:
@@ -82,7 +82,7 @@ from tools.interrupt import set_interrupt as _set_interrupt
 from tools.browser_tool import cleanup_browser
 
 
-from core.hermes_constants import OPENROUTER_BASE_URL
+from core.aizen_constants import OPENROUTER_BASE_URL
 
 # Agent internals extracted to agent/ package for modularity
 from agent.prompt_builder import (
@@ -129,7 +129,7 @@ from core.utils import atomic_json_write
 class _SafeWriter:
     """Transparent stdio wrapper that catches OSError/ValueError from broken pipes.
 
-    When hermes-agent runs as a systemd service, Docker container, or headless
+    When aizen-agent runs as a systemd service, Docker container, or headless
     daemon, the stdout/stderr pipe can become unavailable (idle timeout, buffer
     exhaustion, socket reset). Any print() call then raises
     ``OSError: [Errno 5] Input/output error``, which can crash agent setup or
@@ -602,7 +602,7 @@ class AIAgent:
 
         # Direct OpenAI sessions use the Responses API path.  GPT-5.x tool
         # calls with reasoning are rejected on /v1/chat/completions, and
-        # Hermes is a tool-using client by default.
+        # Aizen is a tool-using client by default.
         if self.api_mode == "chat_completions" and self._is_direct_openai_url():
             self.api_mode = "codex_responses"
 
@@ -682,7 +682,7 @@ class AIAgent:
         # status_callback for gateway platforms.  Does NOT inject into messages.
         self._context_pressure_warned = False
 
-        # Persistent error log -- always writes WARNING+ to ~/.hermes/logs/errors.log
+        # Persistent error log -- always writes WARNING+ to ~/.aizen/logs/errors.log
         # so tool failures, API errors, etc. are inspectable after the fact.
         # In gateway mode, each incoming message creates a new AIAgent instance,
         # while the root logger is process-global. Re-adding the same errors.log
@@ -690,7 +690,7 @@ class AIAgent:
         from logging.handlers import RotatingFileHandler
 
         root_logger = logging.getLogger()
-        error_log_dir = _hermes_home / "logs"
+        error_log_dir = _aizen_home / "logs"
         error_log_path = error_log_dir / "errors.log"
         resolved_error_log_path = error_log_path.resolve()
         has_errors_log_handler = any(
@@ -766,7 +766,7 @@ class AIAgent:
                     "run_agent",  # agent runner internals
                     "trajectory_compressor",
                     "cron",  # scheduler (only relevant in daemon mode)
-                    "hermes_cli",  # CLI helpers
+                    "aizen_cli",  # CLI helpers
                 ]:
                     logging.getLogger(quiet_logger).setLevel(logging.ERROR)
 
@@ -838,12 +838,12 @@ class AIAgent:
                 effective_base = base_url
                 if "openrouter" in effective_base.lower():
                     client_kwargs["default_headers"] = {
-                        "HTTP-Referer": "https://hermes-agent.nousresearch.com",
-                        "X-OpenRouter-Title": "Hermes Agent",
+                        "HTTP-Referer": "https://aizen-agent.nousresearch.com",
+                        "X-OpenRouter-Title": "Aizen Agent",
                         "X-OpenRouter-Categories": "productivity,cli-agent",
                     }
                 elif "api.githubcopilot.com" in effective_base.lower():
-                    from hermes_cli.models import copilot_default_headers
+                    from aizen_cli.models import copilot_default_headers
 
                     client_kwargs["default_headers"] = copilot_default_headers()
                 elif "api.kimi.com" in effective_base.lower():
@@ -879,15 +879,15 @@ class AIAgent:
                         raise RuntimeError(
                             f"Provider '{_explicit}' is set in config.yaml but no API key "
                             f"was found. Set the {_explicit.upper()}_API_KEY environment "
-                            f"variable, or switch to a different provider with `hermes model`."
+                            f"variable, or switch to a different provider with `aizen model`."
                         )
                     # Final fallback: try raw OpenRouter key
                     client_kwargs = {
                         "api_key": os.getenv("OPENROUTER_API_KEY", ""),
                         "base_url": OPENROUTER_BASE_URL,
                         "default_headers": {
-                            "HTTP-Referer": "https://hermes-agent.nousresearch.com",
-                            "X-OpenRouter-Title": "Hermes Agent",
+                            "HTTP-Referer": "https://aizen-agent.nousresearch.com",
+                            "X-OpenRouter-Title": "Aizen Agent",
                             "X-OpenRouter-Categories": "productivity,cli-agent",
                         },
                     }
@@ -1036,9 +1036,9 @@ class AIAgent:
             short_uuid = uuid.uuid4().hex[:6]
             self.session_id = f"{timestamp_str}_{short_uuid}"
 
-        # Session logs go into ~/.hermes/sessions/ alongside gateway sessions
-        hermes_home = get_hermes_home()
-        self.logs_dir = hermes_home / "sessions"
+        # Session logs go into ~/.aizen/sessions/ alongside gateway sessions
+        aizen_home = get_aizen_home()
+        self.logs_dir = aizen_home / "sessions"
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.session_log_file = self.logs_dir / f"session_{self.session_id}.json"
 
@@ -1066,7 +1066,7 @@ class AIAgent:
                 self._session_db.create_session(
                     session_id=self.session_id,
                     source=self.platform
-                    or os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                    or os.environ.get("AIZEN_SESSION_SOURCE", "cli"),
                     model=self.model,
                     model_config={
                         "max_iterations": self.max_iterations,
@@ -1094,7 +1094,7 @@ class AIAgent:
 
         # Load config once for memory, skills, and compression sections
         try:
-            from hermes_cli.config import load_config as _load_agent_config
+            from aizen_cli.config import load_config as _load_agent_config
 
             _agent_cfg = _load_agent_config()
         except Exception:
@@ -2217,7 +2217,7 @@ class AIAgent:
                 f"{self.log_prefix}🧾 Request debug dump written to: {dump_file}"
             )
 
-            if os.getenv("HERMES_DUMP_REQUEST_STDOUT", "").strip().lower() in {
+            if os.getenv("AIZEN_DUMP_REQUEST_STDOUT", "").strip().lower() in {
                 "1",
                 "true",
                 "yes",
@@ -2523,7 +2523,7 @@ class AIAgent:
 
         if not self.skip_context_files:
             # Use TERMINAL_CWD for context file discovery when set (gateway
-            # mode).  The gateway process runs from the hermes-agent install
+            # mode).  The gateway process runs from the aizen-agent install
             # dir, so os.getcwd() would pick up the repo's AGENTS.md and
             # other dev files — inflating token usage by ~10k for no benefit.
             _context_cwd = os.getenv("TERMINAL_CWD") or None
@@ -2533,9 +2533,9 @@ class AIAgent:
             if context_files_prompt:
                 prompt_parts.append(context_files_prompt)
 
-        from core.hermes_time import now as _hermes_now
+        from core.aizen_time import now as _aizen_now
 
-        now = _hermes_now()
+        now = _aizen_now()
         timestamp_line = (
             f"Conversation started: {now.strftime('%A, %B %d, %Y %I:%M %p')}"
         )
@@ -3626,7 +3626,7 @@ class AIAgent:
             return False
 
         try:
-            from hermes_cli.auth import resolve_codex_runtime_credentials
+            from aizen_cli.auth import resolve_codex_runtime_credentials
 
             creds = resolve_codex_runtime_credentials(force_refresh=force)
         except Exception as exc:
@@ -3655,13 +3655,13 @@ class AIAgent:
             return False
 
         try:
-            from hermes_cli.auth import resolve_nous_runtime_credentials
+            from aizen_cli.auth import resolve_nous_runtime_credentials
 
             creds = resolve_nous_runtime_credentials(
                 min_key_ttl_seconds=max(
-                    60, int(os.getenv("HERMES_NOUS_MIN_KEY_TTL_SECONDS", "1800"))
+                    60, int(os.getenv("AIZEN_NOUS_MIN_KEY_TTL_SECONDS", "1800"))
                 ),
-                timeout_seconds=float(os.getenv("HERMES_NOUS_TIMEOUT_SECONDS", "15")),
+                timeout_seconds=float(os.getenv("AIZEN_NOUS_TIMEOUT_SECONDS", "15")),
                 force_mint=force,
             )
         except Exception as exc:
@@ -3918,8 +3918,8 @@ class AIAgent:
             """Stream a chat completions response."""
             import httpx as _httpx
 
-            _base_timeout = float(os.getenv("HERMES_API_TIMEOUT", 1800.0))
-            _stream_read_timeout = float(os.getenv("HERMES_STREAM_READ_TIMEOUT", 60.0))
+            _base_timeout = float(os.getenv("AIZEN_API_TIMEOUT", 1800.0))
+            _stream_read_timeout = float(os.getenv("AIZEN_STREAM_READ_TIMEOUT", 60.0))
             stream_kwargs = {
                 **api_kwargs,
                 "stream": True,
@@ -4159,7 +4159,7 @@ class AIAgent:
         def _call():
             import httpx as _httpx
 
-            _max_stream_retries = int(os.getenv("HERMES_STREAM_RETRIES", 2))
+            _max_stream_retries = int(os.getenv("AIZEN_STREAM_RETRIES", 2))
 
             try:
                 for _stream_attempt in range(_max_stream_retries + 1):
@@ -4294,7 +4294,7 @@ class AIAgent:
                     )
 
         _stream_stale_timeout_base = float(
-            os.getenv("HERMES_STREAM_STALE_TIMEOUT", 180.0)
+            os.getenv("AIZEN_STREAM_STALE_TIMEOUT", 180.0)
         )
         # Scale the stale timeout for large contexts: slow models (like Opus)
         # can legitimately think for minutes before producing the first token
@@ -4789,7 +4789,7 @@ class AIAgent:
         api_kwargs = {
             "model": self.model,
             "messages": sanitized_messages,
-            "timeout": float(os.getenv("HERMES_API_TIMEOUT", 1800.0)),
+            "timeout": float(os.getenv("AIZEN_API_TIMEOUT", 1800.0)),
         }
         if self.tools:
             api_kwargs["tools"] = self.tools
@@ -4847,7 +4847,7 @@ class AIAgent:
 
         # Nous Portal product attribution
         if _is_nous:
-            extra_body["tags"] = ["product=hermes-agent"]
+            extra_body["tags"] = ["product=aizen-agent"]
 
         if extra_body:
             api_kwargs["extra_body"] = extra_body
@@ -4870,7 +4870,7 @@ class AIAgent:
             or "api.githubcopilot.com" in self._base_url_lower
         ):
             try:
-                from hermes_cli.models import github_model_reasoning_efforts
+                from aizen_cli.models import github_model_reasoning_efforts
 
                 return bool(github_model_reasoning_efforts(self.model))
             except Exception:
@@ -4894,7 +4894,7 @@ class AIAgent:
     def _github_models_reasoning_extra_body(self) -> dict | None:
         """Format reasoning payload for GitHub Models/OpenAI-compatible routes."""
         try:
-            from hermes_cli.models import github_model_reasoning_efforts
+            from aizen_cli.models import github_model_reasoning_efforts
         except Exception:
             return None
 
@@ -5302,7 +5302,7 @@ class AIAgent:
                 self._session_db.create_session(
                     session_id=self.session_id,
                     source=self.platform
-                    or os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                    or os.environ.get("AIZEN_SESSION_SOURCE", "cli"),
                     model=self.model,
                     parent_session_id=old_session_id,
                 )
@@ -6214,7 +6214,7 @@ class AIAgent:
                         "effort": "medium",
                     }
             if _is_nous:
-                summary_extra_body["tags"] = ["product=hermes-agent"]
+                summary_extra_body["tags"] = ["product=aizen-agent"]
 
             if self.api_mode == "codex_responses":
                 codex_kwargs = self._build_api_kwargs(api_messages)
@@ -6530,7 +6530,7 @@ class AIAgent:
                 # continuation).  Plugins can use this to initialise
                 # session-scoped state (e.g. warm a memory cache).
                 try:
-                    from hermes_cli.plugins import invoke_hook as _invoke_hook
+                    from aizen_cli.plugins import invoke_hook as _invoke_hook
 
                     _invoke_hook(
                         "on_session_start",
@@ -6621,7 +6621,7 @@ class AIAgent:
         # API call in this turn (not persisted to session DB or cache).
         _plugin_turn_context = ""
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from aizen_cli.plugins import invoke_hook as _invoke_hook
 
             _pre_results = _invoke_hook(
                 "pre_llm_call",
@@ -6879,7 +6879,7 @@ class AIAgent:
                             api_kwargs, allow_stream=False
                         )
 
-                    if os.getenv("HERMES_DUMP_REQUESTS", "").strip().lower() in {
+                    if os.getenv("AIZEN_DUMP_REQUESTS", "").strip().lower() in {
                         "1",
                         "true",
                         "yes",
@@ -7566,11 +7566,11 @@ class AIAgent:
                             else f"{self.log_prefix}   Token: (empty or short)"
                         )
                         print(f"{self.log_prefix}   Troubleshooting:")
-                        from core.hermes_constants import display_hermes_home as _dhh_fn
+                        from core.aizen_constants import display_aizen_home as _dhh_fn
 
                         _dhh = _dhh_fn()
                         print(
-                            f"{self.log_prefix}     • Check ANTHROPIC_TOKEN in {_dhh}/.env for Hermes-managed OAuth/setup tokens"
+                            f"{self.log_prefix}     • Check ANTHROPIC_TOKEN in {_dhh}/.env for Aizen-managed OAuth/setup tokens"
                         )
                         print(
                             f"{self.log_prefix}     • Check ANTHROPIC_API_KEY in {_dhh}/.env for API keys or legacy token values"
@@ -7582,10 +7582,10 @@ class AIAgent:
                             f"{self.log_prefix}     • For Claude Code: run 'claude /login' to refresh, then retry"
                         )
                         print(
-                            f'{self.log_prefix}     • Clear stale keys: hermes config set ANTHROPIC_TOKEN ""'
+                            f'{self.log_prefix}     • Clear stale keys: aizen config set ANTHROPIC_TOKEN ""'
                         )
                         print(
-                            f'{self.log_prefix}     • Legacy cleanup: hermes config set ANTHROPIC_API_KEY ""'
+                            f'{self.log_prefix}     • Legacy cleanup: aizen config set ANTHROPIC_API_KEY ""'
                         )
 
                     retry_count += 1
@@ -7999,7 +7999,7 @@ class AIAgent:
                                 force=True,
                             )
                             self._vprint(
-                                f"{self.log_prefix}      • Is the key valid? Run: hermes setup",
+                                f"{self.log_prefix}      • Is the key valid? Run: aizen setup",
                                 force=True,
                             )
                             self._vprint(
@@ -8983,7 +8983,7 @@ class AIAgent:
         # to an external memory system).
         if final_response and not interrupted:
             try:
-                from hermes_cli.plugins import invoke_hook as _invoke_hook
+                from aizen_cli.plugins import invoke_hook as _invoke_hook
 
                 _invoke_hook(
                     "post_llm_call",
@@ -9075,7 +9075,7 @@ class AIAgent:
         # Fired at the very end of every run_conversation call.
         # Plugins can use this for cleanup, flushing buffers, etc.
         try:
-            from hermes_cli.plugins import invoke_hook as _invoke_hook
+            from aizen_cli.plugins import invoke_hook as _invoke_hook
 
             _invoke_hook(
                 "on_session_end",

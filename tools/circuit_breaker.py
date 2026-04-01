@@ -1,6 +1,6 @@
 """Circuit Breaker tool — provider-level API resilience.
 
-Re-exports the core CircuitBreaker from hermes_resilience and adds
+Re-exports the core CircuitBreaker from aizen_resilience and adds
 provider-aware convenience helpers so the agent loop can track
 failures per provider/model combination without duplicating state.
 
@@ -21,9 +21,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-# Re-export core classes from hermes_resilience so callers can import
+# Re-export core classes from aizen_resilience so callers can import
 # from a single location.
-from hermes_resilience import (
+from aizen_resilience import (
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitBreakerOpenError,

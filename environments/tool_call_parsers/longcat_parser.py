@@ -1,8 +1,8 @@
 """
 Longcat Flash Chat tool call parser.
 
-Same as Hermes but uses <longcat_tool_call> tags instead of <tool_call>.
-Based on VLLM's LongcatFlashToolParser (extends Hermes2ProToolParser).
+Same as Aizen but uses <longcat_tool_call> tags instead of <tool_call>.
+Based on VLLM's LongcatFlashToolParser (extends Aizen2ProToolParser).
 """
 
 import json
@@ -22,7 +22,7 @@ from environments.tool_call_parsers import ParseResult, ToolCallParser, register
 class LongcatToolCallParser(ToolCallParser):
     """
     Parser for Longcat Flash Chat tool calls.
-    Identical logic to Hermes, just different tag names.
+    Identical logic to Aizen, just different tag names.
     """
 
     PATTERN = re.compile(

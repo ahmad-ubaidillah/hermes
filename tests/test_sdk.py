@@ -1,4 +1,4 @@
-"""Tests for Hermes SDK."""
+"""Tests for Aizen SDK."""
 
 import pytest
 from pathlib import Path

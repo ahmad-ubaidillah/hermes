@@ -143,8 +143,8 @@ def _get_command_timeout() -> int:
     ``DEFAULT_COMMAND_TIMEOUT`` (30s) if unset or unreadable.
     """
     try:
-        hermes_home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-        config_path = hermes_home / "config.yaml"
+        aizen_home = Path(os.environ.get("AIZEN_HOME", Path.home() / ".aizen"))
+        config_path = aizen_home / "config.yaml"
         if config_path.exists():
             import yaml
             with open(config_path) as f:
@@ -251,8 +251,8 @@ def _get_cloud_provider() -> Optional[CloudBrowserProvider]:
 
     _cloud_provider_resolved = True
     try:
-        hermes_home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-        config_path = hermes_home / "config.yaml"
+        aizen_home = Path(os.environ.get("AIZEN_HOME", Path.home() / ".aizen"))
+        config_path = aizen_home / "config.yaml"
         if config_path.exists():
             import yaml
             with open(config_path) as f:
@@ -269,7 +269,7 @@ def _socket_safe_tmpdir() -> str:
     """Return a short temp directory path suitable for Unix domain sockets.
 
     macOS sets ``TMPDIR`` to ``/var/folders/xx/.../T/`` (~51 chars).  When we
-    append ``agent-browser-hermes_…`` the resulting socket path exceeds the
+    append ``agent-browser-aizen_…`` the resulting socket path exceeds the
     104-byte macOS limit for ``AF_UNIX`` addresses, causing agent-browser to
     fail with "Failed to create socket directory" or silent screenshot failures.
 
@@ -680,7 +680,7 @@ def _find_agent_browser() -> str:
     """
     Find the agent-browser CLI executable.
     
-    Checks in order: current PATH, Homebrew/common bin dirs, Hermes-managed
+    Checks in order: current PATH, Homebrew/common bin dirs, Aizen-managed
     node, local node_modules/.bin/, npx fallback.
     
     Returns:
@@ -695,7 +695,7 @@ def _find_agent_browser() -> str:
     if which_result:
         return which_result
 
-    # Build an extended search PATH including Homebrew and Hermes-managed dirs.
+    # Build an extended search PATH including Homebrew and Aizen-managed dirs.
     # This covers macOS where the process PATH may not include Homebrew paths.
     extra_dirs: list[str] = []
     for d in ["/opt/homebrew/bin", "/usr/local/bin"]:
@@ -703,10 +703,10 @@ def _find_agent_browser() -> str:
             extra_dirs.append(d)
     extra_dirs.extend(_discover_homebrew_node_dirs())
 
-    hermes_home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-    hermes_node_bin = str(hermes_home / "node" / "bin")
-    if os.path.isdir(hermes_node_bin):
-        extra_dirs.append(hermes_node_bin)
+    aizen_home = Path(os.environ.get("AIZEN_HOME", Path.home() / ".aizen"))
+    aizen_node_bin = str(aizen_home / "node" / "bin")
+    if os.path.isdir(aizen_node_bin):
+        extra_dirs.append(aizen_node_bin)
 
     if extra_dirs:
         extended_path = os.pathsep.join(extra_dirs)
@@ -828,15 +828,15 @@ def _run_browser_command(
         
         browser_env = {**os.environ}
 
-        # Ensure PATH includes Hermes-managed Node first, Homebrew versioned
+        # Ensure PATH includes Aizen-managed Node first, Homebrew versioned
         # node dirs (for macOS ``brew install node@24``), then standard system dirs.
-        hermes_home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-        hermes_node_bin = str(hermes_home / "node" / "bin")
+        aizen_home = Path(os.environ.get("AIZEN_HOME", Path.home() / ".aizen"))
+        aizen_node_bin = str(aizen_home / "node" / "bin")
 
         existing_path = browser_env.get("PATH", "")
         path_parts = [p for p in existing_path.split(":") if p]
         candidate_dirs = (
-            [hermes_node_bin]
+            [aizen_node_bin]
             + _discover_homebrew_node_dirs()
             + [p for p in _SANE_PATH.split(":") if p]
         )
@@ -1442,8 +1442,8 @@ def _maybe_start_recording(task_id: str):
     if task_id in _recording_sessions:
         return
     try:
-        hermes_home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-        config_path = hermes_home / "config.yaml"
+        aizen_home = Path(os.environ.get("AIZEN_HOME", Path.home() / ".aizen"))
+        config_path = aizen_home / "config.yaml"
         record_enabled = False
         if config_path.exists():
             import yaml
@@ -1454,7 +1454,7 @@ def _maybe_start_recording(task_id: str):
         if not record_enabled:
             return
         
-        recordings_dir = hermes_home / "browser_recordings"
+        recordings_dir = aizen_home / "browser_recordings"
         recordings_dir.mkdir(parents=True, exist_ok=True)
         _cleanup_old_recordings(max_age_hours=72)
         
@@ -1576,8 +1576,8 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
     effective_task_id = task_id or "default"
     
     # Save screenshot to persistent location so it can be shared with users
-    from core.hermes_constants import get_hermes_dir
-    screenshots_dir = get_hermes_dir("cache/screenshots", "browser_screenshots")
+    from core.aizen_constants import get_aizen_dir
+    screenshots_dir = get_aizen_dir("cache/screenshots", "browser_screenshots")
     screenshot_path = screenshots_dir / f"browser_screenshot_{uuid_mod.uuid4().hex}.png"
     
     try:
@@ -1649,7 +1649,7 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
         # screenshot analysis, so the default must be generous.
         vision_timeout = 120.0
         try:
-            from hermes_cli.config import load_config
+            from aizen_cli.config import load_config
             _cfg = load_config()
             _vt = _cfg.get("auxiliary", {}).get("vision", {}).get("timeout")
             if _vt is not None:
@@ -1728,8 +1728,8 @@ def _cleanup_old_recordings(max_age_hours=72):
     """Remove browser recordings older than max_age_hours to prevent disk bloat."""
     import time
     try:
-        hermes_home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-        recordings_dir = hermes_home / "browser_recordings"
+        aizen_home = Path(os.environ.get("AIZEN_HOME", Path.home() / ".aizen"))
+        recordings_dir = aizen_home / "browser_recordings"
         if not recordings_dir.exists():
             return
         cutoff = time.time() - (max_age_hours * 3600)

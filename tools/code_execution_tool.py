@@ -2,11 +2,11 @@
 """
 Code Execution Tool -- Programmatic Tool Calling (PTC)
 
-Lets the LLM write a Python script that calls Hermes tools via RPC,
+Lets the LLM write a Python script that calls Aizen tools via RPC,
 collapsing multi-step tool chains into a single inference turn.
 
 Architecture:
-  1. Parent generates a `hermes_tools.py` stub module with RPC functions
+  1. Parent generates a `aizen_tools.py` stub module with RPC functions
   2. Parent opens a Unix domain socket and starts an RPC listener thread
   3. Parent spawns a child process that runs the LLM's script
   4. When the script calls a tool function, the call travels over the UDS
@@ -77,7 +77,7 @@ def check_sandbox_requirements() -> bool:
 
 
 # ---------------------------------------------------------------------------
-# hermes_tools.py code generator
+# aizen_tools.py code generator
 # ---------------------------------------------------------------------------
 
 # Per-tool stub templates: (function_name, signature, docstring, args_dict_expr)
@@ -128,9 +128,9 @@ _TOOL_STUBS = {
 }
 
 
-def generate_hermes_tools_module(enabled_tools: List[str]) -> str:
+def generate_aizen_tools_module(enabled_tools: List[str]) -> str:
     """
-    Build the source code for the hermes_tools.py stub module.
+    Build the source code for the aizen_tools.py stub module.
 
     Only tools in both SANDBOX_ALLOWED_TOOLS and enabled_tools get stubs.
     """
@@ -150,7 +150,7 @@ def generate_hermes_tools_module(enabled_tools: List[str]) -> str:
         export_names.append(func_name)
 
     header = '''\
-"""Auto-generated Hermes tools RPC stubs."""
+"""Auto-generated Aizen tools RPC stubs."""
 import json, os, socket, shlex, time
 
 _sock = None
@@ -194,7 +194,7 @@ def _connect():
     global _sock
     if _sock is None:
         _sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        _sock.connect(os.environ["HERMES_RPC_SOCKET"])
+        _sock.connect(os.environ["AIZEN_RPC_SOCKET"])
         _sock.settimeout(300)
     return _sock
 
@@ -371,7 +371,7 @@ def execute_code(
 ) -> str:
     """
     Run a Python script in a sandboxed environment with RPC access
-    to a subset of Hermes tools.
+    to a subset of Aizen tools.
 
     Dispatches to subprocess (default) or Docker mode based on config.
 
@@ -462,7 +462,7 @@ def _execute_in_docker(
     )
     docker_image = cfg.get("docker_image", DEFAULT_DOCKER_IMAGE)
 
-    tmpdir = tempfile.mkdtemp(prefix="hermes_docker_")
+    tmpdir = tempfile.mkdtemp(prefix="aizen_docker_")
     container_id: Optional[str] = None
     exec_start = time.monotonic()
     tool_call_log: list = []
@@ -471,8 +471,8 @@ def _execute_in_docker(
     status = "success"
 
     try:
-        tools_src = generate_hermes_tools_module(list(sandbox_tools))
-        with open(os.path.join(tmpdir, "hermes_tools.py"), "w") as f:
+        tools_src = generate_aizen_tools_module(list(sandbox_tools))
+        with open(os.path.join(tmpdir, "aizen_tools.py"), "w") as f:
             f.write(tools_src)
         with open(os.path.join(tmpdir, "script.py"), "w") as f:
             f.write(code)
@@ -498,7 +498,7 @@ def _execute_in_docker(
         rpc_thread.start()
 
         # Build Docker command
-        container_name = f"hermes-exec-{uuid.uuid4().hex[:12]}"
+        container_name = f"aizen-exec-{uuid.uuid4().hex[:12]}"
         cmd = [
             docker_exe,
             "run",
@@ -540,10 +540,10 @@ def _execute_in_docker(
 
         # Build child env (same filtering as subprocess mode)
         child_env = _build_child_env()
-        child_env["HERMES_RPC_HOST"] = "host.docker.internal"
-        child_env["HERMES_RPC_PORT"] = str(rpc_port)
+        child_env["AIZEN_RPC_HOST"] = "host.docker.internal"
+        child_env["AIZEN_RPC_PORT"] = str(rpc_port)
         # Convert RPC stubs to use TCP when these vars are present
-        child_env["HERMES_RPC_MODE"] = "tcp"
+        child_env["AIZEN_RPC_MODE"] = "tcp"
 
         # Pass env via -e flags
         for k, v in child_env.items():
@@ -737,12 +737,12 @@ def _build_child_env() -> dict:
         if any(k.startswith(p) for p in _SAFE_ENV_PREFIXES):
             child_env[k] = v
     child_env["PYTHONDONTWRITEBYTECODE"] = "1"
-    _hermes_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _aizen_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     _existing_pp = child_env.get("PYTHONPATH", "")
-    child_env["PYTHONPATH"] = _hermes_root + (
+    child_env["PYTHONPATH"] = _aizen_root + (
         os.pathsep + _existing_pp if _existing_pp else ""
     )
-    _tz_name = os.getenv("HERMES_TIMEZONE", "").strip()
+    _tz_name = os.getenv("AIZEN_TIMEZONE", "").strip()
     if _tz_name:
         child_env["TZ"] = _tz_name
     return child_env
@@ -754,7 +754,7 @@ def _execute_subprocess(
     sandbox_tools: frozenset,
     cfg: dict,
 ) -> str:
-    """Run Python code in a sandboxed subprocess with RPC access to Hermes tools.
+    """Run Python code in a sandboxed subprocess with RPC access to Aizen tools.
 
     This is the original execution path — unchanged from the prior implementation.
     """
@@ -763,9 +763,9 @@ def _execute_subprocess(
     timeout = cfg.get("timeout", DEFAULT_TIMEOUT)
     max_tool_calls = cfg.get("max_tool_calls", DEFAULT_MAX_TOOL_CALLS)
 
-    tmpdir = tempfile.mkdtemp(prefix="hermes_sandbox_")
+    tmpdir = tempfile.mkdtemp(prefix="aizen_sandbox_")
     _sock_tmpdir = "/tmp" if sys.platform == "darwin" else tempfile.gettempdir()
-    sock_path = os.path.join(_sock_tmpdir, f"hermes_rpc_{uuid.uuid4().hex}.sock")
+    sock_path = os.path.join(_sock_tmpdir, f"aizen_rpc_{uuid.uuid4().hex}.sock")
 
     tool_call_log: list = []
     tool_call_counter = [0]
@@ -773,8 +773,8 @@ def _execute_subprocess(
     server_sock = None
 
     try:
-        tools_src = generate_hermes_tools_module(list(sandbox_tools))
-        with open(os.path.join(tmpdir, "hermes_tools.py"), "w") as f:
+        tools_src = generate_aizen_tools_module(list(sandbox_tools))
+        with open(os.path.join(tmpdir, "aizen_tools.py"), "w") as f:
             f.write(tools_src)
 
         with open(os.path.join(tmpdir, "script.py"), "w") as f:
@@ -799,7 +799,7 @@ def _execute_subprocess(
         rpc_thread.start()
 
         child_env = _build_child_env()
-        child_env["HERMES_RPC_SOCKET"] = sock_path
+        child_env["AIZEN_RPC_SOCKET"] = sock_path
 
         proc = subprocess.Popen(
             [sys.executable, "script.py"],
@@ -1078,7 +1078,7 @@ def build_execute_code_schema(
 ) -> dict:
     """Build the execute_code schema with description listing only enabled tools.
 
-    When tools are disabled via ``hermes tools`` (e.g. web is turned off),
+    When tools are disabled via ``aizen tools`` (e.g. web is turned off),
     the schema description should NOT mention web_search / web_extract —
     otherwise the model thinks they are available and keeps trying to use them.
     """
@@ -1104,7 +1104,7 @@ def build_execute_code_schema(
         import_str = "..."
 
     description = (
-        "Run a Python script that can call Hermes tools programmatically. "
+        "Run a Python script that can call Aizen tools programmatically. "
         "Use this when you need 3+ tool calls with processing logic between them, "
         "need to filter/reduce large tool outputs before they enter your context, "
         "need conditional branching (if X then Y else Z), or need to loop "
@@ -1112,13 +1112,13 @@ def build_execute_code_schema(
         "Use normal tool calls instead when: single tool call with no processing, "
         "you need to see the full result and apply complex reasoning, "
         "or the task requires interactive user input.\n\n"
-        f"Available via `from hermes_tools import ...`:\n\n"
+        f"Available via `from aizen_tools import ...`:\n\n"
         f"{tool_lines}\n\n"
         "Limits: 5-minute timeout, 50KB stdout cap, max 50 tool calls per script. "
         "terminal() is foreground-only (no background or pty).\n\n"
         "Print your final result to stdout. Use Python stdlib (json, re, math, csv, "
         "datetime, collections, etc.) for processing between tool calls.\n\n"
-        "Also available (no import needed — built into hermes_tools):\n"
+        "Also available (no import needed — built into aizen_tools):\n"
         "  json_parse(text: str) — json.loads with strict=False; use for terminal() output with control chars\n"
         "  shell_quote(s: str) — shlex.quote(); use when interpolating dynamic strings into shell commands\n"
         "  retry(fn, max_attempts=3, delay=2) — retry with exponential backoff for transient failures"
@@ -1134,7 +1134,7 @@ def build_execute_code_schema(
                     "type": "string",
                     "description": (
                         "Python code to execute. Import tools with "
-                        f"`from hermes_tools import {import_str}` "
+                        f"`from aizen_tools import {import_str}` "
                         "and print your final result to stdout."
                     ),
                 },

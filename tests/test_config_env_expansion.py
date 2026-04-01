@@ -3,7 +3,7 @@
 import os
 import pytest
 import unittest
-from hermes_cli.config import _expand_env_vars, load_config
+from aizen_cli.config import _expand_env_vars, load_config
 from unittest.mock import patch as mock_patch
 
 
@@ -73,7 +73,7 @@ class TestLoadConfigExpansion:
 
         monkeypatch.setenv("GOOGLE_API_KEY", "gsk-test-key")
         monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "1234567:ABC-token")
-        monkeypatch.setattr("hermes_cli.config.get_config_path", lambda: config_file)
+        monkeypatch.setattr("aizen_cli.config.get_config_path", lambda: config_file)
 
         config = load_config()
 
@@ -87,7 +87,7 @@ class TestLoadConfigExpansion:
         config_file.write_text(config_yaml)
 
         monkeypatch.delenv("NOT_SET_XYZ_123", raising=False)
-        monkeypatch.setattr("hermes_cli.config.get_config_path", lambda: config_file)
+        monkeypatch.setattr("aizen_cli.config.get_config_path", lambda: config_file)
 
         config = load_config()
 
@@ -97,10 +97,10 @@ class TestLoadConfigExpansion:
 class TestLoadCliConfigExpansion(unittest.TestCase):
     """Verify that load_cli_config() also expands ${VAR} references."""
 
-    @unittest.skip("cli._hermes_home not implemented in current cli.py")
+    @unittest.skip("cli._aizen_home not implemented in current cli.py")
     def test_cli_config_expands_auxiliary_api_key(self):
         pass
 
-    @unittest.skip("cli._hermes_home not implemented in current cli.py")
+    @unittest.skip("cli._aizen_home not implemented in current cli.py")
     def test_cli_config_unresolved_kept_verbatim(self):
         pass

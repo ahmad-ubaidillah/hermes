@@ -1,4 +1,4 @@
-# Hermes v3.0
+# Aizen v3.0
 
 **Autonomous AI Team Platform - Free + Powerful**
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-Hermes is a multi-agent AI system that operates as an autonomous software development team. Version 3.0 introduces intelligent routing, parallel execution, and enterprise-grade infrastructure.
+Aizen is a multi-agent AI system that operates as an autonomous software development team. Version 3.0 introduces intelligent routing, parallel execution, and enterprise-grade infrastructure.
 
 ### Key Features
 
@@ -48,7 +48,7 @@ Hermes is a multi-agent AI system that operates as an autonomous software develo
 ## Module Structure
 
 ```
-hermes-agent/
+aizen-agent/
 ├── routing/                    # Intent classification
 │   ├── __init__.py
 │   └── intent_gate.py          # Smart task routing
@@ -239,7 +239,7 @@ WS   /ws                     # Real-time WebSocket
 ### Free Models (z.ai)
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.aizen/config.yaml
 provider: zai
 models:
   fast: mimo-v2-omni-free
@@ -256,7 +256,7 @@ limits:
 observability:
   tracing:
     enabled: true
-    export_file: ~/.hermes/traces.jsonl
+    export_file: ~/.aizen/traces.jsonl
   metrics:
     enabled: true
     prometheus_port: 9090
@@ -287,7 +287,7 @@ python -m web.backend.main
 
 ## Comparison
 
-| Feature | Hermes v3.0 | Nasiko | Oh-My-OpenAgent |
+| Feature | Aizen v3.0 | Nasiko | Oh-My-OpenAgent |
 |---------|-------------|--------|-----------------|
 | Free Models | ✓ 550K/day | ✗ | ✗ |
 | Sprint Workflow | ✓ | ✗ | ✗ |
@@ -316,4 +316,4 @@ MIT License - See LICENSE file for details.
 
 ---
 
-**Hermes v3.0** - *The Best of Both Worlds: Free + Autonomous + Enterprise*
+**Aizen v3.0** - *The Best of Both Worlds: Free + Autonomous + Enterprise*

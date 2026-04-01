@@ -42,16 +42,16 @@ logger = logging.getLogger(__name__)
 MAX_MESSAGE_LENGTH = 4000
 
 # Store directory for E2EE keys and sync state.
-# Uses get_hermes_home() so each profile gets its own Matrix store.
-from core.hermes_constants import get_hermes_dir as _get_hermes_dir
-_STORE_DIR = _get_hermes_dir("platforms/matrix/store", "matrix/store")
+# Uses get_aizen_home() so each profile gets its own Matrix store.
+from core.aizen_constants import get_aizen_dir as _get_aizen_dir
+_STORE_DIR = _get_aizen_dir("platforms/matrix/store", "matrix/store")
 
 # Grace period: ignore messages older than this many seconds before startup.
 _STARTUP_GRACE_SECONDS = 5
 
 # E2EE key export file for persistence across restarts.
 _KEY_EXPORT_FILE = _STORE_DIR / "exported_keys.txt"
-_KEY_EXPORT_PASSPHRASE = "hermes-matrix-e2ee-keys"
+_KEY_EXPORT_PASSPHRASE = "aizen-matrix-e2ee-keys"
 
 # Pending undecrypted events: cap and TTL for retry buffer.
 _MAX_PENDING_EVENTS = 100
@@ -223,7 +223,7 @@ class MatrixAdapter(BasePlatformAdapter):
         elif self._password and self._user_id:
             resp = await client.login(
                 self._password,
-                device_name="Hermes Agent",
+                device_name="Aizen Agent",
             )
             if isinstance(resp, nio.LoginResponse):
                 logger.info("Matrix: logged in as %s", self._user_id)
@@ -696,7 +696,7 @@ class MatrixAdapter(BasePlatformAdapter):
     async def _run_e2ee_maintenance(self) -> None:
         """Run matrix-nio E2EE housekeeping between syncs.
 
-        Hermes uses a custom sync loop instead of matrix-nio's sync_forever(),
+        Aizen uses a custom sync loop instead of matrix-nio's sync_forever(),
         so we need to explicitly drive the key management work that sync_forever()
         normally handles for encrypted rooms.
 

@@ -1,4 +1,4 @@
-"""Tests for Hermes Bridge Server."""
+"""Tests for Aizen Bridge Server."""
 
 import pytest
 from pathlib import Path
@@ -73,7 +73,7 @@ class TestBridgeServer:
         from bridge.server import app
         
         assert app is not None
-        assert app.title == "Hermes Bridge"
+        assert app.title == "Aizen Bridge"
     
     def test_routes_exist(self):
         """Test required routes exist."""

@@ -21,7 +21,7 @@ def _make_real_cli(**kwargs):
         "agent": {},
         "terminal": {"env_type": "local"},
     }
-    clean_env = {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""}
+    clean_env = {"LLM_MODEL": "", "AIZEN_MAX_ITERATIONS": ""}
     prompt_toolkit_stubs = {
         "prompt_toolkit": MagicMock(),
         "prompt_toolkit.history": MagicMock(),
@@ -49,7 +49,7 @@ def _make_real_cli(**kwargs):
             patch.object(cli_mod, "get_tool_definitions", return_value=[]),
             patch.dict(cli_mod.__dict__, {"CLI_CONFIG": clean_config}),
         ):
-            return cli_mod.HermesCLI(**kwargs)
+            return cli_mod.AizenCLI(**kwargs)
 
 
 class _DummyCLI:
@@ -72,7 +72,7 @@ class _DummyCLI:
         return None
 
 
-@unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+@unittest.skip("AizenCLI not fully implemented in cli_fast.py")
 def test_main_applies_preloaded_skills_to_system_prompt(monkeypatch):
     import cli as cli_mod
 
@@ -82,30 +82,30 @@ def test_main_applies_preloaded_skills_to_system_prompt(monkeypatch):
         created["cli"] = _DummyCLI(**kwargs)
         return created["cli"]
 
-    monkeypatch.setattr(cli_mod, "HermesCLI", fake_cli)
+    monkeypatch.setattr(cli_mod, "AizenCLI", fake_cli)
     monkeypatch.setattr(
         cli_mod,
         "build_preloaded_skills_prompt",
         lambda skills, task_id=None: (
             "skill prompt",
-            ["hermes-agent-dev", "github-auth"],
+            ["aizen-agent-dev", "github-auth"],
             [],
         ),
     )
 
     with pytest.raises(SystemExit):
-        cli_mod.main(skills="hermes-agent-dev,github-auth", list_tools=True)
+        cli_mod.main(skills="aizen-agent-dev,github-auth", list_tools=True)
 
     cli_obj = created["cli"]
     assert cli_obj.system_prompt == "base prompt\n\nskill prompt"
-    assert cli_obj.preloaded_skills == ["hermes-agent-dev", "github-auth"]
+    assert cli_obj.preloaded_skills == ["aizen-agent-dev", "github-auth"]
 
 
-@unittest.skip("HermesCLI not fully implemented in cli_fast.py")
+@unittest.skip("AizenCLI not fully implemented in cli_fast.py")
 def test_main_raises_for_unknown_preloaded_skill(monkeypatch):
     import cli as cli_mod
 
-    monkeypatch.setattr(cli_mod, "HermesCLI", lambda **kwargs: _DummyCLI(**kwargs))
+    monkeypatch.setattr(cli_mod, "AizenCLI", lambda **kwargs: _DummyCLI(**kwargs))
     monkeypatch.setattr(
         cli_mod,
         "build_preloaded_skills_prompt",
@@ -116,11 +116,11 @@ def test_main_raises_for_unknown_preloaded_skill(monkeypatch):
         cli_mod.main(skills="missing-skill", list_tools=True)
 
 
-@unittest.skip("HermesCLI.show_banner not fully implemented in cli_fast.py")
+@unittest.skip("AizenCLI.show_banner not fully implemented in cli_fast.py")
 def test_show_banner_does_not_print_skills():
     """show_banner() no longer prints the activated skills line — it moved to run()."""
     cli_obj = _make_real_cli(compact=False)
-    cli_obj.preloaded_skills = ["hermes-agent-dev", "github-auth"]
+    cli_obj.preloaded_skills = ["aizen-agent-dev", "github-auth"]
     cli_obj.console = MagicMock()
 
     with (

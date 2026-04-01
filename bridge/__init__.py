@@ -1,11 +1,11 @@
-"""Hermes Bridge - Remote WebSocket bridge for Hermes Agent.
+"""Aizen Bridge - Remote WebSocket bridge for Aizen Agent.
 
 Enables remote clients (VS Code, web UI, mobile apps) to connect to a
-Hermes Agent instance running on a server/VPS.
+Aizen Agent instance running on a server/VPS.
 
 Architecture:
     ┌─────────────────┐         WebSocket         ┌─────────────────┐
-    │   Hermes Server │ ◄────────────────────────► │  Remote Client  │
+    │   Aizen Server │ ◄────────────────────────► │  Remote Client  │
     │   (Cloud/VPS)   │         JWT Auth           │  (Laptop/Phone) │
     │                 │                            │                 │
     │  • AIAgent      │     Session State          │  • Web UI       │
@@ -21,7 +21,7 @@ Usage:
     # Connect with client
     from bridge.client import BridgeClient
     client = BridgeClient("ws://localhost:8765", token="jwt...")
-    response = client.chat("Hello Hermes!")
+    response = client.chat("Hello Aizen!")
 """
 
 from __future__ import annotations

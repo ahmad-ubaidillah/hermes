@@ -15,4 +15,4 @@ def test_all_extra_includes_matrix_dependency():
     optional_dependencies = _load_optional_dependencies()
 
     assert "matrix" in optional_dependencies
-    assert "hermes-agent[matrix]" in optional_dependencies["all"]
+    assert "aizen-agent[matrix]" in optional_dependencies["all"]

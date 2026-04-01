@@ -1,9 +1,9 @@
-"""Secure credential storage for Hermes Agent.
+"""Secure credential storage for Aizen Agent.
 
 Provides encrypted credential storage using the ``cryptography`` library
 (Fernet symmetric encryption) with optional OS keychain integration via
 ``keyring``.  Also includes migration helpers to move plain-text secrets
-from ``~/.hermes/.env`` into the secure store.
+from ``~/.aizen/.env`` into the secure store.
 
 Usage:
     from tools.credential_storage import get_credential_store
@@ -184,14 +184,14 @@ class CredentialStore:
     1. OS keychain (via keyring library) — if available and working
     2. Encrypted file store (Fernet) — always available
 
-    Secrets are also injected into os.environ so the rest of Hermes
+    Secrets are also injected into os.environ so the rest of Aizen
     continues to work without changes (os.getenv("KEY") still works).
     """
 
     def __init__(self, data_dir: Optional[Path] = None):
-        from core.hermes_constants import get_hermes_home
+        from core.aizen_constants import get_aizen_home
 
-        self._data_dir = data_dir or (get_hermes_home() / _CREDENTIALS_DIR_NAME)
+        self._data_dir = data_dir or (get_aizen_home() / _CREDENTIALS_DIR_NAME)
         self._file_store = EncryptedFileStore(self._data_dir)
         self._keyring_available = False
         self._cache: Dict[str, str] = {}
@@ -205,7 +205,7 @@ class CredentialStore:
         try:
             import keyring
 
-            keyring.get_password("__hermes_probe__", "probe")
+            keyring.get_password("__aizen_probe__", "probe")
             self._keyring_available = True
             logger.debug("OS keyring is available")
         except Exception:
@@ -218,7 +218,7 @@ class CredentialStore:
             import keyring
 
             for name in _SECRET_ENV_NAMES:
-                val = keyring.get_password("hermes-agent", name)
+                val = keyring.get_password("aizen-agent", name)
                 if val:
                     self._cache[name] = val
         else:
@@ -243,7 +243,7 @@ class CredentialStore:
                 try:
                     import keyring
 
-                    val = keyring.get_password("hermes-agent", name)
+                    val = keyring.get_password("aizen-agent", name)
                     if val:
                         self._cache[name] = val
                         return val
@@ -276,7 +276,7 @@ class CredentialStore:
                 try:
                     import keyring
 
-                    keyring.set_password("hermes-agent", name, value)
+                    keyring.set_password("aizen-agent", name, value)
                     logger.info("Stored '%s' in OS keyring", name)
                     return
                 except Exception as e:
@@ -299,7 +299,7 @@ class CredentialStore:
                 try:
                     import keyring
 
-                    keyring.delete_password("hermes-agent", name)
+                    keyring.delete_password("aizen-agent", name)
                 except Exception:
                     pass
 
@@ -337,9 +337,9 @@ class CredentialStore:
         migrated entries after verifying the migration succeeded.
         """
         if env_path is None:
-            from core.hermes_constants import get_hermes_home
+            from core.aizen_constants import get_aizen_home
 
-            env_path = get_hermes_home() / ".env"
+            env_path = get_aizen_home() / ".env"
 
         if not env_path.exists():
             return {}
@@ -415,7 +415,7 @@ def credential_storage_tool(
         action: One of "list", "get", "set", "delete", "migrate", "status".
         name: Credential name (e.g. "OPENAI_API_KEY").
         value: Credential value (for "set" action).
-        migrate: If True, migrate secrets from ~/.hermes/.env.
+        migrate: If True, migrate secrets from ~/.aizen/.env.
     """
     try:
         store = get_credential_store()
@@ -517,7 +517,7 @@ registry.register(
         "description": (
             "Manage secure credential storage. Store, retrieve, and migrate API keys "
             "and secrets from plain-text .env files to encrypted storage. "
-            "Use action='migrate' to move secrets from ~/.hermes/.env to secure storage. "
+            "Use action='migrate' to move secrets from ~/.aizen/.env to secure storage. "
             "Use action='status' to check the current storage backend."
         ),
         "parameters": {

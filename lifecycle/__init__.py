@@ -1,5 +1,5 @@
 """
-Hermes Lifecycle Module - Agent lifecycle and background execution.
+Aizen Lifecycle Module - Agent lifecycle and background execution.
 
 This module provides:
 - BackgroundAgentPool: Parallel agent execution

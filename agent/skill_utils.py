@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from core.hermes_constants import get_hermes_home
+from core.aizen_constants import get_aizen_home
 
 logger = logging.getLogger(__name__)
 
@@ -121,11 +121,11 @@ def skill_matches_platform(frontmatter: Dict[str, Any]) -> bool:
 def get_disabled_skill_names() -> Set[str]:
     """Read disabled skill names from config.yaml.
 
-    Resolves platform from ``HERMES_PLATFORM`` env var, falls back to
+    Resolves platform from ``AIZEN_PLATFORM`` env var, falls back to
     the global disabled list.  Reads the config file directly (no CLI
     config imports) to stay lightweight.
     """
-    config_path = get_hermes_home() / "config.yaml"
+    config_path = get_aizen_home() / "config.yaml"
     if not config_path.exists():
         return set()
     try:
@@ -140,7 +140,7 @@ def get_disabled_skill_names() -> Set[str]:
     if not isinstance(skills_cfg, dict):
         return set()
 
-    resolved_platform = os.getenv("HERMES_PLATFORM")
+    resolved_platform = os.getenv("AIZEN_PLATFORM")
     if resolved_platform:
         platform_disabled = (skills_cfg.get("platform_disabled") or {}).get(
             resolved_platform
@@ -166,9 +166,9 @@ def get_external_skills_dirs() -> List[Path]:
 
     Each entry is expanded (``~`` and ``${VAR}``) and resolved to an absolute
     path.  Only directories that actually exist are returned.  Duplicates and
-    paths that resolve to the local ``~/.hermes/skills/`` are silently skipped.
+    paths that resolve to the local ``~/.aizen/skills/`` are silently skipped.
     """
-    config_path = get_hermes_home() / "config.yaml"
+    config_path = get_aizen_home() / "config.yaml"
     if not config_path.exists():
         return []
     try:
@@ -190,7 +190,7 @@ def get_external_skills_dirs() -> List[Path]:
     if not isinstance(raw_dirs, list):
         return []
 
-    local_skills = (get_hermes_home() / "skills").resolve()
+    local_skills = (get_aizen_home() / "skills").resolve()
     seen: Set[Path] = set()
     result: List[Path] = []
 
@@ -215,12 +215,12 @@ def get_external_skills_dirs() -> List[Path]:
 
 
 def get_all_skills_dirs() -> List[Path]:
-    """Return all skill directories: local ``~/.hermes/skills/`` first, then external.
+    """Return all skill directories: local ``~/.aizen/skills/`` first, then external.
 
     The local dir is always first (and always included even if it doesn't exist
     yet — callers handle that).  External dirs follow in config order.
     """
-    dirs = [get_hermes_home() / "skills"]
+    dirs = [get_aizen_home() / "skills"]
     dirs.extend(get_external_skills_dirs())
     return dirs
 
@@ -230,12 +230,12 @@ def get_all_skills_dirs() -> List[Path]:
 
 def extract_skill_conditions(frontmatter: Dict[str, Any]) -> Dict[str, List]:
     """Extract conditional activation fields from parsed frontmatter."""
-    hermes = (frontmatter.get("metadata") or {}).get("hermes") or {}
+    aizen = (frontmatter.get("metadata") or {}).get("aizen") or {}
     return {
-        "fallback_for_toolsets": hermes.get("fallback_for_toolsets", []),
-        "requires_toolsets": hermes.get("requires_toolsets", []),
-        "fallback_for_tools": hermes.get("fallback_for_tools", []),
-        "requires_tools": hermes.get("requires_tools", []),
+        "fallback_for_toolsets": aizen.get("fallback_for_toolsets", []),
+        "requires_toolsets": aizen.get("requires_toolsets", []),
+        "fallback_for_tools": aizen.get("fallback_for_tools", []),
+        "requires_tools": aizen.get("requires_tools", []),
     }
 
 

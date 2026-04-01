@@ -1,4 +1,4 @@
-# Rebranding Plan: Hermes → Aizen
+# Rebranding Plan: Aizen → Aizen
 
 ## Brand Identity
 
@@ -46,21 +46,21 @@ Alternative compact:
 ### Phase 1: Core Renaming (Automated)
 
 #### 1.1 Package & Entry Points
-- [ ] `pyproject.toml`: `hermes-agent` → `aizen-agent`
-- [ ] CLI command: `hermes` → `aizen`
-- [ ] Folder: `hermes_cli/` → `aizen_cli/`
-- [ ] Folder: `hermes_state.py` → `aizen_state.py`
-- [ ] Module: `core.hermes_constants` → `core.aizen_constants`
+- [ ] `pyproject.toml`: `aizen-agent` → `aizen-agent`
+- [ ] CLI command: `aizen` → `aizen`
+- [ ] Folder: `aizen_cli/` → `aizen_cli/`
+- [ ] Folder: `aizen_state.py` → `aizen_state.py`
+- [ ] Module: `core.aizen_constants` → `core.aizen_constants`
 
 #### 1.2 Environment Variables
-- [ ] All `HERMES_*` → `AIZEN_*` (~50 variables)
-- [ ] Config directory: `~/.hermes/` → `~/.aizen/`
+- [ ] All `AIZEN_*` → `AIZEN_*` (~50 variables)
+- [ ] Config directory: `~/.aizen/` → `~/.aizen/`
 - [ ] Migration script for existing users
 
 #### 1.3 Code References
-- [ ] All `"hermes"` string references → `"aizen"`
-- [ ] Class names with Hermes prefix → Aizen prefix
-- [ ] Function names with hermes_ → aizen_
+- [ ] All `"aizen"` string references → `"aizen"`
+- [ ] Class names with Aizen prefix → Aizen prefix
+- [ ] Function names with aizen_ → aizen_
 - [ ] Comments and docstrings
 
 ### Phase 2: Visual Rebranding
@@ -69,11 +69,11 @@ Alternative compact:
 - [ ] New ASCII art logo `<z>`
 - [ ] New color scheme (purple/violet)
 - [ ] New tagline: "Code • Zen • Clarity"
-- [ ] Update `hermes_cli/banner.py`
+- [ ] Update `aizen_cli/banner.py`
 
 #### 2.2 Skin Engine
 - [ ] New default skin with purple theme
-- [ ] Update `hermes_cli/skin_engine.py`
+- [ ] Update `aizen_cli/skin_engine.py`
 - [ ] Update spinner colors and faces
 - [ ] Update agent name branding
 
@@ -98,13 +98,13 @@ Alternative compact:
 ### Phase 4: Setup Wizard
 
 #### 4.1 Wizard UI
-- [ ] Update `hermes_cli/setup_wizard.py`
+- [ ] Update `aizen_cli/setup_wizard.py`
 - [ ] New welcome message
 - [ ] New branding text
 - [ ] Update prompts
 
 #### 4.2 Setup Scripts
-- [ ] `setup-hermes.sh` → `setup-aizen.sh`
+- [ ] `setup-aizen.sh` → `setup-aizen.sh`
 - [ ] Update installation instructions
 
 ### Phase 5: Documentation
@@ -115,22 +115,22 @@ Alternative compact:
 - [ ] docs/*.md - update all
 
 #### 5.2 Code Comments
-- [ ] All "Hermes" in comments → "Aizen"
+- [ ] All "Aizen" in comments → "Aizen"
 - [ ] Update author references
 
 ### Phase 6: Migration & Compatibility
 
 #### 6.1 Migration Script
-- [ ] Create `scripts/migrate_hermes_to_aizen.py`
-- [ ] Move `~/.hermes/` → `~/.aizen/`
+- [ ] Create `scripts/migrate_aizen_to_aizen.py`
+- [ ] Move `~/.aizen/` → `~/.aizen/`
 - [ ] Update config.yaml references
 - [ ] Migrate session databases
 - [ ] Update environment variables in `.env`
 
 #### 6.2 Backward Compatibility (Optional)
-- [ ] Support both HERMES_* and AIZEN_* env vars
+- [ ] Support both AIZEN_* and AIZEN_* env vars
 - [ ] Deprecation warnings for old names
-- [ ] Symlink ~/.hermes → ~/.aizen
+- [ ] Symlink ~/.aizen → ~/.aizen
 
 ### Phase 7: Testing & Cleanup
 
@@ -150,11 +150,11 @@ Alternative compact:
 
 ### Directories to Rename
 ```
-hermes_cli/          → aizen_cli/
-hermes_state.py      → aizen_state.py
-core/hermes_constants.py → core/aizen_constants.py
-tests/hermes_cli/    → tests/aizen_cli/
-setup-hermes.sh      → setup-aizen.sh
+aizen_cli/          → aizen_cli/
+aizen_state.py      → aizen_state.py
+core/aizen_constants.py → core/aizen_constants.py
+tests/aizen_cli/    → tests/aizen_cli/
+setup-aizen.sh      → setup-aizen.sh
 ```
 
 ### Files to Update (Major)
@@ -164,9 +164,9 @@ cli.py                       # CLI class name, branding
 run_agent.py                 # Agent class, imports
 model_tools.py               # Tool references
 gateway/run.py               # Gateway branding
-hermes_cli/banner.py         # ASCII art, colors
-hermes_cli/skin_engine.py    # Default skin
-hermes_cli/setup_wizard.py   # Wizard branding
+aizen_cli/banner.py         # ASCII art, colors
+aizen_cli/skin_engine.py    # Default skin
+aizen_cli/setup_wizard.py   # Wizard branding
 agent/display.py             # Display constants
 web/frontend/src/App.tsx     # Web UI branding
 ```
@@ -174,24 +174,24 @@ web/frontend/src/App.tsx     # Web UI branding
 ### Environment Variables (~50 total)
 ```bash
 # Core
-HERMES_HOME          → AIZEN_HOME
-HERMES_MODEL         → AIZEN_MODEL
-HERMES_API_KEY       → AIZEN_API_KEY
-HERMES_PROVIDER      → AIZEN_PROVIDER
-HERMES_CONFIG        → AIZEN_CONFIG
+AIZEN_HOME          → AIZEN_HOME
+AIZEN_MODEL         → AIZEN_MODEL
+AIZEN_API_KEY       → AIZEN_API_KEY
+AIZEN_PROVIDER      → AIZEN_PROVIDER
+AIZEN_CONFIG        → AIZEN_CONFIG
 
 # Logging
-HERMES_LOG_LEVEL     → AIZEN_LOG_LEVEL
-HERMES_LOG_FILE      → AIZEN_LOG_FILE
+AIZEN_LOG_LEVEL     → AIZEN_LOG_LEVEL
+AIZEN_LOG_FILE      → AIZEN_LOG_FILE
 
 # Tools
-HERMES_TOOL_PROGRESS → AIZEN_TOOL_PROGRESS
-HERMES_CORE_TOOLS    → AIZEN_CORE_TOOLS
+AIZEN_TOOL_PROGRESS → AIZEN_TOOL_PROGRESS
+AIZEN_CORE_TOOLS    → AIZEN_CORE_TOOLS
 
 # Features
-HERMES_CRON_*        → AIZEN_CRON_*
-HERMES_BRIDGE_*      → AIZEN_BRIDGE_*
-HERMES_CODEX_*       → AIZEN_CODEX_*
+AIZEN_CRON_*        → AIZEN_CRON_*
+AIZEN_BRIDGE_*      → AIZEN_BRIDGE_*
+AIZEN_CODEX_*       → AIZEN_CODEX_*
 # ... etc
 ```
 
@@ -202,19 +202,19 @@ HERMES_CODEX_*       → AIZEN_CODEX_*
 ### Step 1: Automated Find-Replace
 ```bash
 # String replacements
-find . -type f -name "*.py" -exec sed -i 's/hermes/aizen/g' {} +
-find . -type f -name "*.py" -exec sed -i 's/Hermes/Aizen/g' {} +
-find . -type f -name "*.py" -exec sed -i 's/HERMES_/AIZEN_/g' {} +
+find . -type f -name "*.py" -exec sed -i 's/aizen/aizen/g' {} +
+find . -type f -name "*.py" -exec sed -i 's/Aizen/Aizen/g' {} +
+find . -type f -name "*.py" -exec sed -i 's/AIZEN_/AIZEN_/g' {} +
 
 # Config paths
-find . -type f -name "*.py" -exec sed -i 's/\.hermes/.aizen/g' {} +
+find . -type f -name "*.py" -exec sed -i 's/\.aizen/.aizen/g' {} +
 ```
 
 ### Step 2: Directory Renaming
 ```bash
-mv hermes_cli aizen_cli
-mv core/hermes_constants.py core/aizen_constants.py
-mv tests/hermes_cli tests/aizen_cli
+mv aizen_cli aizen_cli
+mv core/aizen_constants.py core/aizen_constants.py
+mv tests/aizen_cli tests/aizen_cli
 ```
 
 ### Step 3: Manual Updates
@@ -224,11 +224,11 @@ mv tests/hermes_cli tests/aizen_cli
 
 ### Step 4: Migration Script
 ```python
-# scripts/migrate_hermes_to_aizen.py
+# scripts/migrate_aizen_to_aizen.py
 import shutil
 from pathlib import Path
 
-old_home = Path.home() / ".hermes"
+old_home = Path.home() / ".aizen"
 new_home = Path.home() / ".aizen"
 
 if old_home.exists() and not new_home.exists():
@@ -242,7 +242,7 @@ if old_home.exists() and not new_home.exists():
 
 1. **Backup First**
    - Git commit before starting
-   - Tag current version as `v3.x-hermes-final`
+   - Tag current version as `v3.x-aizen-final`
 
 2. **Gradual Rollout**
    - Test thoroughly before pushing
@@ -256,8 +256,8 @@ if old_home.exists() and not new_home.exists():
 
 ## Success Criteria
 
-- [ ] All `hermes` references replaced with `aizen`
-- [ ] All `HERMES_*` env vars work as `AIZEN_*`
+- [ ] All `aizen` references replaced with `aizen`
+- [ ] All `AIZEN_*` env vars work as `AIZEN_*`
 - [ ] CLI launches as `aizen` command
 - [ ] Config directory is `~/.aizen/`
 - [ ] New banner shows `<z>` logo with purple theme

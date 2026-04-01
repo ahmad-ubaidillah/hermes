@@ -25,8 +25,8 @@ _IS_WINDOWS = platform.system() == "Windows"
 from pathlib import Path
 from typing import Dict, Optional, Any
 
-from hermes_cli.config import get_hermes_home
-from core.hermes_constants import get_hermes_dir
+from aizen_cli.config import get_aizen_home
+from core.aizen_constants import get_aizen_dir
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class WhatsAppAdapter(BasePlatformAdapter):
     # WhatsApp message limits
     MAX_MESSAGE_LENGTH = 65536  # WhatsApp allows longer messages
     
-    # Default bridge location relative to the hermes-agent install
+    # Default bridge location relative to the aizen-agent install
     _DEFAULT_BRIDGE_DIR = Path(__file__).resolve().parents[2] / "scripts" / "whatsapp-bridge"
 
     def __init__(self, config: PlatformConfig):
@@ -135,7 +135,7 @@ class WhatsAppAdapter(BasePlatformAdapter):
         )
         self._session_path: Path = Path(config.extra.get(
             "session_path",
-            get_hermes_dir("platforms/whatsapp/session", "whatsapp/session")
+            get_aizen_dir("platforms/whatsapp/session", "whatsapp/session")
         ))
         self._reply_prefix: Optional[str] = config.extra.get("reply_prefix")
         self._message_queue: asyncio.Queue = asyncio.Queue()
@@ -175,7 +175,7 @@ class WhatsAppAdapter(BasePlatformAdapter):
             if not acquired:
                 owner_pid = existing.get("pid") if isinstance(existing, dict) else None
                 message = (
-                    "Another local Hermes gateway is already using this WhatsApp session"
+                    "Another local Aizen gateway is already using this WhatsApp session"
                     + (f" (PID {owner_pid})." if owner_pid else ".")
                     + " Stop the other gateway before starting a second WhatsApp bridge."
                 )
@@ -329,7 +329,7 @@ class WhatsAppAdapter(BasePlatformAdapter):
                     # auto-reconnect later, e.g. after a code 515 restart).
                     print(f"[{self.name}] ⚠ WhatsApp not connected after 30s")
                     print(f"[{self.name}]   Bridge log: {self._bridge_log}")
-                    print(f"[{self.name}]   If session expired, re-pair: hermes whatsapp")
+                    print(f"[{self.name}]   If session expired, re-pair: aizen whatsapp")
             
             # Create a persistent HTTP session for all bridge communication
             self._http_session = aiohttp.ClientSession()

@@ -1,9 +1,9 @@
-# Hermes Agent Persona
+# Aizen Agent Persona
 
 <!--
 This file defines the agent's personality and tone.
 The agent will embody whatever you write here.
-Edit this to customize how Hermes communicates with you.
+Edit this to customize how Aizen communicates with you.
 
 Examples:
   - "You are a warm, playful assistant who uses kaomoji occasionally."

@@ -7,11 +7,11 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from cli import HermesCLI
+from cli import AizenCLI
 
 
 def _make_cli_stub():
-    cli = HermesCLI.__new__(HermesCLI)
+    cli = AizenCLI.__new__(AizenCLI)
     cli._approval_state = None
     cli._approval_deadline = 0
     cli._approval_lock = threading.Lock()
@@ -21,7 +21,7 @@ def _make_cli_stub():
 
 
 class TestCliApprovalUi:
-    @unittest.skip("HermesCLI._approval_callback not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI._approval_callback not yet implemented in cli_fast.py")
     def test_approval_callback_includes_view_for_long_commands(self):
         cli = _make_cli_stub()
         command = "sudo dd if=/tmp/githubcli-keyring.gpg of=/usr/share/keyrings/githubcli-archive-keyring.gpg bs=4M status=progress"
@@ -45,7 +45,7 @@ class TestCliApprovalUi:
         assert result["value"] == "deny"
 
     @unittest.skip(
-        "HermesCLI._handle_approval_selection not yet implemented in cli_fast.py"
+        "AizenCLI._handle_approval_selection not yet implemented in cli_fast.py"
     )
     def test_handle_approval_selection_view_expands_in_place(self):
         cli = _make_cli_stub()
@@ -66,7 +66,7 @@ class TestCliApprovalUi:
         assert cli._approval_state["response_queue"].empty()
 
     @unittest.skip(
-        "HermesCLI._get_approval_display_fragments not yet implemented in cli_fast.py"
+        "AizenCLI._get_approval_display_fragments not yet implemented in cli_fast.py"
     )
     def test_approval_display_places_title_inside_box_not_border(self):
         cli = _make_cli_stub()
@@ -89,7 +89,7 @@ class TestCliApprovalUi:
         assert "githubcli-archive-keyring.gpg" not in rendered
 
     @unittest.skip(
-        "HermesCLI._get_approval_display_fragments not yet implemented in cli_fast.py"
+        "AizenCLI._get_approval_display_fragments not yet implemented in cli_fast.py"
     )
     def test_approval_display_shows_full_command_after_view(self):
         cli = _make_cli_stub()

@@ -1,93 +1,93 @@
 ---
-name: hermes-agent-setup
-description: Help users configure Hermes Agent — CLI usage, setup wizard, model/provider selection, tools, skills, voice/STT/TTS, gateway, and troubleshooting. Use when someone asks to enable features, configure settings, or needs help with Hermes itself.
+name: aizen-agent-setup
+description: Help users configure Aizen Agent — CLI usage, setup wizard, model/provider selection, tools, skills, voice/STT/TTS, gateway, and troubleshooting. Use when someone asks to enable features, configure settings, or needs help with Aizen itself.
 version: 1.1.0
-author: Hermes Agent
-tags: [setup, configuration, tools, stt, tts, voice, hermes, cli, skills]
+author: Aizen Agent
+tags: [setup, configuration, tools, stt, tts, voice, aizen, cli, skills]
 ---
 
-# Hermes Agent Setup & Configuration
+# Aizen Agent Setup & Configuration
 
-Use this skill when a user asks about configuring Hermes, enabling features, setting up voice, managing tools/skills, or troubleshooting.
+Use this skill when a user asks about configuring Aizen, enabling features, setting up voice, managing tools/skills, or troubleshooting.
 
 ## Key Paths
 
-- Config: `~/.hermes/config.yaml`
-- API keys: `~/.hermes/.env`
-- Skills: `~/.hermes/skills/`
-- Hermes install: `~/.hermes/hermes-agent/`
-- Venv: `~/.hermes/hermes-agent/venv/`
+- Config: `~/.aizen/config.yaml`
+- API keys: `~/.aizen/.env`
+- Skills: `~/.aizen/skills/`
+- Aizen install: `~/.aizen/aizen-agent/`
+- Venv: `~/.aizen/aizen-agent/venv/`
 
 ## CLI Overview
 
-Hermes is used via the `hermes` command (or `python -m hermes_cli.main` from the repo).
+Aizen is used via the `aizen` command (or `python -m aizen_cli.main` from the repo).
 
 ### Core commands:
 
 ```
-hermes                          Interactive chat (default)
-hermes chat -q "question"       Single query, then exit
-hermes chat -m MODEL            Chat with a specific model
-hermes -c                       Resume most recent session
-hermes -c "project name"        Resume session by name
-hermes --resume SESSION_ID      Resume by exact ID
-hermes -w                       Isolated git worktree mode
-hermes -s skill1,skill2         Preload skills for the session
-hermes --yolo                   Skip dangerous command approval
+aizen                          Interactive chat (default)
+aizen chat -q "question"       Single query, then exit
+aizen chat -m MODEL            Chat with a specific model
+aizen -c                       Resume most recent session
+aizen -c "project name"        Resume session by name
+aizen --resume SESSION_ID      Resume by exact ID
+aizen -w                       Isolated git worktree mode
+aizen -s skill1,skill2         Preload skills for the session
+aizen --yolo                   Skip dangerous command approval
 ```
 
 ### Configuration & setup:
 
 ```
-hermes setup                    Interactive setup wizard (provider, API keys, model)
-hermes model                    Interactive model/provider selection
-hermes config                   View current configuration
-hermes config edit              Open config.yaml in $EDITOR
-hermes config set KEY VALUE     Set a config value directly
-hermes login                    Authenticate with a provider
-hermes logout                   Clear stored auth
-hermes doctor                   Check configuration and dependencies
+aizen setup                    Interactive setup wizard (provider, API keys, model)
+aizen model                    Interactive model/provider selection
+aizen config                   View current configuration
+aizen config edit              Open config.yaml in $EDITOR
+aizen config set KEY VALUE     Set a config value directly
+aizen login                    Authenticate with a provider
+aizen logout                   Clear stored auth
+aizen doctor                   Check configuration and dependencies
 ```
 
 ### Tools & skills:
 
 ```
-hermes tools                    Interactive tool enable/disable per platform
-hermes skills list              List installed skills
-hermes skills search QUERY      Search the skills hub
-hermes skills install NAME      Install a skill from the hub
-hermes skills config            Enable/disable skills per platform
+aizen tools                    Interactive tool enable/disable per platform
+aizen skills list              List installed skills
+aizen skills search QUERY      Search the skills hub
+aizen skills install NAME      Install a skill from the hub
+aizen skills config            Enable/disable skills per platform
 ```
 
 ### Gateway (messaging platforms):
 
 ```
-hermes gateway run              Start the messaging gateway
-hermes gateway install          Install gateway as background service
-hermes gateway status           Check gateway status
+aizen gateway run              Start the messaging gateway
+aizen gateway install          Install gateway as background service
+aizen gateway status           Check gateway status
 ```
 
 ### Session management:
 
 ```
-hermes sessions list            List past sessions
-hermes sessions browse          Interactive session picker
-hermes sessions rename ID TITLE Rename a session
-hermes sessions export ID       Export session as markdown
-hermes sessions prune           Clean up old sessions
+aizen sessions list            List past sessions
+aizen sessions browse          Interactive session picker
+aizen sessions rename ID TITLE Rename a session
+aizen sessions export ID       Export session as markdown
+aizen sessions prune           Clean up old sessions
 ```
 
 ### Other:
 
 ```
-hermes status                   Show status of all components
-hermes cron list                List cron jobs
-hermes insights                 Usage analytics
-hermes update                   Update to latest version
-hermes pairing                  Manage DM authorization codes
+aizen status                   Show status of all components
+aizen cron list                List cron jobs
+aizen insights                 Usage analytics
+aizen update                   Update to latest version
+aizen pairing                  Manage DM authorization codes
 ```
 
-## Setup Wizard (`hermes setup`)
+## Setup Wizard (`aizen setup`)
 
 The interactive setup wizard walks through:
 1. **Provider selection** — OpenRouter, Anthropic, OpenAI, Google, DeepSeek, and many more
@@ -97,33 +97,33 @@ The interactive setup wizard walks through:
 
 Run it from terminal:
 ```bash
-cd ~/.hermes/hermes-agent
+cd ~/.aizen/aizen-agent
 source venv/bin/activate
-python -m hermes_cli.main setup
+python -m aizen_cli.main setup
 ```
 
-To change just the model/provider later: `hermes model`
+To change just the model/provider later: `aizen model`
 
-## Skills Configuration (`hermes skills`)
+## Skills Configuration (`aizen skills`)
 
-Skills are reusable instruction sets that extend what Hermes can do.
+Skills are reusable instruction sets that extend what Aizen can do.
 
 ### Managing skills:
 
 ```bash
-hermes skills list              # Show installed skills
-hermes skills search "docker"   # Search the hub
-hermes skills install NAME      # Install from hub
-hermes skills config            # Enable/disable per platform
+aizen skills list              # Show installed skills
+aizen skills search "docker"   # Search the hub
+aizen skills install NAME      # Install from hub
+aizen skills config            # Enable/disable per platform
 ```
 
 ### Per-platform skill control:
 
-`hermes skills config` opens an interactive UI where you can enable or disable specific skills for each platform (cli, telegram, discord, etc.). Disabled skills won't appear in the agent's available skills list for that platform.
+`aizen skills config` opens an interactive UI where you can enable or disable specific skills for each platform (cli, telegram, discord, etc.). Disabled skills won't appear in the agent's available skills list for that platform.
 
 ### Loading skills in a session:
 
-- CLI: `hermes -s skill-name` or `hermes -s skill1,skill2`
+- CLI: `aizen -s skill-name` or `aizen -s skill1,skill2`
 - Chat: `/skill skill-name`
 - Gateway: type `/skill skill-name` in any chat
 
@@ -139,7 +139,7 @@ Voice messages from Telegram/Discord/WhatsApp/Slack/Signal are auto-transcribed 
 ### Setup local STT (recommended):
 
 ```bash
-cd ~/.hermes/hermes-agent
+cd ~/.aizen/aizen-agent
 source venv/bin/activate
 pip install faster-whisper
 ```
@@ -163,11 +163,11 @@ Model downloads automatically on first use (~150 MB for base).
 
 ### Verify STT:
 
-After config changes, restart the gateway (send /restart in chat, or restart `hermes gateway run`). Then send a voice message.
+After config changes, restart the gateway (send /restart in chat, or restart `aizen gateway run`). Then send a voice message.
 
 ## Voice Replies (TTS)
 
-Hermes can reply with voice when users send voice messages.
+Aizen can reply with voice when users send voice messages.
 
 ### TTS providers (set API key in env file):
 
@@ -183,14 +183,14 @@ Hermes can reply with voice when users send voice messages.
 - `/voice tts` — voice reply to all messages
 - `/voice off` — text only (default)
 
-## Enabling/Disabling Tools (`hermes tools`)
+## Enabling/Disabling Tools (`aizen tools`)
 
 ### Interactive tool config:
 
 ```bash
-cd ~/.hermes/hermes-agent
+cd ~/.aizen/aizen-agent
 source venv/bin/activate
-python -m hermes_cli.main tools
+python -m aizen_cli.main tools
 ```
 
 This opens a curses UI to enable/disable toolsets per platform (cli, telegram, discord, slack, etc.).
@@ -217,7 +217,7 @@ Use `/reset` in the chat to start a fresh session with the new toolset. Tool cha
 Some tools need extra packages:
 
 ```bash
-cd ~/.hermes/hermes-agent && source venv/bin/activate
+cd ~/.aizen/aizen-agent && source venv/bin/activate
 
 pip install faster-whisper    # Local STT (voice transcription)
 pip install browserbase       # Browser automation
@@ -226,7 +226,7 @@ pip install mcp               # MCP server connections
 
 ## Config File Reference
 
-The main config file is `~/.hermes/config.yaml`. Key sections:
+The main config file is `~/.aizen/config.yaml`. Key sections:
 
 ```yaml
 # Model and provider
@@ -253,7 +253,7 @@ display:
   background_process_notifications: all  # all, result, error, off
 ```
 
-Edit with `hermes config edit` or `hermes config set KEY VALUE`.
+Edit with `aizen config edit` or `aizen config set KEY VALUE`.
 
 ## Gateway Commands (Messaging Platforms)
 
@@ -281,13 +281,13 @@ Edit with `hermes config edit` or `hermes config set KEY VALUE`.
 3. Restart gateway after config changes (/restart)
 
 ### Tool not available
-1. Run `hermes tools` to check if the toolset is enabled for your platform
+1. Run `aizen tools` to check if the toolset is enabled for your platform
 2. Some tools need env vars — check the env file
 3. Use /reset after enabling tools
 
 ### Model/provider issues
-1. Run `hermes doctor` to check configuration
-2. Run `hermes login` to re-authenticate
+1. Run `aizen doctor` to check configuration
+2. Run `aizen login` to re-authenticate
 3. Check the env file has the right API key
 
 ### Changes not taking effect
@@ -295,6 +295,6 @@ Edit with `hermes config edit` or `hermes config set KEY VALUE`.
 - CLI: start a new session
 
 ### Skills not showing up
-1. Check `hermes skills list` shows the skill
-2. Check `hermes skills config` has it enabled for your platform
-3. Load explicitly with `/skill name` or `hermes -s name`
+1. Check `aizen skills list` shows the skill
+2. Check `aizen skills config` has it enabled for your platform
+3. Load explicitly with `/skill name` or `aizen -s name`

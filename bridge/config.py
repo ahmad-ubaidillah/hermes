@@ -1,9 +1,9 @@
-"""Configuration management for Hermes Bridge.
+"""Configuration management for Aizen Bridge.
 
 Handles JWT secrets, server settings, rate limiting, and CORS configuration.
 Configuration can be loaded from:
-  - Environment variables (HERMES_BRIDGE_*)
-  - YAML config file (~/.hermes/bridge.yaml)
+  - Environment variables (AIZEN_BRIDGE_*)
+  - YAML config file (~/.aizen/bridge.yaml)
   - Default values
 """
 
@@ -46,7 +46,7 @@ class BridgeConfig(BaseModel):
 
     # Authentication
     jwt_secret: str = Field(
-        default_factory=lambda: os.getenv("HERMES_BRIDGE_JWT_SECRET", ""),
+        default_factory=lambda: os.getenv("AIZEN_BRIDGE_JWT_SECRET", ""),
         description="JWT signing secret",
     )
     jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
@@ -103,13 +103,13 @@ def load_bridge_config(config_path: Optional[str] = None) -> BridgeConfig:
     """Load bridge configuration from file, env vars, and defaults.
 
     Priority (highest to lowest):
-    1. Environment variables (HERMES_BRIDGE_*)
+    1. Environment variables (AIZEN_BRIDGE_*)
     2. YAML config file
     3. Default values
 
     Args:
         config_path: Optional path to YAML config file.
-            Defaults to ~/.hermes/bridge.yaml
+            Defaults to ~/.aizen/bridge.yaml
 
     Returns:
         BridgeConfig with merged settings.
@@ -118,8 +118,8 @@ def load_bridge_config(config_path: Optional[str] = None) -> BridgeConfig:
 
     # Determine config path
     if config_path is None:
-        hermes_home = os.getenv("HERMES_HOME", str(Path.home() / ".hermes"))
-        config_path = os.path.join(hermes_home, "bridge.yaml")
+        aizen_home = os.getenv("AIZEN_HOME", str(Path.home() / ".aizen"))
+        config_path = os.path.join(aizen_home, "bridge.yaml")
 
     # Start with defaults
     config_data: Dict[str, Any] = {}
@@ -137,11 +137,11 @@ def load_bridge_config(config_path: Optional[str] = None) -> BridgeConfig:
     # Override with environment variables
     env_overrides = {}
     for key, value in os.environ.items():
-        if key.startswith("HERMES_BRIDGE_"):
-            env_key = key[len("HERMES_BRIDGE_") :].lower()
+        if key.startswith("AIZEN_BRIDGE_"):
+            env_key = key[len("AIZEN_BRIDGE_") :].lower()
             env_overrides[env_key] = _parse_env_value(value)
 
-    # Handle nested env vars (e.g. HERMES_BRIDGE_RATE_LIMIT_ENABLED)
+    # Handle nested env vars (e.g. AIZEN_BRIDGE_RATE_LIMIT_ENABLED)
     nested_overrides = {}
     for key, value in env_overrides.items():
         parts = key.split("_")
@@ -194,7 +194,7 @@ def save_bridge_config(config: BridgeConfig, path: Optional[str] = None) -> str:
 
     Args:
         config: BridgeConfig to save.
-        path: Optional path. Defaults to ~/.hermes/bridge.yaml
+        path: Optional path. Defaults to ~/.aizen/bridge.yaml
 
     Returns:
         Path where config was saved.
@@ -202,8 +202,8 @@ def save_bridge_config(config: BridgeConfig, path: Optional[str] = None) -> str:
     import yaml
 
     if path is None:
-        hermes_home = os.getenv("HERMES_HOME", str(Path.home() / ".hermes"))
-        path = os.path.join(hermes_home, "bridge.yaml")
+        aizen_home = os.getenv("AIZEN_HOME", str(Path.home() / ".aizen"))
+        path = os.path.join(aizen_home, "bridge.yaml")
 
     save_path = Path(path)
     save_path.parent.mkdir(parents=True, exist_ok=True)

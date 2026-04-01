@@ -1,4 +1,4 @@
-"""Load tests for Hermes Agent core subsystems.
+"""Load tests for Aizen Agent core subsystems.
 
 Run separately from unit tests:
     pytest -m load tests/load/
@@ -15,11 +15,11 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _isolate_hermes_home(tmp_path, monkeypatch):
-    fake_home = tmp_path / "hermes_load_test"
+def _isolate_aizen_home(tmp_path, monkeypatch):
+    fake_home = tmp_path / "aizen_load_test"
     fake_home.mkdir()
     (fake_home / "sessions").mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(fake_home))
+    monkeypatch.setenv("AIZEN_HOME", str(fake_home))
 
 
 @pytest.fixture
@@ -130,7 +130,7 @@ class TestMemoryGrowth:
     @pytest.mark.load
     def test_session_store_memory_growth(self, tmp_path, snapshot_memory):
         """Repeated session operations should not leak memory."""
-        from core.hermes_state import SessionDB
+        from core.aizen_state import SessionDB
 
         db = SessionDB(db_path=tmp_path / "sessions.db")
         gc.collect()
@@ -158,7 +158,7 @@ class TestResponseLatency:
     @pytest.mark.load
     def test_session_store_latency(self, tmp_path):
         """Measure session store operation latencies."""
-        from core.hermes_state import SessionDB
+        from core.aizen_state import SessionDB
 
         db = SessionDB(db_path=tmp_path / "sessions.db")
         create_times = []
@@ -207,7 +207,7 @@ class TestBottlenecks:
     @pytest.mark.load
     def test_config_load_performance(self, tmp_path):
         """Measure config loading performance."""
-        from hermes_cli.config import load_config
+        from aizen_cli.config import load_config
 
         iterations = 100
         times = []

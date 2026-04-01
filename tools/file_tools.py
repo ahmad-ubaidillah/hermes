@@ -195,22 +195,22 @@ def clear_file_ops_cache(task_id: str = None):
 def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = "default") -> str:
     """Read a file with pagination and line numbers."""
     try:
-        # Security: block direct reads of internal Hermes cache/index files
+        # Security: block direct reads of internal Aizen cache/index files
         # to prevent prompt injection via catalog or hub metadata files.
         import pathlib as _pathlib
-        from core.hermes_constants import get_hermes_home as _get_hh
+        from core.aizen_constants import get_aizen_home as _get_hh
         _resolved = _pathlib.Path(path).expanduser().resolve()
-        _hermes_home = _get_hh().resolve()
+        _aizen_home = _get_hh().resolve()
         _blocked_dirs = [
-            _hermes_home / "skills" / ".hub" / "index-cache",
-            _hermes_home / "skills" / ".hub",
+            _aizen_home / "skills" / ".hub" / "index-cache",
+            _aizen_home / "skills" / ".hub",
         ]
         for _blocked in _blocked_dirs:
             try:
                 _resolved.relative_to(_blocked)
                 return json.dumps({
                     "error": (
-                        f"Access denied: {path} is an internal Hermes cache file "
+                        f"Access denied: {path} is an internal Aizen cache file "
                         "and cannot be read directly to prevent prompt injection. "
                         "Use the skills_list or skill_view tools instead."
                     )

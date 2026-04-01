@@ -1,4 +1,4 @@
-"""Tests for Hermes Supervisor Module."""
+"""Tests for Aizen Supervisor Module."""
 
 import pytest
 import sys
@@ -71,9 +71,9 @@ class TestSystemdService:
         from supervisor import generate_systemd_service
         
         content = generate_systemd_service(
-            name="hermes",
-            user="hermes",
-            working_dir="/opt/hermes",
+            name="aizen",
+            user="aizen",
+            working_dir="/opt/aizen",
             command="python -m gateway.run",
         )
         

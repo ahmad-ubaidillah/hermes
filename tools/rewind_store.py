@@ -29,7 +29,7 @@ class RewindStore:
     """
     
     def __init__(self, db_path: Path = None):
-        self.db_path = db_path or Path.home() / ".hermes" / "rewind.db"
+        self.db_path = db_path or Path.home() / ".aizen" / "rewind.db"
         self._init_db()
     
     def _init_db(self):

@@ -1,13 +1,13 @@
-"""Tests for slash command prefix matching in HermesCLI.process_command."""
+"""Tests for slash command prefix matching in AizenCLI.process_command."""
 
 import unittest
 from unittest.mock import MagicMock, patch
 
-from cli import HermesCLI
+from cli import AizenCLI
 
 
 def _make_cli():
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = AizenCLI.__new__(AizenCLI)
     cli_obj.config = {}
     cli_obj.console = MagicMock()
     cli_obj.agent = None
@@ -18,7 +18,7 @@ def _make_cli():
 
 
 class TestSlashCommandPrefixMatching(unittest.TestCase):
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_unique_prefix_dispatches_command(self):
         """/con should dispatch to /config when it uniquely matches."""
         cli_obj = _make_cli()
@@ -26,7 +26,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
             cli_obj.process_command("/con")
         mock_config.assert_called_once()
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_unique_prefix_with_args_does_not_recurse(self):
         """/con set key value should expand to /config set key value without infinite recursion."""
         cli_obj = _make_cli()
@@ -53,13 +53,13 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
         # Should have been called at most twice: once for /con set..., once for /config set...
         assert len(dispatched) <= 2
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_exact_command_with_args_does_not_recurse(self):
         """/config set key value hits exact branch and does not loop back to prefix."""
         cli_obj = _make_cli()
         call_count = [0]
 
-        original_pc = HermesCLI.process_command
+        original_pc = AizenCLI.process_command
 
         def guarded(self_inner, cmd):
             call_count[0] += 1
@@ -69,7 +69,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
 
         # Mock show_config since the test is about recursion, not config display
         with (
-            patch.object(HermesCLI, "process_command", guarded),
+            patch.object(AizenCLI, "process_command", guarded),
             patch.object(cli_obj, "show_config"),
         ):
             try:
@@ -79,7 +79,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
 
         assert call_count[0] <= 3
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_ambiguous_prefix_shows_suggestions(self):
         """/re matches multiple commands — should show ambiguous message."""
         cli_obj = _make_cli()
@@ -88,7 +88,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
             printed = " ".join(str(c) for c in mock_cprint.call_args_list)
         assert "Ambiguous" in printed or "Did you mean" in printed
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_unknown_command_shows_error(self):
         """/xyz should show unknown command error."""
         cli_obj = _make_cli()
@@ -97,7 +97,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
             printed = " ".join(str(c) for c in mock_cprint.call_args_list)
         assert "Unknown command" in printed
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_exact_command_still_works(self):
         """/help should still work as exact match."""
         cli_obj = _make_cli()
@@ -105,7 +105,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
             cli_obj.process_command("/help")
         mock_help.assert_called_once()
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_skill_command_prefix_matches(self):
         """A prefix that uniquely matches a skill command should dispatch it."""
         cli_obj = _make_cli()
@@ -122,7 +122,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
         unknown = any("Unknown command" in p for p in printed)
         assert not unknown, f"Expected skill prefix to match, got: {printed}"
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_ambiguous_between_builtin_and_skill(self):
         """Ambiguous prefix spanning builtin + skill commands shows suggestions."""
         cli_obj = _make_cli()
@@ -142,7 +142,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
         printed = " ".join(str(c) for c in cli_obj.console.print.call_args_list)
         assert "Ambiguous" not in printed
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_shortest_match_preferred_over_longer_skill(self):
         """/qui should dispatch to /quit (5 chars) not report ambiguous with /quint-pipeline (15 chars)."""
         cli_obj = _make_cli()
@@ -161,7 +161,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
         printed = " ".join(str(c) for c in cli_obj.console.print.call_args_list)
         assert "Ambiguous" not in printed
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_tied_shortest_matches_still_ambiguous(self):
         """/re matches /reset and /retry (both 6 chars) — no unique shortest, stays ambiguous."""
         cli_obj = _make_cli()
@@ -173,7 +173,7 @@ class TestSlashCommandPrefixMatching(unittest.TestCase):
         combined = " ".join(printed)
         assert "Ambiguous" in combined or "Did you mean" in combined
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_exact_typed_name_dispatches_over_longer_match(self):
         """/help typed with /help-extra skill installed → exact match wins."""
         cli_obj = _make_cli()

@@ -1,4 +1,4 @@
-"""Pydantic models for Hermes Bridge message protocol."""
+"""Pydantic models for Aizen Bridge message protocol."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ class AuthToken(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    """Request to send a message to Hermes."""
+    """Request to send a message to Aizen."""
 
     message: str = Field(..., min_length=1, description="User message")
     session_id: Optional[str] = Field(None, description="Session ID to use/create")
@@ -54,7 +54,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    """Complete response from Hermes."""
+    """Complete response from Aizen."""
 
     response: str = Field(..., description="Full response text")
     session_id: Optional[str] = Field(None, description="Session ID used")

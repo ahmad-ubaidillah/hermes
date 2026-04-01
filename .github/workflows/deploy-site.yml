@@ -20,7 +20,7 @@ concurrency:
 jobs:
   build-and-deploy:
     # Only run on the upstream repository, not on forks
-    if: github.repository == 'NousResearch/hermes-agent'
+    if: github.repository == 'NousResearch/aizen-agent'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -50,7 +50,7 @@ jobs:
           # Docusaurus at /docs/
           cp -r website/build/* _site/docs/
           # CNAME so GitHub Pages keeps the custom domain between deploys
-          echo "hermes-agent.nousresearch.com" > _site/CNAME
+          echo "aizen-agent.nousresearch.com" > _site/CNAME
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

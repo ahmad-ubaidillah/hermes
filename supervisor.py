@@ -1,4 +1,4 @@
-"""Process supervision for Hermes Agent.
+"""Process supervision for Aizen Agent.
 
 Features:
 - Auto-restart on crash with exponential backoff
@@ -22,17 +22,17 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 # Default paths
-DEFAULT_PID_DIR = Path("/tmp/hermes")
-DEFAULT_PID_FILE = DEFAULT_PID_DIR / "hermes.pid"
+DEFAULT_PID_DIR = Path("/tmp/aizen")
+DEFAULT_PID_FILE = DEFAULT_PID_DIR / "aizen.pid"
 
 
 class ProcessSupervisor:
-    """Supervisor for Hermes Agent process.
+    """Supervisor for Aizen Agent process.
     
     Example:
         supervisor = ProcessSupervisor(
             command=["python", "-m", "gateway.run"],
-            pid_file=Path("/var/run/hermes.pid"),
+            pid_file=Path("/var/run/aizen.pid"),
         )
         supervisor.start()
     """
@@ -166,11 +166,11 @@ class ProcessSupervisor:
 
 
 def generate_systemd_service(
-    name: str = "hermes",
-    user: str = "hermes",
-    working_dir: str = "/opt/hermes",
+    name: str = "aizen",
+    user: str = "aizen",
+    working_dir: str = "/opt/aizen",
     command: str = "python -m gateway.run",
-    description: str = "Hermes AI Agent Gateway",
+    description: str = "Aizen AI Agent Gateway",
 ) -> str:
     """Generate a systemd service file.
     
@@ -192,7 +192,7 @@ StandardOutput=journal
 StandardError=journal
 
 # Environment
-Environment=HERMES_HOME=/home/{user}/.hermes
+Environment=AIZEN_HOME=/home/{user}/.aizen
 
 # Security
 NoNewPrivileges=true
@@ -207,7 +207,7 @@ def main():
     """Main entry point for supervisor CLI."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Hermes Process Supervisor")
+    parser = argparse.ArgumentParser(description="Aizen Process Supervisor")
     parser.add_argument("--command", nargs="+", required=True, help="Command to run")
     parser.add_argument("--pid-file", type=Path, default=DEFAULT_PID_FILE, help="PID file path")
     parser.add_argument("--max-restarts", type=int, default=5, help="Max restart attempts")

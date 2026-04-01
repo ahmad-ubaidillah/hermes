@@ -1,4 +1,4 @@
-"""Tests for Hermes Shutdown Module."""
+"""Tests for Aizen Shutdown Module."""
 
 import pytest
 import signal

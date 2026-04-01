@@ -10,7 +10,7 @@ import sys
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
-from core.hermes_state import SessionDB
+from core.aizen_state import SessionDB
 from tools.todo_tool import TodoStore
 
 
@@ -76,7 +76,7 @@ class _FakeAgent:
 
 
 def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
-    """Create a HermesCLI instance with minimal mocking."""
+    """Create a AizenCLI instance with minimal mocking."""
     _clean_config = {
         "model": {
             "default": "anthropic/claude-opus-4.6",
@@ -89,7 +89,7 @@ def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
     }
     if config_overrides:
         _clean_config.update(config_overrides)
-    clean_env = {"LLM_MODEL": "", "HERMES_MAX_ITERATIONS": ""}
+    clean_env = {"LLM_MODEL": "", "AIZEN_MAX_ITERATIONS": ""}
     if env_overrides:
         clean_env.update(env_overrides)
     prompt_toolkit_stubs = {
@@ -120,7 +120,7 @@ def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
             patch.object(_cli_mod, "get_tool_definitions", return_value=[]),
             patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}),
         ):
-            return _cli_mod.HermesCLI(**kwargs)
+            return _cli_mod.AizenCLI(**kwargs)
 
 
 def _prepare_cli_with_active_session(tmp_path):
@@ -139,7 +139,7 @@ def _prepare_cli_with_active_session(tmp_path):
     return cli
 
 
-@unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+@unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
 def test_new_command_creates_real_fresh_session_and_resets_agent_state(tmp_path):
     cli = _prepare_cli_with_active_session(tmp_path)
     old_session_id = cli.session_id
@@ -169,7 +169,7 @@ def test_new_command_creates_real_fresh_session_and_resets_agent_state(tmp_path)
     cli.agent._invalidate_system_prompt.assert_called_once()
 
 
-@unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+@unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
 def test_reset_command_is_alias_for_new_session(tmp_path):
     cli = _prepare_cli_with_active_session(tmp_path)
     old_session_id = cli.session_id
@@ -181,7 +181,7 @@ def test_reset_command_is_alias_for_new_session(tmp_path):
     assert cli._session_db.get_session(cli.session_id) is not None
 
 
-@unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+@unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
 def test_clear_command_starts_new_session_before_redrawing(tmp_path):
     cli = _prepare_cli_with_active_session(tmp_path)
     cli.console = MagicMock()
@@ -198,7 +198,7 @@ def test_clear_command_starts_new_session_before_redrawing(tmp_path):
     assert cli.conversation_history == []
 
 
-@unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+@unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
 def test_new_session_resets_token_counters(tmp_path):
     """Regression test for #2099: /new must zero all token counters."""
     cli = _prepare_cli_with_active_session(tmp_path)

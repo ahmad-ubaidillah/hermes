@@ -59,9 +59,9 @@ def codex_auth_dir(tmp_path, monkeypatch):
 
 class TestReadCodexAccessToken:
     def test_valid_auth_store(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -69,22 +69,22 @@ class TestReadCodexAccessToken:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result == "tok-123"
 
     def test_missing_returns_none(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result is None
 
     def test_empty_token_returns_none(self, tmp_path, monkeypatch):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -92,7 +92,7 @@ class TestReadCodexAccessToken:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result is None
 
@@ -124,9 +124,9 @@ class TestReadCodexAccessToken:
         payload = base64.urlsafe_b64encode(payload_data).rstrip(b"=").decode()
         expired_jwt = f"{header}.{payload}.fakesig"
 
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -134,7 +134,7 @@ class TestReadCodexAccessToken:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result is None, "Expired JWT should return None"
 
@@ -148,9 +148,9 @@ class TestReadCodexAccessToken:
         payload = base64.urlsafe_b64encode(payload_data).rstrip(b"=").decode()
         valid_jwt = f"{header}.{payload}.fakesig"
 
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -158,15 +158,15 @@ class TestReadCodexAccessToken:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result == valid_jwt
 
     def test_non_jwt_token_passes_through(self, tmp_path, monkeypatch):
         """Non-JWT tokens (no dots) should be returned as-is."""
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -174,7 +174,7 @@ class TestReadCodexAccessToken:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result == "plain-token-no-jwt"
 
@@ -222,9 +222,9 @@ class TestExpiredCodexFallback:
         payload = base64.urlsafe_b64encode(payload_data).rstrip(b"=").decode()
         expired_jwt = f"{header}.{payload}.fakesig"
 
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -232,7 +232,7 @@ class TestExpiredCodexFallback:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
 
         # Set up Anthropic as fallback
         monkeypatch.setenv("ANTHROPIC_TOKEN", "sk-ant-oat01-test-fallback")
@@ -254,9 +254,9 @@ class TestExpiredCodexFallback:
         payload = base64.urlsafe_b64encode(payload_data).rstrip(b"=").decode()
         expired_jwt = f"{header}.{payload}.fakesig"
 
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -264,7 +264,7 @@ class TestExpiredCodexFallback:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         monkeypatch.setenv("OPENROUTER_API_KEY", "or-test-key")
 
         with patch("agent.auxiliary_client.OpenAI") as mock_openai:
@@ -285,9 +285,9 @@ class TestExpiredCodexFallback:
         payload = base64.urlsafe_b64encode(payload_data).rstrip(b"=").decode()
         expired_jwt = f"{header}.{payload}.fakesig"
 
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -295,7 +295,7 @@ class TestExpiredCodexFallback:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
 
         # Simulate Ollama or custom endpoint
         with patch("agent.auxiliary_client._resolve_custom_runtime",
@@ -307,10 +307,10 @@ class TestExpiredCodexFallback:
                 assert client is not None
 
 
-    def test_hermes_oauth_file_sets_oauth_flag(self, monkeypatch):
+    def test_aizen_oauth_file_sets_oauth_flag(self, monkeypatch):
         """OAuth-style tokens should get is_oauth=True (token is not sk-ant-api-*)."""
         # Mock resolve_anthropic_token to return an OAuth-style token
-        with patch("agent.anthropic_adapter.resolve_anthropic_token", return_value="hermes-oauth-jwt-token"), \
+        with patch("agent.anthropic_adapter.resolve_anthropic_token", return_value="aizen-oauth-jwt-token"), \
              patch("agent.anthropic_adapter.build_anthropic_client") as mock_build:
             mock_build.return_value = MagicMock()
             from agent.auxiliary_client import _try_anthropic, AnthropicAuxiliaryClient
@@ -327,9 +327,9 @@ class TestExpiredCodexFallback:
         payload = base64.urlsafe_b64encode(payload_data).rstrip(b"=").decode()
         no_exp_jwt = f"{header}.{payload}.fakesig"
 
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -337,7 +337,7 @@ class TestExpiredCodexFallback:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result == no_exp_jwt, "JWT without exp should pass through"
 
@@ -348,9 +348,9 @@ class TestExpiredCodexFallback:
         payload = base64.urlsafe_b64encode(b"not-json-content").rstrip(b"=").decode()
         bad_jwt = f"{header}.{payload}.fakesig"
 
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "auth.json").write_text(json.dumps({
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "auth.json").write_text(json.dumps({
             "version": 1,
             "providers": {
                 "openai-codex": {
@@ -358,7 +358,7 @@ class TestExpiredCodexFallback:
                 },
             },
         }))
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         result = _read_codex_access_token()
         assert result == bad_jwt, "JWT with invalid JSON payload should pass through"
 
@@ -473,8 +473,8 @@ class TestGetTextAuxiliaryClient:
             }
         }
         monkeypatch.setenv("OPENAI_API_KEY", "lm-studio-key")
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: config)
-        monkeypatch.setattr("hermes_cli.runtime_provider.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.config.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.runtime_provider.load_config", lambda: config)
         # Override the autouse monkeypatch for codex
         monkeypatch.setattr(
             "agent.auxiliary_client._read_codex_access_token",
@@ -519,8 +519,8 @@ class TestGetTextAuxiliaryClient:
             }
         }
         monkeypatch.setenv("OPENAI_API_KEY", "lm-studio-key")
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: config)
-        monkeypatch.setattr("hermes_cli.runtime_provider.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.config.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.runtime_provider.load_config", lambda: config)
 
         with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
              patch("agent.auxiliary_client._read_codex_access_token", return_value=None), \
@@ -596,7 +596,7 @@ class TestVisionClientFallback:
 
         with (
             patch(
-                "hermes_cli.auth.resolve_api_key_provider_credentials",
+                "aizen_cli.auth.resolve_api_key_provider_credentials",
                 return_value={
                     "provider": "copilot",
                     "api_key": "gh-cli-token",
@@ -640,7 +640,7 @@ class TestVisionClientFallback:
             patch("agent.anthropic_adapter.build_anthropic_client", return_value=MagicMock()),
             patch("agent.anthropic_adapter.resolve_anthropic_token", return_value="sk-ant-api03-key"),
             patch("agent.auxiliary_client.OpenAI") as mock_openai,
-            patch("hermes_cli.config.load_config", fake_load_config),
+            patch("aizen_cli.config.load_config", fake_load_config),
         ):
             client, model = get_vision_auxiliary_client()
 
@@ -654,7 +654,7 @@ class TestVisionClientFallback:
 
         codex_client = MagicMock()
         with (
-            patch("hermes_cli.config.load_config", fake_load_config),
+            patch("aizen_cli.config.load_config", fake_load_config),
             patch("agent.auxiliary_client._try_codex", return_value=(codex_client, "gpt-5.2-codex")) as mock_codex,
             patch("agent.auxiliary_client._try_openrouter") as mock_openrouter,
             patch("agent.auxiliary_client._try_nous") as mock_nous,
@@ -744,8 +744,8 @@ class TestVisionClientFallback:
         }
         monkeypatch.setenv("AUXILIARY_VISION_PROVIDER", "main")
         monkeypatch.setenv("OPENAI_API_KEY", "local-key")
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: config)
-        monkeypatch.setattr("hermes_cli.runtime_provider.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.config.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.runtime_provider.load_config", lambda: config)
         with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
              patch("agent.auxiliary_client.OpenAI") as mock_openai:
             client, model = get_vision_auxiliary_client()
@@ -851,8 +851,8 @@ class TestResolveForcedProvider:
             }
         }
         monkeypatch.setenv("OPENAI_API_KEY", "local-key")
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: config)
-        monkeypatch.setattr("hermes_cli.runtime_provider.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.config.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.runtime_provider.load_config", lambda: config)
         with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
              patch("agent.auxiliary_client.OpenAI") as mock_openai:
             client, model = _resolve_forced_provider("main")
@@ -867,8 +867,8 @@ class TestResolveForcedProvider:
             }
         }
         monkeypatch.setenv("OPENAI_API_KEY", "local-key")
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: config)
-        monkeypatch.setattr("hermes_cli.runtime_provider.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.config.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.runtime_provider.load_config", lambda: config)
         with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
              patch("agent.auxiliary_client._read_codex_access_token", return_value=None), \
              patch("agent.auxiliary_client._resolve_api_key_provider", return_value=(None, None)), \
@@ -890,8 +890,8 @@ class TestResolveForcedProvider:
         }
         monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
         monkeypatch.setenv("OPENAI_API_KEY", "local-key")
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: config)
-        monkeypatch.setattr("hermes_cli.runtime_provider.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.config.load_config", lambda: config)
+        monkeypatch.setattr("aizen_cli.runtime_provider.load_config", lambda: config)
         with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
              patch("agent.auxiliary_client.OpenAI") as mock_openai:
             client, model = _resolve_forced_provider("main")
@@ -959,9 +959,9 @@ class TestTaskSpecificOverrides:
         assert model == "google/gemini-3-flash-preview"
 
     def test_task_direct_endpoint_from_config(self, monkeypatch, tmp_path):
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "config.yaml").write_text(
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "config.yaml").write_text(
             """auxiliary:
   web_extract:
     base_url: http://localhost:3456/v1
@@ -969,7 +969,7 @@ class TestTaskSpecificOverrides:
     model: config-model
 """
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         with patch("agent.auxiliary_client.OpenAI") as mock_openai:
             client, model = get_text_auxiliary_client("web_extract")
         assert model == "config-model"
@@ -985,16 +985,16 @@ class TestTaskSpecificOverrides:
 
     def test_compression_summary_base_url_from_config(self, monkeypatch, tmp_path):
         """compression.summary_base_url should produce a custom-endpoint client."""
-        hermes_home = tmp_path / "hermes"
-        hermes_home.mkdir(parents=True, exist_ok=True)
-        (hermes_home / "config.yaml").write_text(
+        aizen_home = tmp_path / "aizen"
+        aizen_home.mkdir(parents=True, exist_ok=True)
+        (aizen_home / "config.yaml").write_text(
             """compression:
   summary_provider: custom
   summary_model: glm-4.7
   summary_base_url: https://api.z.ai/api/coding/paas/v4
 """
         )
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("AIZEN_HOME", str(aizen_home))
         # Custom endpoints need an API key to build the client
         monkeypatch.setenv("OPENAI_API_KEY", "test-key")
         with patch("agent.auxiliary_client.OpenAI") as mock_openai:

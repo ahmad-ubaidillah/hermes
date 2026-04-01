@@ -1,4 +1,4 @@
-# Lifecycle Hooks - Hermes v3.0
+# Lifecycle Hooks - Aizen v3.0
 
 48 hooks for fine-grained control over agent lifecycle.
 
@@ -218,7 +218,7 @@ if ctx.should_continue:
 
 ## Built-in Hooks
 
-Hermes includes these pre-registered hooks:
+Aizen includes these pre-registered hooks:
 
 | Hook | Event | Purpose |
 |------|-------|---------|

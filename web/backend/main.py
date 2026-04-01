@@ -1,5 +1,5 @@
 """
-Hermes v3.0 Web Dashboard Backend - FastAPI
+Aizen v3.0 Web Dashboard Backend - FastAPI
 
 Features:
 - Agent management (18 agents)
@@ -27,8 +27,8 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 app = FastAPI(
-    title="Hermes Dashboard v3.0",
-    description="Web dashboard for Hermes AI Agent Team",
+    title="Aizen Dashboard v3.0",
+    description="Web dashboard for Aizen AI Agent Team",
     version="3.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -99,10 +99,10 @@ class HookEvent(BaseModel):
 
 # ============== DATA STORE ==============
 
-# 18 Hermes Agents
+# 18 Aizen Agents
 AGENTS = {
     "Flash": Agent(id="flash", name="Flash", role="Quick Tasks", tag="[FLASH]"),
-    "Hermes": Agent(id="hermes", name="Hermes", role="CEO - Decision Maker", tag="[CEO]"),
+    "Aizen": Agent(id="aizen", name="Aizen", role="CEO - Decision Maker", tag="[CEO]"),
     "Biz": Agent(id="biz", name="Biz", role="Business Development", tag="[BIZ]"),
     "Pixel": Agent(id="pixel", name="Pixel", role="UI/UX Designer", tag="[DESIGN]"),
     "Nova": Agent(id="nova", name="Nova", role="Product Manager", tag="[PM]"),
@@ -158,7 +158,7 @@ manager = ConnectionManager()
 @app.get("/")
 async def root():
     return {
-        "name": "Hermes Dashboard v3.0",
+        "name": "Aizen Dashboard v3.0",
         "docs": "/docs",
         "websocket": "/ws",
     }

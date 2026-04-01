@@ -1,5 +1,5 @@
 """
-Hermes v3.0 Integration - Connects IntentGate, BackgroundAgents, and Hooks.
+Aizen v3.0 Integration - Connects IntentGate, BackgroundAgents, and Hooks.
 
 Main orchestration module that routes requests through the intelligence pipeline:
     IntentGate → Planning → Execution → Review → Report
@@ -35,9 +35,9 @@ class PipelineResult:
             self.agent_results = {}
 
 
-class HermesPipeline:
+class AizenPipeline:
     """
-    Main intelligence pipeline for Hermes v3.0.
+    Main intelligence pipeline for Aizen v3.0.
     
     Flow:
         1. IntentGate - classify user intent
@@ -194,14 +194,14 @@ class HermesPipeline:
 
 
 # Singleton
-_pipeline: Optional[HermesPipeline] = None
+_pipeline: Optional[AizenPipeline] = None
 
 
-def get_pipeline() -> HermesPipeline:
-    """Get singleton HermesPipeline instance."""
+def get_pipeline() -> AizenPipeline:
+    """Get singleton AizenPipeline instance."""
     global _pipeline
     if _pipeline is None:
-        _pipeline = HermesPipeline()
+        _pipeline = AizenPipeline()
     return _pipeline
 
 
@@ -210,13 +210,13 @@ async def process_request(user_input: str, context: str = "") -> PipelineResult:
     return await get_pipeline().process(user_input, context)
 
 
-# Integration with Hermes CLI
+# Integration with Aizen CLI
 
 def integrate_with_cli():
     """
-    Integration point for Hermes CLI.
+    Integration point for Aizen CLI.
     
-    Add to hermes_cli/main.py:
+    Add to aizen_cli/main.py:
         from lifecycle.orchestration import process_request, get_pipeline
         
         async def handle_message(user_input: str) -> str:
@@ -229,9 +229,9 @@ def integrate_with_cli():
 # CLI test
 if __name__ == "__main__":
     async def test():
-        print("\n=== Hermes v3.0 Pipeline Test ===\n")
+        print("\n=== Aizen v3.0 Pipeline Test ===\n")
         
-        pipeline = HermesPipeline()
+        pipeline = AizenPipeline()
         
         test_cases = [
             "quick show me the files",

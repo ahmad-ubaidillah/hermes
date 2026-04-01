@@ -4,7 +4,7 @@ Cron job scheduler - executes due jobs.
 Provides tick() which checks for due jobs and runs them. The gateway
 calls this every 60 seconds from a background thread.
 
-Uses a file-based lock (~/.hermes/cron/.tick.lock) so only one tick
+Uses a file-based lock (~/.aizen/cron/.tick.lock) so only one tick
 runs at a time if multiple processes overlap.
 """
 
@@ -25,11 +25,11 @@ except ImportError:
     except ImportError:
         msvcrt = None
 from pathlib import Path
-from core.hermes_constants import get_hermes_home
-from hermes_cli.config import load_config
+from core.aizen_constants import get_aizen_home
+from aizen_cli.config import load_config
 from typing import Optional
 
-from core.hermes_time import now as _hermes_now
+from core.aizen_time import now as _aizen_now
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +43,11 @@ from cron.jobs import get_due_jobs, mark_job_run, save_job_output, advance_next_
 # locally for audit.
 SILENT_MARKER = "[SILENT]"
 
-# Resolve Hermes home directory (respects HERMES_HOME override)
-_hermes_home = get_hermes_home()
+# Resolve Aizen home directory (respects AIZEN_HOME override)
+_aizen_home = get_aizen_home()
 
 # File-based lock prevents concurrent ticks from gateway + daemon + systemd timer
-_LOCK_DIR = _hermes_home / "cron"
+_LOCK_DIR = _aizen_home / "cron"
 _LOCK_FILE = _LOCK_DIR / ".tick.lock"
 
 
@@ -302,7 +302,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
     # and discoverable via session_search (same pattern as gateway/run.py).
     _session_db = None
     try:
-        from core.hermes_state import SessionDB
+        from core.aizen_state import SessionDB
         _session_db = SessionDB()
     except Exception as e:
         logger.debug("Job '%s': SQLite session store not available: %s", job.get("id", "?"), e)
@@ -311,41 +311,41 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
     job_name = job["name"]
     prompt = _build_job_prompt(job)
     origin = _resolve_origin(job)
-    _cron_session_id = f"cron_{job_id}_{_hermes_now().strftime('%Y%m%d_%H%M%S')}"
+    _cron_session_id = f"cron_{job_id}_{_aizen_now().strftime('%Y%m%d_%H%M%S')}"
 
     logger.info("Running job '%s' (ID: %s)", job_name, job_id)
     logger.info("Prompt: %s", prompt[:100])
 
     # Inject origin context so the agent's send_message tool knows the chat
     if origin:
-        os.environ["HERMES_SESSION_PLATFORM"] = origin["platform"]
-        os.environ["HERMES_SESSION_CHAT_ID"] = str(origin["chat_id"])
+        os.environ["AIZEN_SESSION_PLATFORM"] = origin["platform"]
+        os.environ["AIZEN_SESSION_CHAT_ID"] = str(origin["chat_id"])
         if origin.get("chat_name"):
-            os.environ["HERMES_SESSION_CHAT_NAME"] = origin["chat_name"]
+            os.environ["AIZEN_SESSION_CHAT_NAME"] = origin["chat_name"]
 
     try:
         # Re-read .env and config.yaml fresh every run so provider/key
         # changes take effect without a gateway restart.
         from dotenv import load_dotenv
         try:
-            load_dotenv(str(_hermes_home / ".env"), override=True, encoding="utf-8")
+            load_dotenv(str(_aizen_home / ".env"), override=True, encoding="utf-8")
         except UnicodeDecodeError:
-            load_dotenv(str(_hermes_home / ".env"), override=True, encoding="latin-1")
+            load_dotenv(str(_aizen_home / ".env"), override=True, encoding="latin-1")
 
         delivery_target = _resolve_delivery_target(job)
         if delivery_target:
-            os.environ["HERMES_CRON_AUTO_DELIVER_PLATFORM"] = delivery_target["platform"]
-            os.environ["HERMES_CRON_AUTO_DELIVER_CHAT_ID"] = str(delivery_target["chat_id"])
+            os.environ["AIZEN_CRON_AUTO_DELIVER_PLATFORM"] = delivery_target["platform"]
+            os.environ["AIZEN_CRON_AUTO_DELIVER_CHAT_ID"] = str(delivery_target["chat_id"])
             if delivery_target.get("thread_id") is not None:
-                os.environ["HERMES_CRON_AUTO_DELIVER_THREAD_ID"] = str(delivery_target["thread_id"])
+                os.environ["AIZEN_CRON_AUTO_DELIVER_THREAD_ID"] = str(delivery_target["thread_id"])
 
-        model = job.get("model") or os.getenv("HERMES_MODEL") or ""
+        model = job.get("model") or os.getenv("AIZEN_MODEL") or ""
 
         # Load config.yaml for model, reasoning, prefill, toolsets, provider routing
         _cfg = {}
         try:
             import yaml
-            _cfg_path = str(_hermes_home / "config.yaml")
+            _cfg_path = str(_aizen_home / "config.yaml")
             if os.path.exists(_cfg_path):
                 with open(_cfg_path) as _f:
                     _cfg = yaml.safe_load(_f) or {}
@@ -359,20 +359,20 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
             logger.warning("Job '%s': failed to load config.yaml, using defaults: %s", job_id, e)
 
         # Reasoning config from env or config.yaml
-        from core.hermes_constants import parse_reasoning_effort
-        effort = os.getenv("HERMES_REASONING_EFFORT", "")
+        from core.aizen_constants import parse_reasoning_effort
+        effort = os.getenv("AIZEN_REASONING_EFFORT", "")
         if not effort:
             effort = str(_cfg.get("agent", {}).get("reasoning_effort", "")).strip()
         reasoning_config = parse_reasoning_effort(effort)
 
         # Prefill messages from env or config.yaml
         prefill_messages = None
-        prefill_file = os.getenv("HERMES_PREFILL_MESSAGES_FILE", "") or _cfg.get("prefill_messages_file", "")
+        prefill_file = os.getenv("AIZEN_PREFILL_MESSAGES_FILE", "") or _cfg.get("prefill_messages_file", "")
         if prefill_file:
             import json as _json
             pfpath = Path(prefill_file).expanduser()
             if not pfpath.is_absolute():
-                pfpath = _hermes_home / pfpath
+                pfpath = _aizen_home / pfpath
             if pfpath.exists():
                 try:
                     with open(pfpath, "r", encoding="utf-8") as _pf:
@@ -390,13 +390,13 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         pr = _cfg.get("provider_routing", {})
         smart_routing = _cfg.get("smart_model_routing", {}) or {}
 
-        from hermes_cli.runtime_provider import (
+        from aizen_cli.runtime_provider import (
             resolve_runtime_provider,
             format_runtime_provider_error,
         )
         try:
             runtime_kwargs = {
-                "requested": job.get("provider") or os.getenv("HERMES_INFERENCE_PROVIDER"),
+                "requested": job.get("provider") or os.getenv("AIZEN_INFERENCE_PROVIDER"),
             }
             if job.get("base_url"):
                 runtime_kwargs["explicit_base_url"] = job.get("base_url")
@@ -452,7 +452,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         output = f"""# Cron Job: {job_name}
 
 **Job ID:** {job_id}
-**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}
+**Run Time:** {_aizen_now().strftime('%Y-%m-%d %H:%M:%S')}
 **Schedule:** {job.get('schedule_display', 'N/A')}
 
 ## Prompt
@@ -474,7 +474,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         output = f"""# Cron Job: {job_name} (FAILED)
 
 **Job ID:** {job_id}
-**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}
+**Run Time:** {_aizen_now().strftime('%Y-%m-%d %H:%M:%S')}
 **Schedule:** {job.get('schedule_display', 'N/A')}
 
 ## Prompt
@@ -494,12 +494,12 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
     finally:
         # Clean up injected env vars so they don't leak to other jobs
         for key in (
-            "HERMES_SESSION_PLATFORM",
-            "HERMES_SESSION_CHAT_ID",
-            "HERMES_SESSION_CHAT_NAME",
-            "HERMES_CRON_AUTO_DELIVER_PLATFORM",
-            "HERMES_CRON_AUTO_DELIVER_CHAT_ID",
-            "HERMES_CRON_AUTO_DELIVER_THREAD_ID",
+            "AIZEN_SESSION_PLATFORM",
+            "AIZEN_SESSION_CHAT_ID",
+            "AIZEN_SESSION_CHAT_NAME",
+            "AIZEN_CRON_AUTO_DELIVER_PLATFORM",
+            "AIZEN_CRON_AUTO_DELIVER_CHAT_ID",
+            "AIZEN_CRON_AUTO_DELIVER_THREAD_ID",
         ):
             os.environ.pop(key, None)
         if _session_db:
@@ -546,11 +546,11 @@ def tick(verbose: bool = True) -> int:
         due_jobs = get_due_jobs()
 
         if verbose and not due_jobs:
-            logger.info("%s - No jobs due", _hermes_now().strftime('%H:%M:%S'))
+            logger.info("%s - No jobs due", _aizen_now().strftime('%H:%M:%S'))
             return 0
 
         if verbose:
-            logger.info("%s - %s job(s) due", _hermes_now().strftime('%H:%M:%S'), len(due_jobs))
+            logger.info("%s - %s job(s) due", _aizen_now().strftime('%H:%M:%S'), len(due_jobs))
 
         executed = 0
         for job in due_jobs:

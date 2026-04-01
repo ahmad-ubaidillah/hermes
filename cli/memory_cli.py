@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Hermes Memory CLI - Manage memories from command line.
+Aizen Memory CLI - Manage memories from command line.
 
 Usage:
-    hermes memory add <content> [--static] [--days=N]
-    hermes memory list [--all]
-    hermes memory search <query>
-    hermes memory profile
-    hermes memory stats
-    hermes memory forget <id>
-    hermes memory update <id> <new_content>
-    hermes memory clear [--all]
+    aizen memory add <content> [--static] [--days=N]
+    aizen memory list [--all]
+    aizen memory search <query>
+    aizen memory profile
+    aizen memory stats
+    aizen memory forget <id>
+    aizen memory update <id> <new_content>
+    aizen memory clear [--all]
 """
 
 import sys
@@ -25,7 +25,7 @@ from knowledge.memory_store import MemoryStore, MemoryType
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Hermes Memory Management",
+        description="Aizen Memory Management",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     

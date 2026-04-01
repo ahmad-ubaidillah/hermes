@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hermes REPL - Interactive Python REPL for debugging and exploration.
+"""Aizen REPL - Interactive Python REPL for debugging and exploration.
 
 Usage:
     python repl.py                    # Start REPL
@@ -7,7 +7,7 @@ Usage:
     python repl.py --model opencode/qwen3.6-plus-free  # Use specific model
 
 Features:
-    - Auto-import Hermes modules
+    - Auto-import Aizen modules
     - Tab completion for tools, skills, functions
     - Syntax highlighting (via Pygments if available)
     - Multi-line input support
@@ -33,12 +33,12 @@ import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Hermes imports (lazy)
-HERMES_MODULES = {
+# Aizen imports (lazy)
+AIZEN_MODULES = {
     "agent": "run_agent",
     "registry": "tools.registry",
-    "session_db": "core.hermes_state",
-    "config": "hermes_cli.config",
+    "session_db": "core.aizen_state",
+    "config": "aizen_cli.config",
     "gateway": "gateway.run",
 }
 
@@ -65,15 +65,15 @@ def _syntax_highlight(text: str, is_traceback: bool = False) -> str:
         return text
 
 
-class HermesCompleter:
-    """Enhanced tab completer for Hermes REPL."""
+class AizenCompleter:
+    """Enhanced tab completer for Aizen REPL."""
 
     def __init__(self, repl_instance):
         self.repl = repl_instance
         self.base_completer = rlcompleter.Completer(repl_instance.locals)
 
     def complete(self, text, state):
-        """Custom completion that includes Hermes commands and modules."""
+        """Custom completion that includes Aizen commands and modules."""
         # If we're at the start of a line, offer built-in commands
         if not text or readline.get_line_buffer().strip() == text:
             commands = [
@@ -94,22 +94,22 @@ class HermesCompleter:
         return self.base_completer.complete(text, state)
 
 
-class HermesREPL:
-    """Interactive REPL for Hermes with auto-imports and debugging tools."""
+class AizenREPL:
+    """Interactive REPL for Aizen with auto-imports and debugging tools."""
 
     def __init__(
         self,
         model: str = "opencode/qwen3.6-plus-free",
         session_id: Optional[str] = None,
-        hermes_home: Optional[Path] = None,
+        aizen_home: Optional[Path] = None,
     ):
         self.model = model
         self.session_id = session_id
-        self.hermes_home = hermes_home or Path.home() / ".hermes"
+        self.aizen_home = aizen_home or Path.home() / ".aizen"
 
         self.locals: Dict[str, Any] = {}
         self.agent = None
-        self.history_file = self.hermes_home / "repl_history"
+        self.history_file = self.aizen_home / "repl_history"
         self._multiline_buffer = ""
         self._in_multiline = False
 
@@ -119,16 +119,16 @@ class HermesREPL:
 
     def _setup_environment(self):
         """Setup environment variables and imports."""
-        if self.hermes_home:
-            os.environ["HERMES_HOME"] = str(self.hermes_home)
+        if self.aizen_home:
+            os.environ["AIZEN_HOME"] = str(self.aizen_home)
 
-        # Add Hermes to path
-        hermes_root = Path(__file__).parent
-        if str(hermes_root) not in sys.path:
-            sys.path.insert(0, str(hermes_root))
+        # Add Aizen to path
+        aizen_root = Path(__file__).parent
+        if str(aizen_root) not in sys.path:
+            sys.path.insert(0, str(aizen_root))
 
         # Pre-import common modules
-        print("Loading Hermes modules...")
+        print("Loading Aizen modules...")
 
         # Standard library
         import json
@@ -147,12 +147,12 @@ class HermesREPL:
             }
         )
 
-        # Try to import Hermes modules
+        # Try to import Aizen modules
         imports = [
             ("AIAgent", "run_agent", "AIAgent"),
             ("registry", "tools.registry", "registry"),
-            ("SessionDB", "core.hermes_state", "SessionDB"),
-            ("load_config", "hermes_cli.config", "load_config"),
+            ("SessionDB", "core.aizen_state", "SessionDB"),
+            ("load_config", "aizen_cli.config", "load_config"),
         ]
 
         for name, module, attr in imports:
@@ -184,7 +184,7 @@ class HermesREPL:
     def _setup_readline(self):
         """Setup readline for tab completion and history."""
         # Custom completer
-        completer = HermesCompleter(self)
+        completer = AizenCompleter(self)
         readline.set_completer(completer.complete)
         readline.set_completer_delims(readline.get_completer_delims().replace("-", ""))
         readline.parse_and_bind("tab: complete")
@@ -225,7 +225,7 @@ class HermesREPL:
 ║    tools()     - List available tools                        ║
 ║    models()    - List available models                       ║
 ║    session()   - Show session info                           ║
-║    chat(msg)   - Quick chat with Hermes                      ║
+║    chat(msg)   - Quick chat with Aizen                      ║
 ║    clear()     - Clear screen                                ║
 ║    exit()      - Exit REPL                                   ║
 ║                                                              ║
@@ -233,7 +233,7 @@ class HermesREPL:
 ║    AIAgent     - Main agent class                            ║
 ║    registry    - Tool registry                               ║
 ║    SessionDB   - Session database                            ║
-║    load_config - Load Hermes config                          ║
+║    load_config - Load Aizen config                          ║
 ║                                                              ║
 ║  Examples:                                                   ║
 ║    >>> agent = AIAgent(model="anthropic/claude-sonnet-4")    ║
@@ -261,10 +261,10 @@ class HermesREPL:
             return []
 
     def _list_models(self) -> List[str]:
-        """List available models from Hermes config."""
+        """List available models from Aizen config."""
         try:
-            # Try to load models from the Hermes model catalog
-            from hermes_cli.models import OPENROUTER_MODELS, _PROVIDER_MODELS
+            # Try to load models from the Aizen model catalog
+            from aizen_cli.models import OPENROUTER_MODELS, _PROVIDER_MODELS
 
             all_models = []
             for model_id, desc in OPENROUTER_MODELS:
@@ -303,7 +303,7 @@ class HermesREPL:
         """Show session info."""
         print(f"Session ID: {self.session_id or 'none'}")
         print(f"Model: {self.model}")
-        print(f"HERMES_HOME: {self.hermes_home}")
+        print(f"AIZEN_HOME: {self.aizen_home}")
         if self.agent:
             print(f"Agent: initialized")
             print(
@@ -329,7 +329,7 @@ class HermesREPL:
                 print(f"\n  (Could not load session from DB: {e})")
 
     def _quick_chat(self, message: str) -> str:
-        """Quick chat with Hermes agent."""
+        """Quick chat with Aizen agent."""
         if not self.agent:
             print("Initializing agent...")
             try:
@@ -343,7 +343,7 @@ class HermesREPL:
         print(f"\n[User]: {message}")
         try:
             response = self.agent.chat(message)
-            print(f"\n[Hermes]: {_syntax_highlight(response)}")
+            print(f"\n[Aizen]: {_syntax_highlight(response)}")
             return response
         except Exception as e:
             print(f"Error: {e}")
@@ -379,7 +379,7 @@ class HermesREPL:
 ╔══════════════════════════════════════════════════════════════╗
 ║                    HERMES REPL v1.0                          ║
 ╠══════════════════════════════════════════════════════════════╣
-║  Interactive Python REPL for Hermes Agent                    ║
+║  Interactive Python REPL for Aizen Agent                    ║
 ║  Type help() for commands, exit() to quit                    ║
 ║  Syntax highlighting: """
             + (
@@ -413,7 +413,7 @@ class HermesREPL:
         # Run REPL loop
         while True:
             try:
-                line = get_input("hermes>>> ")
+                line = get_input("aizen>>> ")
 
                 if not line.strip():
                     if self._in_multiline:
@@ -482,18 +482,18 @@ def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Hermes Interactive REPL")
+    parser = argparse.ArgumentParser(description="Aizen Interactive REPL")
     parser.add_argument(
         "--model", default="opencode/qwen3.6-plus-free", help="Model to use"
     )
     parser.add_argument("--session", help="Resume session ID")
-    parser.add_argument("--hermes-home", type=Path, help="HERMES_HOME path")
+    parser.add_argument("--aizen-home", type=Path, help="AIZEN_HOME path")
     args = parser.parse_args()
 
-    repl = HermesREPL(
+    repl = AizenREPL(
         model=args.model,
         session_id=args.session,
-        hermes_home=args.hermes_home,
+        aizen_home=args.aizen_home,
     )
     repl.run()
 

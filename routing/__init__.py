@@ -1,5 +1,5 @@
 """
-Hermes Routing Module - Intent classification and agent routing.
+Aizen Routing Module - Intent classification and agent routing.
 
 This module provides smart task classification to route user requests
 to appropriate agents and workflows.

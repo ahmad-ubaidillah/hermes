@@ -323,7 +323,7 @@ class ParallelAgentPool:
     async def _run_agent(self, task: AgentTaskSpec) -> str:
         """Run the actual agent (placeholder for implementation)."""
         # In production, this would:
-        # 1. Spawn a subprocess with hermes CLI
+        # 1. Spawn a subprocess with aizen CLI
         # 2. Pass the prompt and skill
         # 3. Collect the output
         

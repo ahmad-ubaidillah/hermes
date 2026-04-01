@@ -2,11 +2,11 @@ from datetime import datetime, timedelta
 import unittest
 from types import SimpleNamespace
 
-from cli import HermesCLI
+from cli import AizenCLI
 
 
 def _make_cli(model: str = "anthropic/claude-sonnet-4-20250514"):
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = AizenCLI.__new__(AizenCLI)
     cli_obj.model = model
     cli_obj.session_start = datetime.now() - timedelta(minutes=14, seconds=32)
     cli_obj.conversation_history = [{"role": "user", "content": "hi"}]
@@ -56,7 +56,7 @@ def _attach_agent(
 
 class TestCLIStatusBar(unittest.TestCase):
     @unittest.skip(
-        "HermesCLI._status_bar_context_style not yet implemented in cli_fast.py"
+        "AizenCLI._status_bar_context_style not yet implemented in cli_fast.py"
     )
     def test_context_style_thresholds(self):
         cli_obj = _make_cli()
@@ -68,7 +68,7 @@ class TestCLIStatusBar(unittest.TestCase):
         assert cli_obj._status_bar_context_style(95) == "class:status-bar-critical"
 
     @unittest.skip(
-        "HermesCLI._build_status_bar_text not yet implemented in cli_fast.py"
+        "AizenCLI._build_status_bar_text not yet implemented in cli_fast.py"
     )
     def test_build_status_bar_text_for_wide_terminal(self):
         cli_obj = _attach_agent(
@@ -90,7 +90,7 @@ class TestCLIStatusBar(unittest.TestCase):
         assert "15m" in text
 
     @unittest.skip(
-        "HermesCLI._build_status_bar_text not yet implemented in cli_fast.py"
+        "AizenCLI._build_status_bar_text not yet implemented in cli_fast.py"
     )
     def test_build_status_bar_text_no_cost_in_status_bar(self):
         cli_obj = _attach_agent(
@@ -107,7 +107,7 @@ class TestCLIStatusBar(unittest.TestCase):
         assert "$" not in text  # cost is never shown in status bar
 
     @unittest.skip(
-        "HermesCLI._build_status_bar_text not yet implemented in cli_fast.py"
+        "AizenCLI._build_status_bar_text not yet implemented in cli_fast.py"
     )
     def test_build_status_bar_text_collapses_for_narrow_terminal(self):
         cli_obj = _attach_agent(
@@ -128,7 +128,7 @@ class TestCLIStatusBar(unittest.TestCase):
         assert "200K" not in text
 
     @unittest.skip(
-        "HermesCLI._build_status_bar_text not yet implemented in cli_fast.py"
+        "AizenCLI._build_status_bar_text not yet implemented in cli_fast.py"
     )
     def test_build_status_bar_text_handles_missing_agent(self):
         cli_obj = _make_cli()
@@ -140,7 +140,7 @@ class TestCLIStatusBar(unittest.TestCase):
 
 
 class TestCLIUsageReport(unittest.TestCase):
-    @unittest.skip("HermesCLI._show_usage not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI._show_usage not yet implemented in cli_fast.py")
     def test_show_usage_includes_estimated_cost(self, capsys):
         cli_obj = _attach_agent(
             _make_cli(),
@@ -166,7 +166,7 @@ class TestCLIUsageReport(unittest.TestCase):
         assert "Session duration:" in output
         assert "Compressions:" in output
 
-    @unittest.skip("HermesCLI._show_usage not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI._show_usage not yet implemented in cli_fast.py")
     def test_show_usage_marks_unknown_pricing(self, capsys):
         cli_obj = _attach_agent(
             _make_cli(model="local/my-custom-model"),
@@ -186,7 +186,7 @@ class TestCLIUsageReport(unittest.TestCase):
         assert "n/a" in output
         assert "Pricing unknown for local/my-custom-model" in output
 
-    @unittest.skip("HermesCLI._show_usage not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI._show_usage not yet implemented in cli_fast.py")
     def test_zero_priced_provider_models_stay_unknown(self, capsys):
         cli_obj = _attach_agent(
             _make_cli(model="glm-5"),
@@ -226,7 +226,7 @@ class TestStatusBarWidthSource(unittest.TestCase):
         return cli_obj
 
     @unittest.skip(
-        "HermesCLI._get_status_bar_fragments not yet implemented in cli_fast.py"
+        "AizenCLI._get_status_bar_fragments not yet implemented in cli_fast.py"
     )
     def test_fragments_fit_within_announced_width(self):
         """Total fragment text length must not exceed the width used to build them."""
@@ -249,7 +249,7 @@ class TestStatusBarWidthSource(unittest.TestCase):
             )
 
     @unittest.skip(
-        "HermesCLI._get_status_bar_fragments not yet implemented in cli_fast.py"
+        "AizenCLI._get_status_bar_fragments not yet implemented in cli_fast.py"
     )
     def test_fragments_use_pt_width_over_shutil(self):
         """When prompt_toolkit reports a width, shutil.get_terminal_size must not be used."""
@@ -271,7 +271,7 @@ class TestStatusBarWidthSource(unittest.TestCase):
         mock_shutil.assert_not_called()
 
     @unittest.skip(
-        "HermesCLI._get_status_bar_fragments not yet implemented in cli_fast.py"
+        "AizenCLI._get_status_bar_fragments not yet implemented in cli_fast.py"
     )
     def test_fragments_fall_back_to_shutil_when_no_app(self):
         """Outside a TUI context (no running app), shutil must be used as fallback."""
@@ -293,7 +293,7 @@ class TestStatusBarWidthSource(unittest.TestCase):
         assert len(frags) > 0
 
     @unittest.skip(
-        "HermesCLI._build_status_bar_text not yet implemented in cli_fast.py"
+        "AizenCLI._build_status_bar_text not yet implemented in cli_fast.py"
     )
     def test_build_status_bar_text_uses_pt_width(self):
         """_build_status_bar_text() must also prefer prompt_toolkit width."""
@@ -315,7 +315,7 @@ class TestStatusBarWidthSource(unittest.TestCase):
         assert len(text) > 0
 
     @unittest.skip(
-        "HermesCLI._build_status_bar_text not yet implemented in cli_fast.py"
+        "AizenCLI._build_status_bar_text not yet implemented in cli_fast.py"
     )
     def test_explicit_width_skips_pt_lookup(self):
         """An explicit width= argument must bypass both PT and shutil lookups."""

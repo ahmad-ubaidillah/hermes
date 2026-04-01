@@ -73,17 +73,17 @@ def ai_agent(tmp_path_factory):
 
     from run_agent import AIAgent
 
-    tmp_home = tmp_path_factory.mktemp("hermes_real_api")
+    tmp_home = tmp_path_factory.mktemp("aizen_real_api")
     (tmp_home / "sessions").mkdir()
     (tmp_home / "memories").mkdir()
     (tmp_home / "skills").mkdir()
 
-    with patch.dict(os.environ, {"HERMES_HOME": str(tmp_home)}):
-        # Force re-import of hermes_constants so it picks up the patched env
+    with patch.dict(os.environ, {"AIZEN_HOME": str(tmp_home)}):
+        # Force re-import of aizen_constants so it picks up the patched env
         import importlib
-        import core.hermes_constants
+        import core.aizen_constants
 
-        importlib.reload(core.hermes_constants)
+        importlib.reload(core.aizen_constants)
 
         agent = AIAgent(
             model=_pick_model(),
@@ -142,9 +142,9 @@ class TestToolCallRoundtrip:
 
     def test_read_file_tool_roundtrip(self, ai_agent):
         """Agent should be able to read a file we create and report its contents."""
-        from core.hermes_constants import get_hermes_home
+        from core.aizen_constants import get_aizen_home
 
-        test_dir = get_hermes_home() / "test_real_api"
+        test_dir = get_aizen_home() / "test_real_api"
         test_dir.mkdir(exist_ok=True)
         test_file = test_dir / "secret.txt"
         test_file.write_text("THE_SECRET_IS_42\n", encoding="utf-8")
@@ -165,13 +165,13 @@ class TestSessionPersistence:
         """Agent should remember context from earlier in the conversation."""
         # First message establishes context
         ai_agent.chat(
-            "Remember this code: HERMES_TEST_CODE_9876. Acknowledge with just: SAVED"
+            "Remember this code: AIZEN_TEST_CODE_9876. Acknowledge with just: SAVED"
         )
         # Second message asks about it
         response = ai_agent.chat(
             "What code did I ask you to remember? Reply with the exact code."
         )
-        assert "HERMES_TEST_CODE_9876" in response, (
+        assert "AIZEN_TEST_CODE_9876" in response, (
             f"Agent should remember the code from the previous turn. Got: {response[:300]}"
         )
 
@@ -186,11 +186,11 @@ class TestSessionPersistence:
 
     def test_session_file_persisted_to_disk(self, ai_agent):
         """After a conversation, a session JSONL file should exist on disk."""
-        from core.hermes_constants import get_hermes_home
+        from core.aizen_constants import get_aizen_home
 
         ai_agent.chat("This is a persistence test. Reply with: PERSISTED_OK")
 
-        sessions_dir = get_hermes_home() / "sessions"
+        sessions_dir = get_aizen_home() / "sessions"
         if sessions_dir.exists():
             session_files = list(sessions_dir.glob("*.jsonl")) + list(
                 sessions_dir.glob("*.json")

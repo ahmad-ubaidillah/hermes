@@ -11,7 +11,7 @@ import unittest
 
 
 class TestCLIQuickCommands(unittest.TestCase):
-    """Test quick command dispatch in HermesCLI.process_command - skipped until HermesCLI methods are implemented."""
+    """Test quick command dispatch in AizenCLI.process_command - skipped until AizenCLI methods are implemented."""
 
     def test_exec_command_runs_and_prints_output(self):
         pass

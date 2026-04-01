@@ -1,7 +1,7 @@
 {
-  "name": "hermes-dashboard",
+  "name": "aizen-dashboard",
   "version": "3.0.0",
-  "description": "Hermes AI Agent Dashboard",
+  "description": "Aizen AI Agent Dashboard",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

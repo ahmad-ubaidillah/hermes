@@ -1,5 +1,5 @@
 """
-Hermes Observability - OpenTelemetry Integration
+Aizen Observability - OpenTelemetry Integration
 
 Provides:
 - Tracing (request flow)
@@ -99,7 +99,7 @@ class Tracer:
     
     def __init__(
         self,
-        service_name: str = "hermes",
+        service_name: str = "aizen",
         export_to_file: Optional[str] = None,
         export_to_console: bool = True,
     ):
@@ -235,7 +235,7 @@ class MetricsRegistry:
     - Console
     """
     
-    def __init__(self, namespace: str = "hermes"):
+    def __init__(self, namespace: str = "aizen"):
         self.namespace = namespace
         self._counters: Dict[str, float] = {}
         self._gauges: Dict[str, float] = {}
@@ -345,7 +345,7 @@ class StructuredLogger:
     Structured JSON logger with context support.
     """
     
-    def __init__(self, name: str = "hermes"):
+    def __init__(self, name: str = "aizen"):
         self.name = name
         self.logger = logging.getLogger(name)
         self._context: Dict[str, Any] = {}
@@ -389,14 +389,14 @@ class StructuredLogger:
 
 class Observability:
     """
-    Unified observability for Hermes.
+    Unified observability for Aizen.
     
     Combines tracing, metrics, and logging.
     """
     
     def __init__(
         self,
-        service_name: str = "hermes",
+        service_name: str = "aizen",
         trace_file: Optional[str] = None,
         enable_console: bool = True,
     ):
@@ -460,7 +460,7 @@ def get_observability() -> Observability:
     global _observability
     if _observability is None:
         _observability = Observability(
-            trace_file=str(Path.home() / ".hermes" / "traces.jsonl"),
+            trace_file=str(Path.home() / ".aizen" / "traces.jsonl"),
         )
     return _observability
 
@@ -471,7 +471,7 @@ if __name__ == "__main__":
     print("\n=== Observability Test ===\n")
     
     obs = Observability(
-        service_name="hermes-test",
+        service_name="aizen-test",
         enable_console=True,
     )
     

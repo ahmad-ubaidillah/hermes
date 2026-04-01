@@ -1,5 +1,5 @@
 """
-IntentGate - Smart task classification for Hermes.
+IntentGate - Smart task classification for Aizen.
 
 Analyzes user's true intent before routing to appropriate agent/workflow.
 Inspired by oh-my-openagent's IntentGate system.

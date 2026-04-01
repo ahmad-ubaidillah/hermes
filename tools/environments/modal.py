@@ -20,13 +20,13 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hermes_cli.config import get_hermes_home
+from aizen_cli.config import get_aizen_home
 from tools.environments.base import BaseEnvironment
 from tools.interrupt import is_interrupted
 
 logger = logging.getLogger(__name__)
 
-_SNAPSHOT_STORE = get_hermes_home() / "modal_snapshots.json"
+_SNAPSHOT_STORE = get_aizen_home() / "modal_snapshots.json"
 
 
 def _load_snapshots() -> Dict[str, str]:
@@ -177,7 +177,7 @@ class ModalEnvironment(BaseEnvironment):
 
         async def _create_sandbox():
             app = await _modal.App.lookup.aio(
-                "hermes-agent", create_if_missing=True
+                "aizen-agent", create_if_missing=True
             )
             create_kwargs = dict(sandbox_kwargs)
             if cred_mounts:
@@ -261,9 +261,9 @@ class ModalEnvironment(BaseEnvironment):
         self._sync_files()
 
         if stdin_data is not None:
-            marker = f"HERMES_EOF_{uuid.uuid4().hex[:8]}"
+            marker = f"AIZEN_EOF_{uuid.uuid4().hex[:8]}"
             while marker in stdin_data:
-                marker = f"HERMES_EOF_{uuid.uuid4().hex[:8]}"
+                marker = f"AIZEN_EOF_{uuid.uuid4().hex[:8]}"
             command = f"{command} << '{marker}'\n{stdin_data}\n{marker}"
 
         exec_command, sudo_stdin = self._prepare_command(command)

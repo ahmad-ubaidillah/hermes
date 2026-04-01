@@ -1,10 +1,10 @@
-# Hermes vs Claw Code (Claude Code) Comparison
+# Aizen vs Claw Code (Claude Code) Comparison
 
 ## Overview
 
 **Claw Code** is a Python porting workspace for the original Claude Code TypeScript implementation. It tracks **207 commands**, **hundreds of tools**, and **29 subsystems** from the original Claude Code.
 
-**Hermes** is a mature, production-ready AI agent framework with **31658 Python files**, extensive tool ecosystem, and multi-platform gateway support.
+**Aizen** is a mature, production-ready AI agent framework with **31658 Python files**, extensive tool ecosystem, and multi-platform gateway support.
 
 ---
 
@@ -12,56 +12,56 @@
 
 ### Core Agent Features
 
-| Feature | Claude Code (Claw) | Hermes | Status |
+| Feature | Claude Code (Claw) | Aizen | Status |
 |---------|-------------------|--------|--------|
-| **Agent Loop** | ✅ TypeScript | ✅ Python | ✅ Hermes has |
-| **Tool Orchestration** | ✅ 100+ tools | ✅ 50+ tools | ✅ Hermes has |
-| **Session Management** | ✅ | ✅ SessionDB | ✅ Hermes has |
-| **Context Compression** | ✅ | ✅ trajectory_compressor | ✅ Hermes has |
-| **Multi-model Support** | ✅ Anthropic only | ✅ Multi-provider | ⭐ Hermes BETTER |
+| **Agent Loop** | ✅ TypeScript | ✅ Python | ✅ Aizen has |
+| **Tool Orchestration** | ✅ 100+ tools | ✅ 50+ tools | ✅ Aizen has |
+| **Session Management** | ✅ | ✅ SessionDB | ✅ Aizen has |
+| **Context Compression** | ✅ | ✅ trajectory_compressor | ✅ Aizen has |
+| **Multi-model Support** | ✅ Anthropic only | ✅ Multi-provider | ⭐ Aizen BETTER |
 
 ### CLI Features
 
-| Feature | Claude Code (Claw) | Hermes | Status |
+| Feature | Claude Code (Claw) | Aizen | Status |
 |---------|-------------------|--------|--------|
-| **Interactive CLI** | ✅ Ink (React-like) | ✅ Rich + prompt_toolkit | ✅ Hermes has |
-| **Slash Commands** | ✅ 207 commands | ✅ ~30 commands | ⚠️ Hermes less |
-| **Auto-complete** | ✅ | ✅ | ✅ Hermes has |
-| **Skins/Themes** | ❓ | ✅ 4 skins | ⭐ Hermes BETTER |
-| **REPL Mode** | ✅ | ❌ | ⚠️ Hermes MISSING |
+| **Interactive CLI** | ✅ Ink (React-like) | ✅ Rich + prompt_toolkit | ✅ Aizen has |
+| **Slash Commands** | ✅ 207 commands | ✅ ~30 commands | ⚠️ Aizen less |
+| **Auto-complete** | ✅ | ✅ | ✅ Aizen has |
+| **Skins/Themes** | ❓ | ✅ 4 skins | ⭐ Aizen BETTER |
+| **REPL Mode** | ✅ | ❌ | ⚠️ Aizen MISSING |
 
 ### Gateway/Messaging
 
-| Feature | Claude Code (Claw) | Hermes | Status |
+| Feature | Claude Code (Claw) | Aizen | Status |
 |---------|-------------------|--------|--------|
-| **Telegram** | ❓ | ✅ | ⭐ Hermes has |
-| **Discord** | ❓ | ✅ | ⭐ Hermes has |
-| **Slack** | ❓ | ✅ | ⭐ Hermes has |
-| **WhatsApp** | ❓ | ✅ | ⭐ Hermes has |
-| **Signal** | ❓ | ✅ | ⭐ Hermes has |
-| **Home Assistant** | ❓ | ✅ | ⭐ Hermes has |
+| **Telegram** | ❓ | ✅ | ⭐ Aizen has |
+| **Discord** | ❓ | ✅ | ⭐ Aizen has |
+| **Slack** | ❓ | ✅ | ⭐ Aizen has |
+| **WhatsApp** | ❓ | ✅ | ⭐ Aizen has |
+| **Signal** | ❓ | ✅ | ⭐ Aizen has |
+| **Home Assistant** | ❓ | ✅ | ⭐ Aizen has |
 
 ### Integration Features
 
-| Feature | Claude Code (Claw) | Hermes | Status |
+| Feature | Claude Code (Claw) | Aizen | Status |
 |---------|-------------------|--------|--------|
 | **MCP Support** | ✅ Native | ✅ Native MCP client | ✅ Both have |
-| **VS Code Integration** | ✅ | ✅ ACP adapter | ✅ Hermes has |
-| **Git Integration** | ✅ | ✅ 7 git skills | ✅ Hermes has |
-| **Browser Automation** | ✅ | ✅ Browserbase | ✅ Hermes has |
+| **VS Code Integration** | ✅ | ✅ ACP adapter | ✅ Aizen has |
+| **Git Integration** | ✅ | ✅ 7 git skills | ✅ Aizen has |
+| **Browser Automation** | ✅ | ✅ Browserbase | ✅ Aizen has |
 
 ### Development Features
 
-| Feature | Claude Code (Claw) | Hermes | Status |
+| Feature | Claude Code (Claw) | Aizen | Status |
 |---------|-------------------|--------|--------|
-| **Skills System** | ✅ plugins | ✅ 100+ skills | ⭐ Hermes BETTER |
-| **Memory System** | ❓ | ✅ Chroma + FAISS | ⭐ Hermes BETTER |
-| **Cron/Scheduling** | ❓ | ✅ Built-in | ⭐ Hermes BETTER |
-| **Multi-Agent** | ❓ | ✅ 18 agents | ⭐ Hermes BETTER |
+| **Skills System** | ✅ plugins | ✅ 100+ skills | ⭐ Aizen BETTER |
+| **Memory System** | ❓ | ✅ Chroma + FAISS | ⭐ Aizen BETTER |
+| **Cron/Scheduling** | ❓ | ✅ Built-in | ⭐ Aizen BETTER |
+| **Multi-Agent** | ❓ | ✅ 18 agents | ⭐ Aizen BETTER |
 
 ---
 
-## Claude Code Unique Features (Hermes Missing)
+## Claude Code Unique Features (Aizen Missing)
 
 ### 1. **Bridge System** (31 modules)
 Claude Code has a sophisticated bridge system for remote sessions:
@@ -71,99 +71,99 @@ Claude Code has a sophisticated bridge system for remote sessions:
 - `bridge/remoteBridgeCore.ts` - Remote bridge core
 - `bridge/codeSessionApi.ts` - Code session management
 
-**Hermes Gap**: No built-in remote session bridge. Would need to add.
+**Aizen Gap**: No built-in remote session bridge. Would need to add.
 
 ### 2. **Voice System**
 Claude Code has voice integration subsystem:
 - Voice input/output
 - Speech recognition integration
 
-**Hermes Gap**: No voice support. Could integrate with whisper/elevenlabs.
+**Aizen Gap**: No voice support. Could integrate with whisper/elevenlabs.
 
 ### 3. **Vim Integration**
 Claude Code has vim-specific features:
 - Vim keybindings
 - Vim mode integration
 
-**Hermes Gap**: No vim-specific features.
+**Aizen Gap**: No vim-specific features.
 
 ### 4. **Keybindings System**
 Claude Code has configurable keybindings:
 - Custom keybinding profiles
 - Keyboard shortcuts management
 
-**Hermes Gap**: Limited keybinding support (only CLI basic).
+**Aizen Gap**: Limited keybinding support (only CLI basic).
 
 ### 5. **Buddy/Companion System**
 Claude Code has an animated companion:
 - `CompanionSprite.tsx` - Animated sprite
 - `useBuddyNotification.tsx` - Companion notifications
 
-**Hermes Gap**: No animated companion feature.
+**Aizen Gap**: No animated companion feature.
 
 ### 6. **Screens System**
 Claude Code has screen management:
 - Multiple screen layouts
 - Screen transitions
 
-**Hermes Gap**: No screen management system.
+**Aizen Gap**: No screen management system.
 
 ### 7. **Services Layer**
 Claude Code has a services abstraction:
 - Service registry
 - Service lifecycle
 
-**Hermes Gap**: No formal service layer.
+**Aizen Gap**: No formal service layer.
 
 ### 8. **Bootstrap System**
 Claude Code has bootstrap state management:
 - `bootstrap/state.ts` - Bootstrap state machine
 - Initialization orchestration
 
-**Hermes Gap**: No formal bootstrap system.
+**Aizen Gap**: No formal bootstrap system.
 
 ### 9. **Native TypeScript Bridge**
 Claude Code has native TS integration:
 - `native_ts/` - Native TypeScript execution
 
-**Hermes Gap**: No native TypeScript execution.
+**Aizen Gap**: No native TypeScript execution.
 
 ### 10. **Output Styles**
 Claude Code has configurable output styles:
 - `outputStyles/` - Different output formatting
 
-**Hermes Gap**: Limited output style options.
+**Aizen Gap**: Limited output style options.
 
 ---
 
 ## Claude Code Commands Analysis (207 total)
 
-### Command Categories Hermes Should Consider:
+### Command Categories Aizen Should Consider:
 
-#### Navigation Commands (Missing in Hermes):
+#### Navigation Commands (Missing in Aizen):
 - `/add-dir` - Add directory to context
 - `/remove-dir` - Remove directory from context
 
-#### Session Commands (Hermes has some):
-- `/compact` - Compact context (Hermes has)
-- `/clear` - Clear conversation (Hermes has)
-- `/resume` - Resume session (Hermes has)
+#### Session Commands (Aizen has some):
+- `/compact` - Compact context (Aizen has)
+- `/clear` - Clear conversation (Aizen has)
+- `/resume` - Resume session (Aizen has)
 
-#### Agent Commands (Hermes has):
-- `/agents` - List agents (Hermes has multi-agent)
-- `/fork` - Fork subagent (Hermes has delegate_task)
+#### Agent Commands (Aizen has):
+- `/agents` - List agents (Aizen has multi-agent)
+- `/fork` - Fork subagent (Aizen has delegate_task)
 
-#### Development Commands (Missing in Hermes):
+#### Development Commands (Missing in Aizen):
 - `/bughunter` - Bug hunting mode
 - `/autofix-pr` - Auto-fix PR
 - `/chrome` - Chrome integration
 - `/statusline` - Status line integration
 
-#### Bridge Commands (Missing in Hermes):
+#### Bridge Commands (Missing in Aizen):
 - `/bridge` - Bridge mode
 - `/bridge-kick` - Kick bridge connection
 
-#### Utility Commands (Missing in Hermes):
+#### Utility Commands (Missing in Aizen):
 - `/brief` - Brief output mode
 - `/btw` - Side notes
 - `/advisor` - Advisor mode
@@ -171,7 +171,7 @@ Claude Code has configurable output styles:
 
 ---
 
-## Hermes Unique Features (Claude Code Missing)
+## Aizen Unique Features (Claude Code Missing)
 
 ### 1. **Multi-Platform Gateway**
 - Telegram, Discord, Slack, WhatsApp, Signal, Home Assistant
@@ -209,7 +209,7 @@ Claude Code has configurable output styles:
 
 ---
 
-## Priority Recommendations for Hermes
+## Priority Recommendations for Aizen
 
 ### High Priority (Should Add):
 
@@ -237,25 +237,25 @@ Claude Code has configurable output styles:
 
 | Project | Python Files | TypeScript Files | Total Lines |
 |---------|-------------|------------------|-------------|
-| Hermes | 31658 | 0 | ~500K+ |
+| Aizen | 31658 | 0 | ~500K+ |
 | Claw Code | 67 | 0 (archived) | ~10K |
 
-**Note**: Hermes is significantly more mature and feature-complete than Claw Code. Claw Code is primarily a tracking/manifest system for the original TypeScript codebase.
+**Note**: Aizen is significantly more mature and feature-complete than Claw Code. Claw Code is primarily a tracking/manifest system for the original TypeScript codebase.
 
 ---
 
 ## Conclusion
 
-**Hermes is MORE feature-complete** than Claw Code in most areas:
+**Aizen is MORE feature-complete** than Claw Code in most areas:
 
-✅ **Hermes Advantages**:
+✅ **Aizen Advantages**:
 - Multi-platform gateway
 - Multi-agent orchestration
 - Comprehensive skills system
 - Production-ready infrastructure
 - Multi-provider support
 
-⚠️ **Hermes Gaps**:
+⚠️ **Aizen Gaps**:
 - Voice integration
 - Remote bridge system
 - REPL debugging mode

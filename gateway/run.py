@@ -76,25 +76,25 @@ _ensure_ssl_certs()
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Resolve Hermes home directory (respects HERMES_HOME override)
-from core.hermes_constants import get_hermes_home
+# Resolve Aizen home directory (respects AIZEN_HOME override)
+from core.aizen_constants import get_aizen_home
 from core.utils import atomic_yaml_write
 
-_hermes_home = get_hermes_home()
+_aizen_home = get_aizen_home()
 
-# Load environment variables from ~/.hermes/.env first.
+# Load environment variables from ~/.aizen/.env first.
 # User-managed env files should override stale shell exports on restart.
 from dotenv import load_dotenv  # backward-compat for tests that monkeypatch this symbol
-from hermes_cli.env_loader import load_hermes_dotenv
+from aizen_cli.env_loader import load_aizen_dotenv
 
-_env_path = _hermes_home / ".env"
-load_hermes_dotenv(
-    hermes_home=_hermes_home, project_env=Path(__file__).resolve().parents[1] / ".env"
+_env_path = _aizen_home / ".env"
+load_aizen_dotenv(
+    aizen_home=_aizen_home, project_env=Path(__file__).resolve().parents[1] / ".env"
 )
 
 # Bridge config.yaml values into the environment so os.getenv() picks them up.
 # config.yaml is authoritative for terminal settings — overrides .env.
-_config_path = _hermes_home / "config.yaml"
+_config_path = _aizen_home / "config.yaml"
 if _config_path.exists():
     try:
         import yaml as _yaml
@@ -102,7 +102,7 @@ if _config_path.exists():
         with open(_config_path, encoding="utf-8") as _f:
             _cfg = _yaml.safe_load(_f) or {}
         # Expand ${ENV_VAR} references before bridging to env vars.
-        from hermes_cli.config import _expand_env_vars
+        from aizen_cli.config import _expand_env_vars
 
         _cfg = _expand_env_vars(_cfg)
         # Top-level simple values (fallback only — don't override .env)
@@ -187,26 +187,26 @@ if _config_path.exists():
         _agent_cfg = _cfg.get("agent", {})
         if _agent_cfg and isinstance(_agent_cfg, dict):
             if "max_turns" in _agent_cfg:
-                os.environ["HERMES_MAX_ITERATIONS"] = str(_agent_cfg["max_turns"])
-        # Timezone: bridge config.yaml → HERMES_TIMEZONE env var.
-        # HERMES_TIMEZONE from .env takes precedence (already in os.environ).
+                os.environ["AIZEN_MAX_ITERATIONS"] = str(_agent_cfg["max_turns"])
+        # Timezone: bridge config.yaml → AIZEN_TIMEZONE env var.
+        # AIZEN_TIMEZONE from .env takes precedence (already in os.environ).
         _tz_cfg = _cfg.get("timezone", "")
-        if _tz_cfg and isinstance(_tz_cfg, str) and "HERMES_TIMEZONE" not in os.environ:
-            os.environ["HERMES_TIMEZONE"] = _tz_cfg.strip()
+        if _tz_cfg and isinstance(_tz_cfg, str) and "AIZEN_TIMEZONE" not in os.environ:
+            os.environ["AIZEN_TIMEZONE"] = _tz_cfg.strip()
         # Security settings
         _security_cfg = _cfg.get("security", {})
         if isinstance(_security_cfg, dict):
             _redact = _security_cfg.get("redact_secrets")
             if _redact is not None:
-                os.environ["HERMES_REDACT_SECRETS"] = str(_redact).lower()
+                os.environ["AIZEN_REDACT_SECRETS"] = str(_redact).lower()
     except Exception:
         pass  # Non-fatal; gateway can still run with .env values
 
 # Gateway runs in quiet mode - suppress debug output and use cwd directly (no temp dirs)
-os.environ["HERMES_QUIET"] = "1"
+os.environ["AIZEN_QUIET"] = "1"
 
 # Enable interactive exec approval for dangerous commands on messaging platforms
-os.environ["HERMES_EXEC_ASK"] = "1"
+os.environ["AIZEN_EXEC_ASK"] = "1"
 
 # Set terminal working directory for messaging platforms.
 # If the user set an explicit path in config.yaml (not "." or "auto"),
@@ -244,7 +244,7 @@ def _expand_whatsapp_auth_aliases(identifier: str) -> set:
     if not normalized:
         return set()
 
-    session_dir = _hermes_home / "whatsapp" / "session"
+    session_dir = _aizen_home / "whatsapp" / "session"
     resolved = set()
     queue = [normalized]
 
@@ -349,14 +349,14 @@ _AGENT_PENDING_SENTINEL = object()
 
 def _resolve_runtime_agent_kwargs() -> dict:
     """Resolve provider credentials for gateway-created AIAgent instances."""
-    from hermes_cli.runtime_provider import (
+    from aizen_cli.runtime_provider import (
         resolve_runtime_provider,
         format_runtime_provider_error,
     )
 
     try:
         runtime = resolve_runtime_provider(
-            requested=os.getenv("HERMES_INFERENCE_PROVIDER"),
+            requested=os.getenv("AIZEN_INFERENCE_PROVIDER"),
         )
     except Exception as exc:
         raise RuntimeError(format_runtime_provider_error(exc)) from exc
@@ -391,11 +391,11 @@ def _check_unavailable_skill(command_name: str) -> str | None:
             if name == normalized and name in disabled:
                 return (
                     f"The **{command_name}** skill is installed but disabled.\n"
-                    f"Enable it with: `hermes skills config`"
+                    f"Enable it with: `aizen skills config`"
                 )
 
         # Check optional skills (shipped with repo but not installed)
-        from core.hermes_constants import get_hermes_home, get_optional_skills_dir
+        from core.aizen_constants import get_aizen_home, get_optional_skills_dir
 
         repo_root = Path(__file__).resolve().parent.parent
         optional_dir = get_optional_skills_dir(repo_root / "optional-skills")
@@ -409,7 +409,7 @@ def _check_unavailable_skill(command_name: str) -> str | None:
                     install_path = f"official/{'/'.join(parts)}"
                     return (
                         f"The **{command_name}** skill is available but not installed.\n"
-                        f"Install it with: `hermes skills install {install_path}`"
+                        f"Install it with: `aizen skills install {install_path}`"
                     )
     except Exception:
         pass
@@ -420,9 +420,9 @@ def _platform_config_key(platform: "Platform") -> str:
     return "cli" if platform == Platform.LOCAL else platform.value
 
 def _load_gateway_config() -> dict:
-    """Load and parse ~/.hermes/config.yaml, returning {} on any error."""
+    """Load and parse ~/.aizen/config.yaml, returning {} on any error."""
     try:
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aizen_home / "config.yaml"
         if config_path.exists():
             import yaml
 
@@ -430,7 +430,7 @@ def _load_gateway_config() -> dict:
                 return yaml.safe_load(f) or {}
     except Exception:
         logger.debug(
-            "Could not load gateway config from %s", _hermes_home / "config.yaml"
+            "Could not load gateway config from %s", _aizen_home / "config.yaml"
         )
     return {}
 
@@ -449,27 +449,27 @@ def _resolve_gateway_model(config: dict | None = None) -> str:
         return model_cfg.get("default") or model_cfg.get("model") or ""
     return ""
 
-def _resolve_hermes_bin() -> Optional[list[str]]:
-    """Resolve the Hermes update command as argv parts.
+def _resolve_aizen_bin() -> Optional[list[str]]:
+    """Resolve the Aizen update command as argv parts.
 
     Tries in order:
-    1. ``shutil.which("hermes")`` — standard PATH lookup
-    2. ``sys.executable -m hermes_cli.main`` — fallback when Hermes is running
-       from a venv/module invocation and the ``hermes`` shim is not on PATH
+    1. ``shutil.which("aizen")`` — standard PATH lookup
+    2. ``sys.executable -m aizen_cli.main`` — fallback when Aizen is running
+       from a venv/module invocation and the ``aizen`` shim is not on PATH
 
     Returns argv parts ready for quoting/joining, or ``None`` if neither works.
     """
     import shutil
 
-    hermes_bin = shutil.which("hermes")
-    if hermes_bin:
-        return [hermes_bin]
+    aizen_bin = shutil.which("aizen")
+    if aizen_bin:
+        return [aizen_bin]
 
     try:
         import importlib.util
 
-        if importlib.util.find_spec("hermes_cli") is not None:
-            return [sys.executable, "-m", "hermes_cli.main"]
+        if importlib.util.find_spec("aizen_cli") is not None:
+            return [sys.executable, "-m", "aizen_cli.main"]
     except Exception:
         pass
 
@@ -553,7 +553,7 @@ class GatewayRunner:
         # Initialize session database for session_search tool support
         self._session_db = None
         try:
-            from core.hermes_state import SessionDB
+            from core.aizen_state import SessionDB
 
             self._session_db = SessionDB()
         except Exception as e:
@@ -585,17 +585,17 @@ class GatewayRunner:
     # -- Setup skill availability ----------------------------------------
 
     def _has_setup_skill(self) -> bool:
-        """Check if the hermes-agent-setup skill is installed."""
+        """Check if the aizen-agent-setup skill is installed."""
         try:
             from tools.skill_manager_tool import _find_skill
 
-            return _find_skill("hermes-agent-setup") is not None
+            return _find_skill("aizen-agent-setup") is not None
         except Exception:
             return False
 
     # -- Voice mode persistence ------------------------------------------
 
-    _VOICE_MODE_PATH = _hermes_home / "gateway_voice_mode.json"
+    _VOICE_MODE_PATH = _aizen_home / "gateway_voice_mode.json"
 
     def _load_voice_modes(self) -> Dict[str, str]:
         try:
@@ -888,18 +888,18 @@ class GatewayRunner:
     def _load_prefill_messages() -> List[Dict[str, Any]]:
         """Load ephemeral prefill messages from config or env var.
 
-        Checks HERMES_PREFILL_MESSAGES_FILE env var first, then falls back to
-        the prefill_messages_file key in ~/.hermes/config.yaml.
-        Relative paths are resolved from ~/.hermes/.
+        Checks AIZEN_PREFILL_MESSAGES_FILE env var first, then falls back to
+        the prefill_messages_file key in ~/.aizen/config.yaml.
+        Relative paths are resolved from ~/.aizen/.
         """
         import json as _json
 
-        file_path = os.getenv("HERMES_PREFILL_MESSAGES_FILE", "")
+        file_path = os.getenv("AIZEN_PREFILL_MESSAGES_FILE", "")
         if not file_path:
             try:
                 import yaml as _y
 
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _aizen_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -910,7 +910,7 @@ class GatewayRunner:
             return []
         path = Path(file_path).expanduser()
         if not path.is_absolute():
-            path = _hermes_home / path
+            path = _aizen_home / path
         if not path.exists():
             logger.warning("Prefill messages file not found: %s", path)
             return []
@@ -931,16 +931,16 @@ class GatewayRunner:
     def _load_ephemeral_system_prompt() -> str:
         """Load ephemeral system prompt from config or env var.
 
-        Checks HERMES_EPHEMERAL_SYSTEM_PROMPT env var first, then falls back to
-        agent.system_prompt in ~/.hermes/config.yaml.
+        Checks AIZEN_EPHEMERAL_SYSTEM_PROMPT env var first, then falls back to
+        agent.system_prompt in ~/.aizen/config.yaml.
         """
-        prompt = os.getenv("HERMES_EPHEMERAL_SYSTEM_PROMPT", "")
+        prompt = os.getenv("AIZEN_EPHEMERAL_SYSTEM_PROMPT", "")
         if prompt:
             return prompt
         try:
             import yaml as _y
 
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aizen_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -954,17 +954,17 @@ class GatewayRunner:
         """Load reasoning effort from config with env fallback.
 
         Checks agent.reasoning_effort in config.yaml first, then
-        HERMES_REASONING_EFFORT as a fallback. Valid: "xhigh", "high",
+        AIZEN_REASONING_EFFORT as a fallback. Valid: "xhigh", "high",
         "medium", "low", "minimal", "none". Returns None to use default
         (medium).
         """
-        from core.hermes_constants import parse_reasoning_effort
+        from core.aizen_constants import parse_reasoning_effort
 
         effort = ""
         try:
             import yaml as _y
 
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aizen_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -974,7 +974,7 @@ class GatewayRunner:
         except Exception:
             pass
         if not effort:
-            effort = os.getenv("HERMES_REASONING_EFFORT", "")
+            effort = os.getenv("AIZEN_REASONING_EFFORT", "")
         result = parse_reasoning_effort(effort)
         if effort and effort.strip() and result is None:
             logger.warning(
@@ -988,7 +988,7 @@ class GatewayRunner:
         try:
             import yaml as _y
 
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aizen_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1007,12 +1007,12 @@ class GatewayRunner:
           - ``error``  — only the final message when exit code is non-zero
           - ``off``    — no watcher messages at all
         """
-        mode = os.getenv("HERMES_BACKGROUND_NOTIFICATIONS", "")
+        mode = os.getenv("AIZEN_BACKGROUND_NOTIFICATIONS", "")
         if not mode:
             try:
                 import yaml as _y
 
-                cfg_path = _hermes_home / "config.yaml"
+                cfg_path = _aizen_home / "config.yaml"
                 if cfg_path.exists():
                     with open(cfg_path, encoding="utf-8") as _f:
                         cfg = _y.safe_load(_f) or {}
@@ -1039,7 +1039,7 @@ class GatewayRunner:
         try:
             import yaml as _y
 
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aizen_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1059,7 +1059,7 @@ class GatewayRunner:
         try:
             import yaml as _y
 
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aizen_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1076,7 +1076,7 @@ class GatewayRunner:
         try:
             import yaml as _y
 
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aizen_home / "config.yaml"
             if cfg_path.exists():
                 with open(cfg_path, encoding="utf-8") as _f:
                     cfg = _y.safe_load(_f) or {}
@@ -1091,10 +1091,10 @@ class GatewayRunner:
 
         Returns True if at least one adapter connected successfully.
         """
-        logger.info("Starting Hermes Gateway...")
+        logger.info("Starting Aizen Gateway...")
         logger.info("Session storage: %s", self.config.sessions_dir)
         try:
-            from hermes_cli.profiles import get_active_profile_name
+            from aizen_cli.profiles import get_active_profile_name
 
             _profile = get_active_profile_name()
             if _profile and _profile != "default":
@@ -1152,7 +1152,7 @@ class GatewayRunner:
         if not _any_allowlist and not _allow_all:
             logger.warning(
                 "No user allowlists configured. All unauthorized users will be denied. "
-                "Set GATEWAY_ALLOW_ALL_USERS=true in ~/.hermes/.env to allow open access, "
+                "Set GATEWAY_ALLOW_ALL_USERS=true in ~/.aizen/.env to allow open access, "
                 "or configure platform allowlists (e.g., TELEGRAM_ALLOWED_USERS=your_id)."
             )
 
@@ -1314,8 +1314,8 @@ class GatewayRunner:
         if not notified and any(
             path.exists()
             for path in (
-                _hermes_home / ".update_pending.json",
-                _hermes_home / ".update_pending.claimed.json",
+                _aizen_home / ".update_pending.json",
+                _aizen_home / ".update_pending.claimed.json",
             )
         ):
             self._schedule_update_notification_watch()
@@ -1609,7 +1609,7 @@ class GatewayRunner:
 
             if not check_slack_requirements():
                 logger.warning(
-                    "Slack: slack-bolt not installed. Run: pip install 'hermes-agent[slack]'"
+                    "Slack: slack-bolt not installed. Run: pip install 'aizen-agent[slack]'"
                 )
                 return None
             return SlackAdapter(config)
@@ -1923,7 +1923,7 @@ class GatewayRunner:
                             f"Hi~ I don't recognize you yet!\n\n"
                             f"Here's your pairing code: `{code}`\n\n"
                             f"Ask the bot owner to run:\n"
-                            f"`hermes pairing approve {platform_name} {code}`",
+                            f"`aizen pairing approve {platform_name} {code}`",
                         )
                 else:
                     adapter = self.adapters.get(source.platform)
@@ -1950,7 +1950,7 @@ class GatewayRunner:
                 return await self._handle_status_command(event)
 
             # Resolve the command once for all early-intercept checks below.
-            from hermes_cli.commands import resolve_command as _resolve_cmd_inner
+            from aizen_cli.commands import resolve_command as _resolve_cmd_inner
 
             _evt_cmd = event.get_command()
             _cmd_def_inner = _resolve_cmd_inner(_evt_cmd) if _evt_cmd else None
@@ -2076,8 +2076,8 @@ class GatewayRunner:
 
         # Emit command:* hook for any recognized slash command.
         # GATEWAY_KNOWN_COMMANDS is derived from the central COMMAND_REGISTRY
-        # in hermes_cli/commands.py — no hardcoded set to maintain here.
-        from hermes_cli.commands import (
+        # in aizen_cli/commands.py — no hardcoded set to maintain here.
+        from aizen_cli.commands import (
             GATEWAY_KNOWN_COMMANDS,
             resolve_command as _resolve_cmd,
         )
@@ -2250,7 +2250,7 @@ class GatewayRunner:
         # Plugin-registered slash commands
         if command:
             try:
-                from hermes_cli.plugins import get_plugin_command_handler
+                from aizen_cli.plugins import get_plugin_command_handler
 
                 plugin_handler = get_plugin_command_handler(command)
                 if plugin_handler:
@@ -2505,7 +2505,7 @@ class GatewayRunner:
             _hyg_base_url = None
             _hyg_api_key = None
             try:
-                _hyg_cfg_path = _hermes_home / "config.yaml"
+                _hyg_cfg_path = _aizen_home / "config.yaml"
                 if _hyg_cfg_path.exists():
                     import yaml as _hyg_yaml
 
@@ -2722,7 +2722,7 @@ class GatewayRunner:
                     await adapter.send(
                         source.chat_id,
                         f"📬 No home channel is set for {platform_name.title()}. "
-                        f"A home channel is where Hermes delivers cron job results "
+                        f"A home channel is where Aizen delivers cron job results "
                         f"and cross-platform messages.\n\n"
                         f"Type /sethome to make this chat your home channel, "
                         f"or ignore to skip.",
@@ -2807,13 +2807,13 @@ class GatewayRunner:
                                 "🎤 I received your voice message but can't transcribe it — "
                                 "no speech-to-text provider is configured.\n\n"
                                 "To enable voice: install faster-whisper "
-                                "(`pip install faster-whisper` in the Hermes venv) "
+                                "(`pip install faster-whisper` in the Aizen venv) "
                                 "and set `stt.enabled: true` in config.yaml, "
                                 "then /restart the gateway."
                             )
                             # Point to setup skill if it's installed
                             if self._has_setup_skill():
-                                _stt_msg += "\n\nFor full setup instructions, type: `/skill hermes-agent-setup`"
+                                _stt_msg += "\n\nFor full setup instructions, type: `/skill aizen-agent-setup`"
                             await _stt_adapter.send(
                                 source.chat_id,
                                 _stt_msg,
@@ -3235,7 +3235,7 @@ class GatewayRunner:
         api_key = None
 
         try:
-            cfg_path = _hermes_home / "config.yaml"
+            cfg_path = _aizen_home / "config.yaml"
             if cfg_path.exists():
                 import yaml as _info_yaml
 
@@ -3364,15 +3364,15 @@ class GatewayRunner:
 
     async def _handle_profile_command(self, event: MessageEvent) -> str:
         """Handle /profile — show active profile name and home directory."""
-        from core.hermes_constants import get_hermes_home, display_hermes_home
+        from core.aizen_constants import get_aizen_home, display_aizen_home
         from pathlib import Path
 
-        home = get_hermes_home()
-        display = display_hermes_home()
+        home = get_aizen_home()
+        display = display_aizen_home()
 
-        # Detect profile name from HERMES_HOME path
-        # Profile paths look like: ~/.hermes/profiles/<name>
-        profiles_parent = Path.home() / ".hermes" / "profiles"
+        # Detect profile name from AIZEN_HOME path
+        # Profile paths look like: ~/.aizen/profiles/<name>
+        profiles_parent = Path.home() / ".aizen" / "profiles"
         try:
             rel = home.relative_to(profiles_parent)
             profile_name = str(rel).split("/")[0]
@@ -3404,7 +3404,7 @@ class GatewayRunner:
         is_running = session_key in self._running_agents
 
         lines = [
-            "📊 **Hermes Gateway Status**",
+            "📊 **Aizen Gateway Status**",
             "",
             f"**Session ID:** `{session_entry.session_id[:12]}...`",
             f"**Created:** {session_entry.created_at.strftime('%Y-%m-%d %H:%M')}",
@@ -3452,10 +3452,10 @@ class GatewayRunner:
 
     async def _handle_help_command(self, event: MessageEvent) -> str:
         """Handle /help command - list available commands."""
-        from hermes_cli.commands import gateway_help_lines
+        from aizen_cli.commands import gateway_help_lines
 
         lines = [
-            "📖 **Hermes Commands**\n",
+            "📖 **Aizen Commands**\n",
             *gateway_help_lines(),
         ]
         try:
@@ -3478,7 +3478,7 @@ class GatewayRunner:
 
     async def _handle_commands_command(self, event: MessageEvent) -> str:
         """Handle /commands [page] - paginated list of all commands and skills."""
-        from hermes_cli.commands import gateway_help_lines
+        from aizen_cli.commands import gateway_help_lines
 
         raw_args = event.get_command_args().strip()
         if raw_args:
@@ -3539,7 +3539,7 @@ class GatewayRunner:
     async def _handle_provider_command(self, event: MessageEvent) -> str:
         """Handle /provider command - show available providers."""
         import yaml
-        from hermes_cli.models import (
+        from aizen_cli.models import (
             list_available_providers,
             normalize_provider,
             _PROVIDER_LABELS,
@@ -3547,7 +3547,7 @@ class GatewayRunner:
 
         # Resolve current provider from config
         current_provider = "openrouter"
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aizen_home / "config.yaml"
         try:
             if config_path.exists():
                 with open(config_path, encoding="utf-8") as f:
@@ -3561,7 +3561,7 @@ class GatewayRunner:
         current_provider = normalize_provider(current_provider)
         if current_provider == "auto":
             try:
-                from hermes_cli.auth import resolve_provider as _resolve_provider
+                from aizen_cli.auth import resolve_provider as _resolve_provider
 
                 current_provider = _resolve_provider(current_provider)
             except Exception:
@@ -3592,7 +3592,7 @@ class GatewayRunner:
 
         lines.append("")
         lines.append("Switch: `/model provider:model-name`")
-        lines.append("Setup: `hermes setup`")
+        lines.append("Setup: `aizen setup`")
         return "\n".join(lines)
 
     async def _handle_personality_command(self, event: MessageEvent) -> str:
@@ -3600,7 +3600,7 @@ class GatewayRunner:
         import yaml
 
         args = event.get_command_args().strip().lower()
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aizen_home / "config.yaml"
 
         try:
             if config_path.exists():
@@ -3615,7 +3615,7 @@ class GatewayRunner:
             personalities = {}
 
         if not personalities:
-            return "No personalities configured in `~/.hermes/config.yaml`"
+            return "No personalities configured in `~/.aizen/config.yaml`"
 
         if not args:
             lines = ["🎭 **Available Personalities**\n"]
@@ -3747,7 +3747,7 @@ class GatewayRunner:
         try:
             import yaml
 
-            config_path = _hermes_home / "config.yaml"
+            config_path = _aizen_home / "config.yaml"
             user_config = {}
             if config_path.exists():
                 with open(config_path, encoding="utf-8") as f:
@@ -3884,8 +3884,8 @@ class GatewayRunner:
             if "pynacl" in err_lower or "nacl" in err_lower or "davey" in err_lower:
                 return (
                     "Voice dependencies are missing (PyNaCl / davey). "
-                    "Install or reinstall Hermes with the messaging extra, e.g. "
-                    "`pip install hermes-agent[messaging]`."
+                    "Install or reinstall Aizen with the messaging extra, e.g. "
+                    "`pip install aizen-agent[messaging]`."
                 )
             return f"Failed to join voice channel: {e}"
 
@@ -4066,7 +4066,7 @@ class GatewayRunner:
             # The TTS tool may convert to .ogg — use file_path from result.
             audio_path = os.path.join(
                 tempfile.gettempdir(),
-                "hermes_voice",
+                "aizen_voice",
                 f"tts_reply_{_uuid.uuid4().hex[:12]}.mp3",
             )
             os.makedirs(os.path.dirname(audio_path), exist_ok=True)
@@ -4204,7 +4204,7 @@ class GatewayRunner:
         try:
             import yaml as _y
 
-            _cfg_path = _hermes_home / "config.yaml"
+            _cfg_path = _aizen_home / "config.yaml"
             if _cfg_path.exists():
                 with open(_cfg_path, encoding="utf-8") as _f:
                     _data = _y.safe_load(_f) or {}
@@ -4313,12 +4313,12 @@ class GatewayRunner:
             model = _resolve_gateway_model(user_config)
             platform_key = _platform_config_key(source.platform)
 
-            from hermes_cli.tools_config import _get_platform_tools
+            from aizen_cli.tools_config import _get_platform_tools
 
             enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
 
             pr = self._provider_routing
-            max_iterations = int(os.getenv("HERMES_MAX_ITERATIONS", "90"))
+            max_iterations = int(os.getenv("AIZEN_MAX_ITERATIONS", "90"))
             reasoning_config = self._load_reasoning_config()
             self._reasoning_config = reasoning_config
             turn_route = self._resolve_turn_agent_config(prompt, model, runtime_kwargs)
@@ -4606,7 +4606,7 @@ class GatewayRunner:
         import yaml
 
         args = event.get_command_args().strip().lower()
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aizen_home / "config.yaml"
         self._reasoning_config = self._load_reasoning_config()
         self._show_reasoning = self._load_show_reasoning()
 
@@ -4679,12 +4679,12 @@ class GatewayRunner:
 
     async def _handle_yolo_command(self, event: MessageEvent) -> str:
         """Handle /yolo — toggle dangerous command approval bypass."""
-        current = bool(os.environ.get("HERMES_YOLO_MODE"))
+        current = bool(os.environ.get("AIZEN_YOLO_MODE"))
         if current:
-            os.environ.pop("HERMES_YOLO_MODE", None)
+            os.environ.pop("AIZEN_YOLO_MODE", None)
             return "⚠️ YOLO mode **OFF** — dangerous commands will require approval."
         else:
-            os.environ["HERMES_YOLO_MODE"] = "1"
+            os.environ["AIZEN_YOLO_MODE"] = "1"
             return "⚡ YOLO mode **ON** — all commands auto-approved. Use with caution."
 
     async def _handle_verbose_command(self, event: MessageEvent) -> str:
@@ -4696,7 +4696,7 @@ class GatewayRunner:
         """
         import yaml
 
-        config_path = _hermes_home / "config.yaml"
+        config_path = _aizen_home / "config.yaml"
 
         # --- check config gate ------------------------------------------------
         try:
@@ -5037,7 +5037,7 @@ class GatewayRunner:
                     i += 1
 
         try:
-            from core.hermes_state import SessionDB
+            from core.aizen_state import SessionDB
             from agent.insights import InsightsEngine
 
             loop = _asyncio.get_event_loop()
@@ -5218,10 +5218,10 @@ class GatewayRunner:
         return "❌ Command denied."
 
     async def _handle_update_command(self, event: MessageEvent) -> str:
-        """Handle /update command — update Hermes Agent to the latest version.
+        """Handle /update command — update Aizen Agent to the latest version.
 
-        Spawns ``hermes update`` in a detached session (via ``setsid``) so it
-        survives the gateway restart that ``hermes update`` may trigger. Marker
+        Spawns ``aizen update`` in a detached session (via ``setsid``) so it
+        survives the gateway restart that ``aizen update`` may trigger. Marker
         files are written so either the current gateway process or the next one
         can notify the user when the update finishes.
         """
@@ -5229,10 +5229,10 @@ class GatewayRunner:
         import shutil
         import subprocess
         from datetime import datetime
-        from hermes_cli.config import is_managed, format_managed_message
+        from aizen_cli.config import is_managed, format_managed_message
 
         if is_managed():
-            return f"✗ {format_managed_message('update Hermes Agent')}"
+            return f"✗ {format_managed_message('update Aizen Agent')}"
 
         project_root = Path(__file__).parent.parent.resolve()
         git_dir = project_root / ".git"
@@ -5240,18 +5240,18 @@ class GatewayRunner:
         if not git_dir.exists():
             return "✗ Not a git repository — cannot update."
 
-        hermes_cmd = _resolve_hermes_bin()
-        if not hermes_cmd:
+        aizen_cmd = _resolve_aizen_bin()
+        if not aizen_cmd:
             return (
-                "✗ Could not locate the `hermes` command. "
-                "Hermes is running, but the update command could not find the "
+                "✗ Could not locate the `aizen` command. "
+                "Aizen is running, but the update command could not find the "
                 "executable on PATH or via the current Python interpreter. "
-                "Try running `hermes update` manually in your terminal."
+                "Try running `aizen update` manually in your terminal."
             )
 
-        pending_path = _hermes_home / ".update_pending.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
+        pending_path = _aizen_home / ".update_pending.json"
+        output_path = _aizen_home / ".update_output.txt"
+        exit_code_path = _aizen_home / ".update_exit_code"
         pending = {
             "platform": event.source.platform.value,
             "chat_id": event.source.chat_id,
@@ -5261,12 +5261,12 @@ class GatewayRunner:
         pending_path.write_text(json.dumps(pending))
         exit_code_path.unlink(missing_ok=True)
 
-        # Spawn `hermes update` detached so it survives gateway restart.
+        # Spawn `aizen update` detached so it survives gateway restart.
         # Use setsid for portable session detach (works under system services
         # where systemd-run --user fails due to missing D-Bus session).
-        hermes_cmd_str = " ".join(shlex.quote(part) for part in hermes_cmd)
+        aizen_cmd_str = " ".join(shlex.quote(part) for part in aizen_cmd)
         update_cmd = (
-            f"{hermes_cmd_str} update > {shlex.quote(str(output_path))} 2>&1; "
+            f"{aizen_cmd_str} update > {shlex.quote(str(output_path))} 2>&1; "
             f"status=$?; printf '%s' \"$status\" > {shlex.quote(str(exit_code_path))}"
         )
         try:
@@ -5293,7 +5293,7 @@ class GatewayRunner:
             return f"✗ Failed to start update: {e}"
 
         self._schedule_update_notification_watch()
-        return "⚕ Starting Hermes update… I'll notify you when it's done."
+        return "⚕ Starting Aizen update… I'll notify you when it's done."
 
     def _schedule_update_notification_watch(self) -> None:
         """Ensure a background task is watching for update completion."""
@@ -5313,10 +5313,10 @@ class GatewayRunner:
         poll_interval: float = 2.0,
         timeout: float = 1800.0,
     ) -> None:
-        """Wait for ``hermes update`` to finish, then send its notification."""
-        pending_path = _hermes_home / ".update_pending.json"
-        claimed_path = _hermes_home / ".update_pending.claimed.json"
-        exit_code_path = _hermes_home / ".update_exit_code"
+        """Wait for ``aizen update`` to finish, then send its notification."""
+        pending_path = _aizen_home / ".update_pending.json"
+        claimed_path = _aizen_home / ".update_pending.claimed.json"
+        exit_code_path = _aizen_home / ".update_exit_code"
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout
 
@@ -5344,10 +5344,10 @@ class GatewayRunner:
         import json
         import re as _re
 
-        pending_path = _hermes_home / ".update_pending.json"
-        claimed_path = _hermes_home / ".update_pending.claimed.json"
-        output_path = _hermes_home / ".update_output.txt"
-        exit_code_path = _hermes_home / ".update_exit_code"
+        pending_path = _aizen_home / ".update_pending.json"
+        claimed_path = _aizen_home / ".update_pending.claimed.json"
+        output_path = _aizen_home / ".update_output.txt"
+        exit_code_path = _aizen_home / ".update_exit_code"
 
         if not pending_path.exists() and not claimed_path.exists():
             return False
@@ -5394,14 +5394,14 @@ class GatewayRunner:
                     if len(output) > 3500:
                         output = "…" + output[-3500:]
                     if exit_code == 0:
-                        msg = f"✅ Hermes update finished.\n\n```\n{output}\n```"
+                        msg = f"✅ Aizen update finished.\n\n```\n{output}\n```"
                     else:
-                        msg = f"❌ Hermes update failed.\n\n```\n{output}\n```"
+                        msg = f"❌ Aizen update failed.\n\n```\n{output}\n```"
                 else:
                     if exit_code == 0:
-                        msg = "✅ Hermes update finished successfully."
+                        msg = "✅ Aizen update finished successfully."
                     else:
-                        msg = "❌ Hermes update failed. Check the gateway logs or run `hermes update` manually for details."
+                        msg = "❌ Aizen update failed. Check the gateway logs or run `aizen update` manually for details."
                 await adapter.send(chat_id, msg)
                 logger.info(
                     "Sent post-update notification to %s:%s (exit=%s)",
@@ -5422,20 +5422,20 @@ class GatewayRunner:
 
     def _set_session_env(self, context: SessionContext) -> None:
         """Set environment variables for the current session."""
-        os.environ["HERMES_SESSION_PLATFORM"] = context.source.platform.value
-        os.environ["HERMES_SESSION_CHAT_ID"] = context.source.chat_id
+        os.environ["AIZEN_SESSION_PLATFORM"] = context.source.platform.value
+        os.environ["AIZEN_SESSION_CHAT_ID"] = context.source.chat_id
         if context.source.chat_name:
-            os.environ["HERMES_SESSION_CHAT_NAME"] = context.source.chat_name
+            os.environ["AIZEN_SESSION_CHAT_NAME"] = context.source.chat_name
         if context.source.thread_id:
-            os.environ["HERMES_SESSION_THREAD_ID"] = str(context.source.thread_id)
+            os.environ["AIZEN_SESSION_THREAD_ID"] = str(context.source.thread_id)
 
     def _clear_session_env(self) -> None:
         """Clear session environment variables."""
         for var in [
-            "HERMES_SESSION_PLATFORM",
-            "HERMES_SESSION_CHAT_ID",
-            "HERMES_SESSION_CHAT_NAME",
-            "HERMES_SESSION_THREAD_ID",
+            "AIZEN_SESSION_PLATFORM",
+            "AIZEN_SESSION_CHAT_ID",
+            "AIZEN_SESSION_CHAT_NAME",
+            "AIZEN_SESSION_THREAD_ID",
         ]:
             if var in os.environ:
                 del os.environ[var]
@@ -5528,8 +5528,8 @@ class GatewayRunner:
             disabled_note = "[The user sent voice message(s), but transcription is disabled in config."
             if self._has_setup_skill():
                 disabled_note += (
-                    " You have a skill called hermes-agent-setup that can help "
-                    "users configure Hermes features including voice, tools, and more."
+                    " You have a skill called aizen-agent-setup that can help "
+                    "users configure Aizen features including voice, tools, and more."
                 )
             disabled_note += "]"
             if user_text:
@@ -5570,8 +5570,8 @@ class GatewayRunner:
                         )
                         if self._has_setup_skill():
                             _no_stt_note += (
-                                " You have a skill called hermes-agent-setup "
-                                "that can help users configure Hermes features "
+                                " You have a skill called aizen-agent-setup "
+                                "that can help users configure Aizen features "
                                 "including voice, tools, and more."
                             )
                         _no_stt_note += "]"
@@ -5779,7 +5779,7 @@ class GatewayRunner:
         user_config = _load_gateway_config()
         platform_key = _platform_config_key(source.platform)
 
-        from hermes_cli.tools_config import _get_platform_tools
+        from aizen_cli.tools_config import _get_platform_tools
 
         enabled_toolsets = sorted(_get_platform_tools(user_config, platform_key))
 
@@ -5799,7 +5799,7 @@ class GatewayRunner:
         _raw_tp = user_config.get("display", {}).get("tool_progress")
         if _raw_tp is False:
             _raw_tp = "off"
-        progress_mode = _raw_tp or os.getenv("HERMES_TOOL_PROGRESS_MODE") or "all"
+        progress_mode = _raw_tp or os.getenv("AIZEN_TOOL_PROGRESS_MODE") or "all"
         tool_progress_enabled = progress_mode != "off"
 
         # Queue for progress messages (thread-safe)
@@ -6037,10 +6037,10 @@ class GatewayRunner:
         def run_sync():
             # Pass session_key to process registry via env var so background
             # processes can be mapped back to this gateway session
-            os.environ["HERMES_SESSION_KEY"] = session_key or ""
+            os.environ["AIZEN_SESSION_KEY"] = session_key or ""
 
             # Read from env var or use default (same as CLI)
-            max_iterations = int(os.getenv("HERMES_MAX_ITERATIONS", "90"))
+            max_iterations = int(os.getenv("AIZEN_MAX_ITERATIONS", "90"))
 
             # Map platform enum to the platform hint key the agent understands.
             # Platform.LOCAL ("local") maps to "cli"; others pass through as-is.
@@ -6633,7 +6633,7 @@ def _start_cron_ticker(stop_event: threading.Event, adapters=None, interval: int
     Background thread that ticks the cron scheduler at a regular interval.
 
     Runs inside the gateway process so cronjobs fire automatically without
-    needing a separate `hermes cron daemon` or system cron entry.
+    needing a separate `aizen cron daemon` or system cron entry.
 
     Also refreshes the channel directory every 5 minutes and prunes the
     image/audio/document cache once per hour.
@@ -6700,9 +6700,9 @@ async def start_gateway(
                  when the previous process hasn't fully exited yet.
     """
     # ── Duplicate-instance guard ──────────────────────────────────────
-    # Prevent two gateways from running under the same HERMES_HOME.
-    # The PID file is scoped to HERMES_HOME, so future multi-profile
-    # setups (each profile using a distinct HERMES_HOME) will naturally
+    # Prevent two gateways from running under the same AIZEN_HOME.
+    # The PID file is scoped to AIZEN_HOME, so future multi-profile
+    # setups (each profile using a distinct AIZEN_HOME) will naturally
     # allow concurrent instances without tripping this guard.
     import time as _time
     from gateway.status import get_running_pid, remove_pid_file
@@ -6757,18 +6757,18 @@ async def start_gateway(
             except Exception:
                 pass
         else:
-            hermes_home = str(get_hermes_home())
+            aizen_home = str(get_aizen_home())
             logger.error(
-                "Another gateway instance is already running (PID %d, HERMES_HOME=%s). "
-                "Use 'hermes gateway restart' to replace it, or 'hermes gateway stop' first.",
+                "Another gateway instance is already running (PID %d, AIZEN_HOME=%s). "
+                "Use 'aizen gateway restart' to replace it, or 'aizen gateway stop' first.",
                 existing_pid,
-                hermes_home,
+                aizen_home,
             )
             print(
                 f"\n❌ Gateway already running (PID {existing_pid}).\n"
-                f"   Use 'hermes gateway restart' to replace it,\n"
-                f"   or 'hermes gateway stop' to kill it first.\n"
-                f"   Or use 'hermes gateway run --replace' to auto-replace.\n"
+                f"   Use 'aizen gateway restart' to replace it,\n"
+                f"   or 'aizen gateway stop' to kill it first.\n"
+                f"   Or use 'aizen gateway run --replace' to auto-replace.\n"
             )
             return False
 
@@ -6781,7 +6781,7 @@ async def start_gateway(
         pass
 
     # Configure rotating file log so gateway output is persisted for debugging
-    log_dir = _hermes_home / "logs"
+    log_dir = _aizen_home / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(
         log_dir / "gateway.log",
@@ -6875,7 +6875,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Hermes Gateway - Multi-platform messaging"
+        description="Aizen Gateway - Multi-platform messaging"
     )
     parser.add_argument("--config", "-c", help="Path to gateway config file")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")

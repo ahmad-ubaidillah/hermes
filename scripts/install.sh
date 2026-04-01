@@ -1,10 +1,10 @@
 #!/bin/bash
 # ============================================================================
-# Hermes v3.0 Installer - Simple & Comprehensive
+# Aizen v3.0 Installer - Simple & Comprehensive
 # ============================================================================
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
 #
 # Options:
 #   --skip-setup      Skip setup wizard
@@ -21,9 +21,9 @@ R='\033[0;31m'; G='\033[0;32m'; Y='\033[0;33m'; B='\033[0;34m'; M='\033[0;35m'; 
 N='\033[0m'; BOLD='\033[1m'
 
 # Config
-REPO="https://github.com/ahmad-ubaidillah/hermes.git"
-HOME_HERMES="$HOME/.hermes"
-INSTALL_DIR="${HERMES_INSTALL_DIR:-$HOME_HERMES/hermes-agent}"
+REPO="https://github.com/ahmad-ubaidillah/aizen.git"
+HOME_HERMES="$HOME/.aizen"
+INSTALL_DIR="${AIZEN_INSTALL_DIR:-$HOME_HERMES/aizen-agent}"
 PYTHON_VER="3.11"
 BRANCH="main"
 RUN_SETUP=true
@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
         --branch) BRANCH="$2"; shift 2 ;;
         --dir) INSTALL_DIR="$2"; shift 2 ;;
         -h|--help)
-            echo "Hermes v3.0 Installer"
+            echo "Aizen v3.0 Installer"
             echo "Usage: install.sh [OPTIONS]"
             echo "  --skip-setup    Skip setup wizard"
             echo "  --no-opencode   Skip OpenCode (free models)"
@@ -54,7 +54,7 @@ done
 # Banner
 echo -e "${M}${BOLD}"
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║              ⚕ Hermes v3.0 Installer                         ║"
+echo "║              ⚕ Aizen v3.0 Installer                         ║"
 echo "║         Autonomous AI Team - Free + Powerful                 ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${N}"
@@ -81,8 +81,8 @@ if ! command -v uv &>/dev/null; then
 fi
 echo -e "${G}✓ uv installed${N}"
 
-# Step 3: Clone Hermes
-echo -e "${B}▸ Cloning Hermes v3.0...${N}"
+# Step 3: Clone Aizen
+echo -e "${B}▸ Cloning Aizen v3.0...${N}"
 if [ -d "$INSTALL_DIR" ]; then
     cd "$INSTALL_DIR" && git pull origin "$BRANCH" >/dev/null 2>&1 || true
 else
@@ -113,23 +113,23 @@ if [ "$INSTALL_OPENCODE" = true ] && [ "$MINIMAL" = false ]; then
     fi
 fi
 
-# Step 6: Create hermes command
-echo -e "${B}▸ Creating hermes command...${N}"
+# Step 6: Create aizen command
+echo -e "${B}▸ Creating aizen command...${N}"
 mkdir -p "$HOME/.local/bin"
-cat > "$HOME/.local/bin/hermes" << 'CMD'
+cat > "$HOME/.local/bin/aizen" << 'CMD'
 #!/bin/bash
-source "$HOME/.hermes/hermes-agent/venv/bin/activate"
-python "$HOME/.hermes/hermes-agent/cli.py" "$@"
+source "$HOME/.aizen/aizen-agent/venv/bin/activate"
+python "$HOME/.aizen/aizen-agent/cli.py" "$@"
 CMD
-chmod +x "$HOME/.local/bin/hermes"
+chmod +x "$HOME/.local/bin/aizen"
 
 # Create dashboard command
-cat > "$HOME/.local/bin/hermes-dashboard" << 'CMD'
+cat > "$HOME/.local/bin/aizen-dashboard" << 'CMD'
 #!/bin/bash
-source "$HOME/.hermes/hermes-agent/venv/bin/activate"
+source "$HOME/.aizen/aizen-agent/venv/bin/activate"
 python -m web.backend.main "$@"
 CMD
-chmod +x "$HOME/.local/bin/hermes-dashboard"
+chmod +x "$HOME/.local/bin/aizen-dashboard"
 echo -e "${G}✓ Commands created${N}"
 
 # Step 7: Config directory
@@ -145,14 +145,14 @@ fi
 # Done
 echo ""
 echo -e "${G}${BOLD}╔══════════════════════════════════════════════════════════════╗${N}"
-echo -e "${G}${BOLD}║              ✓ Hermes v3.0 Installed!                        ║${N}"
+echo -e "${G}${BOLD}║              ✓ Aizen v3.0 Installed!                        ║${N}"
 echo -e "${G}${BOLD}╚══════════════════════════════════════════════════════════════╝${N}"
 echo ""
 echo -e "${BOLD}Quick Start:${N}"
 echo ""
-echo "  ${C}hermes${N}              Start chatting"
-echo "  ${C}hermes-dashboard${N}    Start web dashboard"
+echo "  ${C}aizen${N}              Start chatting"
+echo "  ${C}aizen-dashboard${N}    Start web dashboard"
 echo "  ${C}opencode run \"task\"${N} Free AI coding"
 echo ""
-echo -e "${BOLD}Documentation:${N} https://github.com/ahmad-ubaidillah/hermes"
+echo -e "${BOLD}Documentation:${N} https://github.com/ahmad-ubaidillah/aizen"
 echo ""

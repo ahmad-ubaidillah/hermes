@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Hermes Agent" width="100%">
+  <img src="assets/banner.png" alt="Aizen Agent" width="100%">
 </p>
 
-# Hermes Agent v3.0 ☤
+# Aizen Agent v3.0 ☤
 
 <p align="center">
-  <a href="https://github.com/ahmad-ubaidillah/hermes"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/hermes-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
-  <a href="https://github.com/ahmad-ubaidillah/hermes/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/ahmad-ubaidillah/aizen"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/aizen-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+  <a href="https://github.com/ahmad-ubaidillah/aizen/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
 </p>
 
 **Autonomous AI Team Platform - Free + Powerful**
 
-Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com) with enhanced multi-agent capabilities, smart routing, and enterprise features.
+Fork of [Aizen Agent](https://github.com/NousResearch/aizen-agent) by [Nous Research](https://nousresearch.com) with enhanced multi-agent capabilities, smart routing, and enterprise features.
 
 ---
 
@@ -40,11 +40,11 @@ Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Re
 ## Quick Start
 
 ```bash
-# Chat with Hermes
-hermes
+# Chat with Aizen
+aizen
 
 # Use free models via OpenCode
-hermes --model opencode/qwen3.6-plus-free
+aizen --model opencode/qwen3.6-plus-free
 
 # Start REPL for debugging
 python repl.py
@@ -89,42 +89,42 @@ open dashboard/index.html
 ### Method 1: Quick Install (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
 source ~/.bashrc
 ```
 
 ### Method 2: Git Clone
 
 ```bash
-git clone https://github.com/ahmad-ubaidillah/hermes.git ~/.hermes/hermes-agent
-cd ~/.hermes/hermes-agent
+git clone https://github.com/ahmad-ubaidillah/aizen.git ~/.aizen/aizen-agent
+cd ~/.aizen/aizen-agent
 python -m venv venv
 source venv/bin/activate
 pip install -e ".[all]"
 
-# Create hermes command
-echo 'source ~/.hermes/hermes-agent/venv/bin/activate && python ~/.hermes/hermes-agent/cli.py "$@"' > ~/.local/bin/hermes
-chmod +x ~/.local/bin/hermes
+# Create aizen command
+echo 'source ~/.aizen/aizen-agent/venv/bin/activate && python ~/.aizen/aizen-agent/cli.py "$@"' > ~/.local/bin/aizen
+chmod +x ~/.local/bin/aizen
 ```
 
 ### Method 3: pip (Coming Soon)
 
 ```bash
-pip install hermes-agent
+pip install aizen-agent
 ```
 
 ### Method 4: Docker
 
 ```bash
-docker pull ghcr.io/ahmad-ubaidillah/hermes:latest
-docker run -it -v ~/.hermes:/root/.hermes hermes:latest
+docker pull ghcr.io/ahmad-ubaidillah/aizen:latest
+docker run -it -v ~/.aizen:/root/.aizen aizen:latest
 ```
 
 ### Method 5: Development
 
 ```bash
-git clone https://github.com/ahmad-ubaidillah/hermes.git
-cd hermes
+git clone https://github.com/ahmad-ubaidillah/aizen.git
+cd aizen
 python -m venv venv
 source venv/bin/activate
 pip install -e ".[dev]"
@@ -135,16 +135,16 @@ pre-commit install
 
 ```bash
 # Skip setup wizard
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --skip-setup
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --skip-setup
 
 # Minimal install (no OpenCode, no dashboard)
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --minimal
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --minimal
 
 # Install specific branch
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --branch develop
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --branch develop
 
 # Custom install directory
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash -s -- --dir /opt/hermes
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash -s -- --dir /opt/aizen
 ```
 
 ### Post-Installation
@@ -152,14 +152,14 @@ curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/script
 After installation, you can:
 
 ```bash
-# Start chatting with Hermes
-hermes
+# Start chatting with Aizen
+aizen
 
 # Run setup wizard to configure
-hermes setup
+aizen setup
 
 # Start web dashboard
-hermes-dashboard
+aizen-dashboard
 
 # Or manually
 python -m web.server --port 8000
@@ -168,8 +168,8 @@ python -m web.server --port 8000
 opencode run "implement feature X"
 
 # Check installation
-hermes --version
-hermes doctor
+aizen --version
+aizen doctor
 ```
 
 ### Use v3.0 Features
@@ -218,7 +218,7 @@ python -m web.backend.main
 ## Module Structure
 
 ```
-hermes-agent/
+aizen-agent/
 ├── routing/                    # Intent classification
 │   ├── __init__.py
 │   └── intent_gate.py          # Smart task routing

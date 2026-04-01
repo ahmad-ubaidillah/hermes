@@ -1,4 +1,4 @@
-"""Trajectory compression for Hermes conversation histories."""
+"""Trajectory compression for Aizen conversation histories."""
 
 import asyncio
 import json
@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from core.hermes_constants import OPENROUTER_BASE_URL
+from core.aizen_constants import OPENROUTER_BASE_URL
 
 
 # ---------------------------------------------------------------------------

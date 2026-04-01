@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from acp_adapter.session import SessionManager, SessionState
-from core.hermes_state import SessionDB
+from core.aizen_state import SessionDB
 
 
 def _mock_agent():
@@ -306,11 +306,11 @@ class TestPersistence:
                 api_mode=kwargs.get("api_mode"),
             )
 
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {
+        monkeypatch.setattr("aizen_cli.config.load_config", lambda: {
             "model": {"provider": runtime_choice["provider"], "default": "test-model"}
         })
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "aizen_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve_runtime_provider,
         )
         db = SessionDB(tmp_path / "state.db")

@@ -1,4 +1,4 @@
-"""Graceful shutdown handling for Hermes Agent.
+"""Graceful shutdown handling for Aizen Agent.
 
 Ensures clean shutdown on SIGTERM/SIGINT:
 - Finish current tool call before exit

@@ -41,8 +41,8 @@ class TestSendMessageTool:
         with patch.dict(
             os.environ,
             {
-                "HERMES_CRON_AUTO_DELIVER_PLATFORM": "telegram",
-                "HERMES_CRON_AUTO_DELIVER_CHAT_ID": "-1001",
+                "AIZEN_CRON_AUTO_DELIVER_PLATFORM": "telegram",
+                "AIZEN_CRON_AUTO_DELIVER_CHAT_ID": "-1001",
             },
             clear=False,
         ), \
@@ -74,8 +74,8 @@ class TestSendMessageTool:
         with patch.dict(
             os.environ,
             {
-                "HERMES_CRON_AUTO_DELIVER_PLATFORM": "telegram",
-                "HERMES_CRON_AUTO_DELIVER_CHAT_ID": "-1001",
+                "AIZEN_CRON_AUTO_DELIVER_PLATFORM": "telegram",
+                "AIZEN_CRON_AUTO_DELIVER_CHAT_ID": "-1001",
             },
             clear=False,
         ), \
@@ -112,9 +112,9 @@ class TestSendMessageTool:
         with patch.dict(
             os.environ,
             {
-                "HERMES_CRON_AUTO_DELIVER_PLATFORM": "telegram",
-                "HERMES_CRON_AUTO_DELIVER_CHAT_ID": "-1001",
-                "HERMES_CRON_AUTO_DELIVER_THREAD_ID": "17585",
+                "AIZEN_CRON_AUTO_DELIVER_PLATFORM": "telegram",
+                "AIZEN_CRON_AUTO_DELIVER_CHAT_ID": "-1001",
+                "AIZEN_CRON_AUTO_DELIVER_THREAD_ID": "17585",
             },
             clear=False,
         ), \
@@ -409,12 +409,12 @@ class TestSendToPlatformWhatsapp:
                     Platform.WHATSAPP,
                     SimpleNamespace(enabled=True, token=None, extra={"bridge_port": 3000}),
                     chat_id,
-                    "hello from hermes",
+                    "hello from aizen",
                 )
             )
 
         assert result["success"] is True
-        async_mock.assert_awaited_once_with({"bridge_port": 3000}, chat_id, "hello from hermes")
+        async_mock.assert_awaited_once_with({"bridge_port": 3000}, chat_id, "hello from aizen")
 
 
 class TestSendTelegramHtmlDetection:

@@ -1,4 +1,4 @@
-"""Hermes HTTP API Server - FastAPI-based REST API.
+"""Aizen HTTP API Server - FastAPI-based REST API.
 
 Usage:
     uvicorn server:app --host 0.0.0.0 --port 8000
@@ -23,14 +23,14 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 app = FastAPI(
-    title="Hermes Agent API",
-    description="REST API for Hermes AI Agent",
+    title="Aizen Agent API",
+    description="REST API for Aizen AI Agent",
     version="1.0.0",
 )
 
 # Configuration
-API_KEY = os.getenv("HERMES_API_KEY", "")
-DEFAULT_MODEL = os.getenv("HERMES_DEFAULT_MODEL", "anthropic/claude-sonnet-4")
+API_KEY = os.getenv("AIZEN_API_KEY", "")
+DEFAULT_MODEL = os.getenv("AIZEN_DEFAULT_MODEL", "anthropic/claude-sonnet-4")
 
 
 # Request/Response Models

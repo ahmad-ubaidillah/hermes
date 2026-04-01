@@ -185,7 +185,7 @@ except Exception as e:
 
 # Plugin tool discovery (user/project/pip plugins)
 try:
-    from hermes_cli.plugins import discover_plugins
+    from aizen_cli.plugins import discover_plugins
 
     discover_plugins()
 except Exception as e:
@@ -444,7 +444,7 @@ def handle_function_call(
             )
 
         try:
-            from hermes_cli.plugins import invoke_hook
+            from aizen_cli.plugins import invoke_hook
 
             invoke_hook(
                 "pre_tool_call",
@@ -482,7 +482,7 @@ def handle_function_call(
             )
 
         try:
-            from hermes_cli.plugins import invoke_hook
+            from aizen_cli.plugins import invoke_hook
 
             invoke_hook(
                 "post_tool_call",

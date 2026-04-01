@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hermes Dashboard Server - Start both backend and frontend
+Aizen Dashboard Server - Start both backend and frontend
 
 Usage:
     python -m web.server
@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 
 def main():
-    parser = argparse.ArgumentParser(description="Start Hermes Dashboard")
+    parser = argparse.ArgumentParser(description="Start Aizen Dashboard")
     parser.add_argument("--port", type=int, default=8000, help="Port for backend")
     parser.add_argument("--no-frontend", action="store_true", help="Don't open frontend")
     parser.add_argument("--host", default="0.0.0.0", help="Host for backend")
@@ -30,7 +30,7 @@ def main():
     
     print(f"""
 ╔══════════════════════════════════════════════════════════════╗
-║           Hermes Dashboard v3.0                               ║
+║           Aizen Dashboard v3.0                               ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Backend:  http://localhost:{args.port:<5}                          ║
 ║  API Docs: http://localhost:{args.port:<5}/docs                      ║

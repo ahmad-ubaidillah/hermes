@@ -128,14 +128,14 @@ class TelegramAdapter(BasePlatformAdapter):
         self._reply_to_mode: str = getattr(config, 'reply_to_mode', 'first') or 'first'
         # Buffer rapid/album photo updates so Telegram image bursts are handled
         # as a single MessageEvent instead of self-interrupting multiple turns.
-        self._media_batch_delay_seconds = float(os.getenv("HERMES_TELEGRAM_MEDIA_BATCH_DELAY_SECONDS", "0.8"))
+        self._media_batch_delay_seconds = float(os.getenv("AIZEN_TELEGRAM_MEDIA_BATCH_DELAY_SECONDS", "0.8"))
         self._pending_photo_batches: Dict[str, MessageEvent] = {}
         self._pending_photo_batch_tasks: Dict[str, asyncio.Task] = {}
         self._media_group_events: Dict[str, MessageEvent] = {}
         self._media_group_tasks: Dict[str, asyncio.Task] = {}
         # Buffer rapid text messages so Telegram client-side splits of long
         # messages are aggregated into a single MessageEvent.
-        self._text_batch_delay_seconds = float(os.getenv("HERMES_TELEGRAM_TEXT_BATCH_DELAY_SECONDS", "0.6"))
+        self._text_batch_delay_seconds = float(os.getenv("AIZEN_TELEGRAM_TEXT_BATCH_DELAY_SECONDS", "0.6"))
         self._pending_text_batches: Dict[str, MessageEvent] = {}
         self._pending_text_batch_tasks: Dict[str, asyncio.Task] = {}
         self._token_lock_identity: Optional[str] = None
@@ -288,7 +288,7 @@ class TelegramAdapter(BasePlatformAdapter):
         # Exhausted retries — fatal
         message = (
             "Another Telegram bot poller is already using this token. "
-            "Hermes stopped Telegram polling after %d retries. "
+            "Aizen stopped Telegram polling after %d retries. "
             "Make sure only one gateway instance is running for this bot token."
             % MAX_CONFLICT_RETRIES
         )
@@ -348,8 +348,8 @@ class TelegramAdapter(BasePlatformAdapter):
     def _persist_dm_topic_thread_id(self, chat_id: int, topic_name: str, thread_id: int) -> None:
         """Save a newly created thread_id back into config.yaml so it persists across restarts."""
         try:
-            from core.hermes_constants import get_hermes_home
-            config_path = get_hermes_home() / "config.yaml"
+            from core.aizen_constants import get_aizen_home
+            config_path = get_aizen_home() / "config.yaml"
             if not config_path.exists():
                 logger.warning("[%s] Config file not found at %s, cannot persist thread_id", self.name, config_path)
                 return
@@ -495,7 +495,7 @@ class TelegramAdapter(BasePlatformAdapter):
             if not acquired:
                 owner_pid = existing.get("pid") if isinstance(existing, dict) else None
                 message = (
-                    "Another local Hermes gateway is already using this Telegram bot token"
+                    "Another local Aizen gateway is already using this Telegram bot token"
                     + (f" (PID {owner_pid})." if owner_pid else ".")
                     + " Stop the other gateway before starting a second Telegram poller."
                 )
@@ -622,7 +622,7 @@ class TelegramAdapter(BasePlatformAdapter):
             # gateway command there automatically adds it to the Telegram menu.
             try:
                 from telegram import BotCommand
-                from hermes_cli.commands import telegram_menu_commands
+                from aizen_cli.commands import telegram_menu_commands
                 # Telegram allows up to 100 commands but has an undocumented
                 # payload size limit.  Skill descriptions are truncated to 40
                 # chars in telegram_menu_commands() to fit 100 commands safely.
@@ -1974,8 +1974,8 @@ class TelegramAdapter(BasePlatformAdapter):
         recognized without a gateway restart.
         """
         try:
-            from core.hermes_constants import get_hermes_home
-            config_path = get_hermes_home() / "config.yaml"
+            from core.aizen_constants import get_aizen_home
+            config_path = get_aizen_home() / "config.yaml"
             if not config_path.exists():
                 return
 

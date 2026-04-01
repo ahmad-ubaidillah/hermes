@@ -1,6 +1,6 @@
-# Hermes Agent — Local-First Guide
+# Aizen Agent — Local-First Guide
 
-Hermes Agent is designed to work **without any API keys**. Every feature has a free, local alternative. API keys are purely optional — they unlock premium providers but are never required.
+Aizen Agent is designed to work **without any API keys**. Every feature has a free, local alternative. API keys are purely optional — they unlock premium providers but are never required.
 
 ## Features That Work Without Any API Keys
 
@@ -25,7 +25,7 @@ Hermes Agent is designed to work **without any API keys**. Every feature has a f
 
 ## Optional API Keys
 
-All API keys in `~/.hermes/.env` are **optional**. Hermes works fully without them:
+All API keys in `~/.aizen/.env` are **optional**. Aizen works fully without them:
 
 - **LLM Providers**: OpenRouter, Nous, Z.AI, Kimi, DeepSeek, DashScope, HuggingFace, etc. — you need at least one LLM provider, but free options exist (see below)
 - **Web Search**: Exa, Parallel, Firecrawl, Tavily — DuckDuckGo is the free fallback
@@ -37,7 +37,7 @@ All API keys in `~/.hermes/.env` are **optional**. Hermes works fully without th
 
 ## Free LLM Access
 
-You can run Hermes with **zero cost** using free model providers:
+You can run Aizen with **zero cost** using free model providers:
 
 - **OpenCode** — Free models via `opencode/` prefix (Qwen, MiniMax, Nemotron, etc.)
 - **Nous Portal** — Free tier available
@@ -75,7 +75,7 @@ pip install ddgs
 
 ### Browser
 ```bash
-# Local browser — included with Hermes
+# Local browser — included with Aizen
 # No additional install needed — uses bundled agent-browser
 
 # Camofox — anti-detection browsing
@@ -95,7 +95,7 @@ See [DEAD_CODE_ANALYSIS.md](DEAD_CODE_ANALYSIS.md) for the full dead code analys
 
 ## Configuration
 
-All local-first settings are in `~/.hermes/config.yaml`:
+All local-first settings are in `~/.aizen/config.yaml`:
 
 ```yaml
 # TTS — Edge-TTS is the default (free)
@@ -115,7 +115,7 @@ web:
 
 ## Summary
 
-**You can run Hermes Agent with zero API keys** if you:
+**You can run Aizen Agent with zero API keys** if you:
 1. Use a free LLM provider (OpenCode, Nous free tier, or HuggingFace)
 2. Install `ddgs` for web search (`pip install ddgs`)
 3. Use the default Edge-TTS for voice output

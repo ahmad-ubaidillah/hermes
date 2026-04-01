@@ -3,7 +3,7 @@
 Standalone Web Tools Module
 
 This module provides generic web tools that work with multiple backend providers.
-Backend is selected during ``hermes tools`` setup (web.backend in config.yaml).
+Backend is selected during ``aizen tools`` setup (web.backend in config.yaml).
 
 Available tools:
 - web_search_tool: Search the web for information
@@ -79,9 +79,9 @@ def _has_env(name: str) -> bool:
 
 
 def _load_web_config() -> dict:
-    """Load the ``web:`` section from ~/.hermes/config.yaml."""
+    """Load the ``web:`` section from ~/.aizen/config.yaml."""
     try:
-        from hermes_cli.config import load_config
+        from aizen_cli.config import load_config
 
         return load_config().get("web", {})
     except (ImportError, Exception):
@@ -91,7 +91,7 @@ def _load_web_config() -> dict:
 def _get_backend() -> str:
     """Determine which web backend to use.
 
-    Reads ``web.backend`` from config.yaml (set by ``hermes tools``).
+    Reads ``web.backend`` from config.yaml (set by ``aizen tools``).
     Falls back to whichever API key is present for users who configured
     keys manually without running setup.
     """
@@ -718,7 +718,7 @@ def _get_exa_client():
                 "Get your API key at https://exa.ai"
             )
         _exa_client = Exa(api_key=api_key)
-        _exa_client.headers["x-exa-integration"] = "hermes-agent"
+        _exa_client.headers["x-exa-integration"] = "aizen-agent"
     return _exa_client
 
 

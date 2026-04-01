@@ -17,7 +17,7 @@ Setup::
     # Option 2: Docker
     docker run -p 9377:9377 jo-inc/camofox-browser
 
-Then set ``CAMOFOX_URL=http://localhost:9377`` in ``~/.hermes/.env``.
+Then set ``CAMOFOX_URL=http://localhost:9377`` in ``~/.aizen/.env``.
 """
 
 from __future__ import annotations
@@ -81,7 +81,7 @@ def _get_session(task_id: Optional[str]) -> Dict[str, Any]:
         if task_id in _sessions:
             return _sessions[task_id]
         session = {
-            "user_id": f"hermes_{uuid.uuid4().hex[:10]}",
+            "user_id": f"aizen_{uuid.uuid4().hex[:10]}",
             "tab_id": None,
             "session_key": f"task_{task_id[:16]}",
         }
@@ -398,8 +398,8 @@ def camofox_vision(question: str, annotate: bool = False,
         )
 
         # Save screenshot to cache
-        from core.hermes_constants import get_hermes_home
-        screenshots_dir = get_hermes_home() / "browser_screenshots"
+        from core.aizen_constants import get_aizen_home
+        screenshots_dir = get_aizen_home() / "browser_screenshots"
         screenshots_dir.mkdir(parents=True, exist_ok=True)
         screenshot_path = str(screenshots_dir / f"browser_screenshot_{uuid.uuid4().hex[:8]}.png")
 
@@ -430,7 +430,7 @@ def camofox_vision(question: str, annotate: bool = False,
         )
 
         try:
-            from hermes_cli.config import load_config
+            from aizen_cli.config import load_config
             _cfg = load_config()
             _vision_timeout = int(_cfg.get("auxiliary", {}).get("vision", {}).get("timeout", 120))
         except Exception:

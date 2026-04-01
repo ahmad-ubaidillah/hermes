@@ -79,7 +79,7 @@ class TestMemoryToolPercentClamp:
 
 
 @unittest.skip(
-    "HermesCLI not fully implemented in cli_fast.py - _build_status_bar_text doesn't exist"
+    "AizenCLI not fully implemented in cli_fast.py - _build_status_bar_text doesn't exist"
 )
 class TestCLIStatsPercentClamp:
     """cli.py — /stats command percentage"""

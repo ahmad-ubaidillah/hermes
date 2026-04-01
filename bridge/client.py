@@ -1,17 +1,17 @@
-"""Hermes Bridge Client - Python client for remote Hermes Agent access.
+"""Aizen Bridge Client - Python client for remote Aizen Agent access.
 
-Connects to a Hermes Bridge Server via WebSocket or REST API.
+Connects to a Aizen Bridge Server via WebSocket or REST API.
 
 Usage:
     from bridge.client import BridgeClient
 
     # WebSocket client (recommended for streaming)
     client = BridgeClient("ws://localhost:8765", token="jwt...")
-    response = client.chat("Hello Hermes!")
+    response = client.chat("Hello Aizen!")
 
     # REST client
     client = BridgeClient("http://localhost:8765", api_key="key...")
-    response = client.chat("Hello Hermes!")
+    response = client.chat("Hello Aizen!")
 
     # Streaming
     for chunk in client.stream_chat("Tell me a story"):
@@ -32,7 +32,7 @@ logger = logging.getLogger("bridge.client")
 
 
 class BridgeClient:
-    """Client for connecting to a Hermes Bridge Server.
+    """Client for connecting to a Aizen Bridge Server.
 
     Supports both REST API and WebSocket connections.
     WebSocket is preferred for streaming and real-time interaction.

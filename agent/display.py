@@ -42,7 +42,7 @@ def get_tool_preview_max_len() -> int:
 def _get_skin():
     """Get the active skin config, or None if not available."""
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from aizen_cli.skin_engine import get_active_skin
         return get_active_skin()
     except Exception:
         return None
@@ -338,7 +338,7 @@ class KawaiiSpinner:
         wings = skin.get_spinner_wings() if skin else []
 
         while self.running:
-            if os.getenv("HERMES_SPINNER_PAUSE"):
+            if os.getenv("AIZEN_SPINNER_PAUSE"):
                 time.sleep(0.1)
                 continue
             frame = self.spinner_frames[self.frame_idx % len(self.spinner_frames)]

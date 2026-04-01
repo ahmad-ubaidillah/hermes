@@ -238,7 +238,7 @@ class TestOpenCodeRegistry:
         assert len(TOOLSETS["opencode"]["tools"]) == 6
 
     def test_opencode_tools_in_core_list(self):
-        from tools.toolsets import _HERMES_CORE_TOOLS
+        from tools.toolsets import _AIZEN_CORE_TOOLS
 
-        assert "opencode_coding_task" in _HERMES_CORE_TOOLS
-        assert "opencode_status" in _HERMES_CORE_TOOLS
+        assert "opencode_coding_task" in _AIZEN_CORE_TOOLS
+        assert "opencode_status" in _AIZEN_CORE_TOOLS

@@ -2,11 +2,11 @@
 
 ## Apa itu Remote Bridge?
 
-Remote Bridge adalah sistem yang memungkinkan Hermes berjalan di satu tempat (server/cloud), tapi bisa diakses dan dikontrol dari tempat lain (laptop, phone, VS Code, web app).
+Remote Bridge adalah sistem yang memungkinkan Aizen berjalan di satu tempat (server/cloud), tapi bisa diakses dan dikontrol dari tempat lain (laptop, phone, VS Code, web app).
 
 ```
 ┌─────────────────┐         WebSocket         ┌─────────────────┐
-│   Hermes Server │ ◄────────────────────────► │  Remote Client  │
+│   Aizen Server │ ◄────────────────────────► │  Remote Client  │
 │   (Cloud/VPS)   │         JWT Auth           │  (Laptop/Phone) │
 │                 │                            │                 │
 │  • AIAgent      │     Session State          │  • Web UI       │
@@ -22,21 +22,21 @@ Remote Bridge adalah sistem yang memungkinkan Hermes berjalan di satu tempat (se
 
 ### 1. **VS Code Extension**
 ```
-User types in VS Code → Bridge → Hermes Server → Response → VS Code
+User types in VS Code → Bridge → Aizen Server → Response → VS Code
 ```
-Tanpa install Hermes lokal, cuma perlu extension.
+Tanpa install Aizen lokal, cuma perlu extension.
 
 ### 2. **Web Dashboard**
 ```
-Browser → WebSocket → Hermes Cloud → Tools → Response
+Browser → WebSocket → Aizen Cloud → Tools → Response
 ```
-Akses Hermes dari browser mana saja.
+Akses Aizen dari browser mana saja.
 
 ### 3. **Mobile Access**
 ```
-Phone App → API Bridge → Hermes VPS → Notifications → Phone
+Phone App → API Bridge → Aizen VPS → Notifications → Phone
 ```
-Control Hermes dari HP.
+Control Aizen dari HP.
 
 ### 4. **Multi-Device Session**
 ```
@@ -49,7 +49,7 @@ Both share same session via Bridge
 ```
 Developer A: Runs command
 Developer B: Sees output in real-time
-Same Hermes instance, different clients
+Same Aizen instance, different clients
 ```
 
 ---
@@ -75,7 +75,7 @@ Dari file `bridge.json`, Claude Code punya:
 
 ---
 
-## Hermes Implementation Plan
+## Aizen Implementation Plan
 
 ### Phase 1: Basic Bridge Server
 
@@ -87,7 +87,7 @@ from fastapi.security import HTTPBearer
 import jwt
 import asyncio
 
-app = FastAPI(title="Hermes Bridge")
+app = FastAPI(title="Aizen Bridge")
 security = HTTPBearer()
 
 # JWT Authentication
@@ -101,7 +101,7 @@ def verify_token(credentials):
 # REST API for simple commands
 @app.post("/chat")
 async def chat(message: str, user_id: str = Depends(verify_token)):
-    """Send message to Hermes, get response."""
+    """Send message to Aizen, get response."""
     agent = get_agent(user_id)
     response = await agent.achat(message)
     return {"response": response}
@@ -171,11 +171,11 @@ class FileSync:
     """Sync project files with remote client."""
     
     async def upload_file(self, path: str, content: bytes):
-        """Client uploads file to Hermes workspace."""
+        """Client uploads file to Aizen workspace."""
         # Store in temp or project dir
         
     async def download_file(self, path: str) -> bytes:
-        """Client downloads file from Hermes workspace."""
+        """Client downloads file from Aizen workspace."""
         
     async def watch_changes(self, ws: WebSocket):
         """Stream file changes to client."""
@@ -193,7 +193,7 @@ class FileSync:
                                        │
                                        ▼
                                   ┌────────────┐
-                                  │  Hermes    │
+                                  │  Aizen    │
                                   │  (isolated)│
                                   └────────────┘
 
@@ -206,9 +206,9 @@ JWT Token contains:
 
 ---
 
-## Comparison with Existing Hermes Features
+## Comparison with Existing Aizen Features
 
-| Feature | Hermes Current | Bridge Adds |
+| Feature | Aizen Current | Bridge Adds |
 |---------|---------------|-------------|
 | Gateway | Telegram/Discord/Slack | Web UI, VS Code |
 | Sessions | SQLite local | Remote sync |
@@ -229,7 +229,7 @@ python bridge_server.py --port 8765 --secret-key "your-secret"
 # Client connects
 wscat -c ws://localhost:8765/ws/session-123
 > {"type": "auth", "token": "jwt..."}
-> {"type": "chat", "message": "Hello Hermes!"}
+> {"type": "chat", "message": "Hello Aizen!"}
 < {"type": "chunk", "content": "Hi! How can I help?"}
 < {"type": "done"}
 ```
@@ -239,12 +239,12 @@ wscat -c ws://localhost:8765/ws/session-123
 ## Should We Build This?
 
 ### ✅ YES if:
-- Kamu mau akses Hermes dari mana saja (web, mobile, VS Code)
-- Kamu mau run Hermes di VPS, akses dari laptop/phone
+- Kamu mau akses Aizen dari mana saja (web, mobile, VS Code)
+- Kamu mau run Aizen di VPS, akses dari laptop/phone
 - Kamu mau team collaboration real-time
 
 ### ❌ NO if:
-- Kamu cuma pakai Hermes di satu laptop
+- Kamu cuma pakai Aizen di satu laptop
 - Kamu sudah puas dengan Telegram/Discord gateway
 - Kamu tidak butuh remote access
 

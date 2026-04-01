@@ -1,8 +1,8 @@
-# Hermes Skills Development Guide
+# Aizen Skills Development Guide
 
 ## What are Skills?
 
-Skills are reusable prompt templates and workflows that enhance Hermes Agent capabilities. They are stored in `~/.hermes/skills/` as Markdown files with YAML frontmatter.
+Skills are reusable prompt templates and workflows that enhance Aizen Agent capabilities. They are stored in `~/.aizen/skills/` as Markdown files with YAML frontmatter.
 
 ## Skill Structure
 
@@ -41,12 +41,12 @@ Example usage scenarios...
 ### Method 1: CLI Command
 
 ```bash
-hermes skills create my-skill
+aizen skills create my-skill
 ```
 
 ### Method 2: Manual Creation
 
-1. Create directory: `mkdir -p ~/.hermes/skills/my-skill`
+1. Create directory: `mkdir -p ~/.aizen/skills/my-skill`
 2. Create `SKILL.md` file
 3. Add optional files in `templates/`, `scripts/`, `references/`
 
@@ -207,21 +207,21 @@ tracemalloc.start()
 From the skills registry:
 
 ```bash
-hermes skills install git-workflow
-hermes skills install mlops/training
+aizen skills install git-workflow
+aizen skills install mlops/training
 ```
 
 From a URL:
 
 ```bash
-hermes skills install https://example.com/skills/my-skill.md
+aizen skills install https://example.com/skills/my-skill.md
 ```
 
 ## Sharing Skills
 
 Skills are local-first, but you can share via:
 
-1. **Git Repository**: Add to `.hermes/skills/` in your repo
+1. **Git Repository**: Add to `.aizen/skills/` in your repo
 2. **Gist**: Share as GitHub Gist
 3. **File**: Copy SKILL.md directly
 
@@ -229,4 +229,4 @@ Skills are local-first, but you can share via:
 
 - `/skills` - Browse available skills
 - `/save-skill` - Save current workflow as skill
-- `hermes skills --help` - CLI commands
+- `aizen skills --help` - CLI commands

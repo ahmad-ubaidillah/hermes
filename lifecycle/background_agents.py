@@ -77,21 +77,21 @@ class BackgroundAgentPool:
     MAX_CONCURRENT = 5
     DEFAULT_TIMEOUT = 300
     
-    def __init__(self, hermes_path: Optional[str] = None):
+    def __init__(self, aizen_path: Optional[str] = None):
         self.tasks: Dict[str, AgentTask] = {}
         self.results: Dict[str, BackgroundResult] = {}
         self._running: Dict[str, asyncio.Task] = {}
         
-        # Find Hermes CLI path
-        self.hermes_path = hermes_path or self._find_hermes_cli()
+        # Find Aizen CLI path
+        self.aizen_path = aizen_path or self._find_aizen_cli()
     
-    def _find_hermes_cli(self) -> str:
-        """Find Hermes CLI executable."""
+    def _find_aizen_cli(self) -> str:
+        """Find Aizen CLI executable."""
         # Check common locations
         candidates = [
-            Path.home() / ".hermes" / "hermes-agent" / "cli.py",
-            Path.home() / ".local" / "bin" / "hermes",
-            Path("/usr/local/bin/hermes"),
+            Path.home() / ".aizen" / "aizen-agent" / "cli.py",
+            Path.home() / ".local" / "bin" / "aizen",
+            Path("/usr/local/bin/aizen"),
         ]
         
         for path in candidates:
@@ -99,7 +99,7 @@ class BackgroundAgentPool:
                 return str(path)
         
         # Fallback to python module
-        return "hermes"
+        return "aizen"
     
     async def spawn(
         self,
@@ -212,7 +212,7 @@ class BackgroundAgentPool:
     
     def _build_command(self, task: AgentTask) -> List[str]:
         """Build CLI command for task."""
-        cmd = [sys.executable, self.hermes_path]
+        cmd = [sys.executable, self.aizen_path]
         
         if task.skill:
             cmd.extend(["--skill", task.skill])

@@ -1,4 +1,4 @@
-from hermes_cli import runtime_provider as rp
+from aizen_cli import runtime_provider as rp
 
 
 def test_resolve_runtime_provider_codex(monkeypatch):
@@ -226,7 +226,7 @@ def test_custom_endpoint_uses_config_api_field_when_no_api_key(monkeypatch):
 def test_custom_endpoint_auto_provider_prefers_openai_key(monkeypatch):
     """Auto provider with non-OpenRouter base_url should prefer OPENAI_API_KEY.
 
-    Same as #560 but via 'hermes model' flow which sets provider to 'auto'.
+    Same as #560 but via 'aizen model' flow which sets provider to 'auto'.
     
     Note: OPENAI_BASE_URL is no longer consulted; use OPENROUTER_BASE_URL
     or config.yaml model.base_url to override the endpoint URL.
@@ -365,7 +365,7 @@ def test_explicit_openrouter_skips_openai_base_url(monkeypatch):
 
 
 def test_resolve_requested_provider_precedence(monkeypatch):
-    monkeypatch.setenv("HERMES_INFERENCE_PROVIDER", "nous")
+    monkeypatch.setenv("AIZEN_INFERENCE_PROVIDER", "nous")
     monkeypatch.setattr(rp, "_get_model_config", lambda: {"provider": "openai-codex"})
     assert rp.resolve_requested_provider("openrouter") == "openrouter"
     assert rp.resolve_requested_provider() == "openai-codex"
@@ -373,7 +373,7 @@ def test_resolve_requested_provider_precedence(monkeypatch):
     monkeypatch.setattr(rp, "_get_model_config", lambda: {})
     assert rp.resolve_requested_provider() == "nous"
 
-    monkeypatch.delenv("HERMES_INFERENCE_PROVIDER", raising=False)
+    monkeypatch.delenv("AIZEN_INFERENCE_PROVIDER", raising=False)
     assert rp.resolve_requested_provider() == "auto"
 
 
@@ -593,13 +593,13 @@ def test_named_custom_provider_anthropic_api_mode(monkeypatch):
 
 def test_resolve_provider_custom_returns_custom():
     """resolve_provider('custom') must return 'custom', not 'openrouter'."""
-    from hermes_cli.auth import resolve_provider
+    from aizen_cli.auth import resolve_provider
     assert resolve_provider("custom") == "custom"
 
 
 def test_resolve_provider_openrouter_unchanged():
     """resolve_provider('openrouter') must still return 'openrouter'."""
-    from hermes_cli.auth import resolve_provider
+    from aizen_cli.auth import resolve_provider
     assert resolve_provider("openrouter") == "openrouter"
 
 

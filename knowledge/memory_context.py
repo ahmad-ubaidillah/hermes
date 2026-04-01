@@ -1,5 +1,5 @@
 """
-Hermes Memory Context Provider
+Aizen Memory Context Provider
 
 Automatically injects relevant memories into the agent context
 before each request and stores conversations after.
@@ -190,7 +190,7 @@ class MemoryContextProvider:
         return self.store.stats(self.container_tag)
 
 
-# Integration helper for Hermes
+# Integration helper for Aizen
 def inject_memory_context(
     user_message: str,
     container_tag: str = "default",
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     
     # Add some memories
     provider.add_memory("User's name is Ahmad Ubaidillah", is_static=True)
-    provider.add_memory("User develops Hermes agent framework", is_static=True)
+    provider.add_memory("User develops Aizen agent framework", is_static=True)
     provider.add_memory("Currently working on memory integration", forget_after_days=7)
     
     # Get context for injection
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     conversation = """
 User: What's my name and what am I working on?
 Assistant: Based on my memory, your name is Ahmad Ubaidillah. 
-You're currently working on memory integration for the Hermes agent framework.
+You're currently working on memory integration for the Aizen agent framework.
 """
     provider.after_request(conversation, forget_after_days=30)
     

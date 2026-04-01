@@ -23,7 +23,7 @@ class TestParseReasoningConfig(unittest.TestCase):
     """Verify _parse_reasoning_config handles all effort levels."""
 
     def _parse(self, effort):
-        from core.hermes_constants import parse_reasoning_effort
+        from core.aizen_constants import parse_reasoning_effort
 
         return parse_reasoning_effort(effort)
 
@@ -104,7 +104,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_effort_level_sets_config(self):
         """Setting an effort level should update reasoning_config."""
-        from core.hermes_constants import parse_reasoning_effort
+        from core.aizen_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         arg = "high"
@@ -113,7 +113,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
         self.assertEqual(stub.reasoning_config, {"enabled": True, "effort": "high"})
 
     def test_effort_none_disables_reasoning(self):
-        from core.hermes_constants import parse_reasoning_effort
+        from core.aizen_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         parsed = parse_reasoning_effort("none")
@@ -122,7 +122,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_invalid_argument_rejected(self):
         """Invalid arguments should be rejected (parsed returns None)."""
-        from core.hermes_constants import parse_reasoning_effort
+        from core.aizen_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         arg = "high"
@@ -132,7 +132,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_effort_none_disables_reasoning_2(self):
         """Duplicate test removed - keeping only the one at line 115"""
-        from core.hermes_constants import parse_reasoning_effort
+        from core.aizen_constants import parse_reasoning_effort
 
         stub = self._make_cli()
         parsed = parse_reasoning_effort("none")
@@ -141,7 +141,7 @@ class TestHandleReasoningCommand(unittest.TestCase):
 
     def test_invalid_argument_rejected_2(self):
         """Duplicate test removed - keeping only the one above"""
-        from core.hermes_constants import parse_reasoning_effort
+        from core.aizen_constants import parse_reasoning_effort
 
         parsed = parse_reasoning_effort("turbo")
         self.assertIsNone(parsed)
@@ -325,7 +325,7 @@ class TestReasoningCallback(unittest.TestCase):
 
 
 class TestReasoningPreviewBuffering(unittest.TestCase):
-    """Tests for HermesCLI reasoning preview buffering - skipped until methods are implemented."""
+    """Tests for AizenCLI reasoning preview buffering - skipped until methods are implemented."""
 
     pass
 
@@ -488,7 +488,7 @@ class TestConfigDefault(unittest.TestCase):
     """Verify config default for show_reasoning."""
 
     def test_default_config_has_show_reasoning(self):
-        from hermes_cli.config import DEFAULT_CONFIG
+        from aizen_cli.config import DEFAULT_CONFIG
 
         display = DEFAULT_CONFIG.get("display", {})
         self.assertIn("show_reasoning", display)
@@ -499,7 +499,7 @@ class TestCommandRegistered(unittest.TestCase):
     """Verify /reasoning is in the COMMANDS dict."""
 
     def test_reasoning_in_commands(self):
-        from hermes_cli.commands import COMMANDS
+        from aizen_cli.commands import COMMANDS
 
         self.assertIn("/reasoning", COMMANDS)
 
@@ -663,7 +663,7 @@ class TestReasoningDeltasFiredFlag(unittest.TestCase):
 
 
 class TestReasoningShownThisTurnFlag(unittest.TestCase):
-    """Post-response reasoning display tests - skipped until HermesCLI methods are implemented."""
+    """Post-response reasoning display tests - skipped until AizenCLI methods are implemented."""
 
     pass
 

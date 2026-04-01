@@ -2,7 +2,7 @@
 and CLI integration.
 
 Coverage:
-  hermes_cli/clipboard.py  — platform-specific image extraction (macOS, WSL, Wayland, X11)
+  aizen_cli/clipboard.py  — platform-specific image extraction (macOS, WSL, Wayland, X11)
   cli.py                   — _try_attach_clipboard_image, _build_multimodal_content,
                               image attachment state, queue tuple routing
 """
@@ -17,7 +17,7 @@ from unittest.mock import patch, MagicMock, PropertyMock, mock_open
 
 import pytest
 
-from hermes_cli.clipboard import (
+from aizen_cli.clipboard import (
     save_clipboard_image,
     has_clipboard_image,
     _is_wsl,
@@ -46,25 +46,25 @@ FAKE_BMP = b"BM" + b"\x00" * 100
 class TestSaveClipboardImage:
     def test_dispatches_to_macos_on_darwin(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("aizen_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "darwin"
-            with patch("hermes_cli.clipboard._macos_save", return_value=False) as m:
+            with patch("aizen_cli.clipboard._macos_save", return_value=False) as m:
                 save_clipboard_image(dest)
                 m.assert_called_once_with(dest)
 
     def test_dispatches_to_linux_on_linux(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("aizen_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._linux_save", return_value=False) as m:
+            with patch("aizen_cli.clipboard._linux_save", return_value=False) as m:
                 save_clipboard_image(dest)
                 m.assert_called_once_with(dest)
 
     def test_creates_parent_dirs(self, tmp_path):
         dest = tmp_path / "deep" / "nested" / "out.png"
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("aizen_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._linux_save", return_value=False):
+            with patch("aizen_cli.clipboard._linux_save", return_value=False):
                 save_clipboard_image(dest)
         assert dest.parent.exists()
 
@@ -80,19 +80,19 @@ class TestMacosPngpaste:
             dest.write_bytes(FAKE_PNG)
             return MagicMock(returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_pngpaste(dest) is True
         assert dest.stat().st_size == len(FAKE_PNG)
 
     def test_not_installed(self, tmp_path):
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
         ):
             assert _macos_pngpaste(tmp_path / "out.png") is False
 
     def test_no_image_in_clipboard(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=1)
             assert _macos_pngpaste(dest) is False
         assert not dest.exists()
@@ -104,13 +104,13 @@ class TestMacosPngpaste:
             dest.write_bytes(b"")
             return MagicMock(returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_pngpaste(dest) is False
 
     def test_timeout_returns_false(self, tmp_path):
         dest = tmp_path / "out.png"
         with patch(
-            "hermes_cli.clipboard.subprocess.run",
+            "aizen_cli.clipboard.subprocess.run",
             side_effect=subprocess.TimeoutExpired("pngpaste", 3),
         ):
             assert _macos_pngpaste(dest) is False
@@ -118,19 +118,19 @@ class TestMacosPngpaste:
 
 class TestMacosHasImage:
     def test_png_detected(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="«class PNGf», «class ut16»", returncode=0
             )
             assert _macos_has_image() is True
 
     def test_tiff_detected(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="«class TIFF»", returncode=0)
             assert _macos_has_image() is True
 
     def test_text_only(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="«class ut16», «class utf8»", returncode=0
             )
@@ -139,7 +139,7 @@ class TestMacosHasImage:
 
 class TestMacosOsascript:
     def test_no_image_type_in_clipboard(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="«class ut16», «class utf8»", returncode=0
             )
@@ -147,7 +147,7 @@ class TestMacosOsascript:
 
     def test_clipboard_info_fails(self, tmp_path):
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=Exception("fail")
+            "aizen_cli.clipboard.subprocess.run", side_effect=Exception("fail")
         ):
             assert _macos_osascript(tmp_path / "out.png") is False
 
@@ -162,7 +162,7 @@ class TestMacosOsascript:
             dest.write_bytes(FAKE_PNG)
             return MagicMock(stdout="", returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is True
         assert dest.stat().st_size > 0
 
@@ -177,7 +177,7 @@ class TestMacosOsascript:
             dest.write_bytes(FAKE_PNG)
             return MagicMock(stdout="", returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is True
 
     def test_extraction_returns_fail(self, tmp_path):
@@ -190,7 +190,7 @@ class TestMacosOsascript:
                 return MagicMock(stdout="«class PNGf»", returncode=0)
             return MagicMock(stdout="fail", returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is False
 
     def test_extraction_writes_empty_file(self, tmp_path):
@@ -204,7 +204,7 @@ class TestMacosOsascript:
             dest.write_bytes(b"")
             return MagicMock(stdout="", returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _macos_osascript(dest) is False
 
 
@@ -214,7 +214,7 @@ class TestMacosOsascript:
 class TestIsWsl:
     def setup_method(self):
         # Reset cached value before each test
-        import hermes_cli.clipboard as cb
+        import aizen_cli.clipboard as cb
 
         cb._wsl_detected = None
 
@@ -250,23 +250,23 @@ class TestIsWsl:
 
 class TestWslHasImage:
     def test_clipboard_has_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="True\n", returncode=0)
             assert _wsl_has_image() is True
 
     def test_clipboard_no_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="False\n", returncode=0)
             assert _wsl_has_image() is False
 
     def test_powershell_not_found(self):
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
         ):
             assert _wsl_has_image() is False
 
     def test_powershell_error(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=1)
             assert _wsl_has_image() is False
 
@@ -275,34 +275,34 @@ class TestWslSave:
     def test_successful_extraction(self, tmp_path):
         dest = tmp_path / "out.png"
         b64_png = base64.b64encode(FAKE_PNG).decode()
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout=b64_png + "\n", returncode=0)
             assert _wsl_save(dest) is True
         assert dest.read_bytes() == FAKE_PNG
 
     def test_no_image_returns_false(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=1)
             assert _wsl_save(dest) is False
         assert not dest.exists()
 
     def test_empty_output(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=0)
             assert _wsl_save(dest) is False
 
     def test_powershell_not_found(self, tmp_path):
         dest = tmp_path / "out.png"
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
         ):
             assert _wsl_save(dest) is False
 
     def test_invalid_base64(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="not-valid-base64!!!", returncode=0
             )
@@ -311,7 +311,7 @@ class TestWslSave:
     def test_timeout(self, tmp_path):
         dest = tmp_path / "out.png"
         with patch(
-            "hermes_cli.clipboard.subprocess.run",
+            "aizen_cli.clipboard.subprocess.run",
             side_effect=subprocess.TimeoutExpired("powershell.exe", 15),
         ):
             assert _wsl_save(dest) is False
@@ -322,21 +322,21 @@ class TestWslSave:
 
 class TestWaylandHasImage:
     def test_has_png(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="image/png\ntext/plain\n", returncode=0
             )
             assert _wayland_has_image() is True
 
     def test_has_bmp_only(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="text/html\nimage/bmp\n", returncode=0
             )
             assert _wayland_has_image() is True
 
     def test_text_only(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="text/plain\ntext/html\n", returncode=0
             )
@@ -344,7 +344,7 @@ class TestWaylandHasImage:
 
     def test_wl_paste_not_installed(self):
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
         ):
             assert _wayland_has_image() is False
 
@@ -363,7 +363,7 @@ class TestWaylandSave:
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _wayland_save(dest) is True
         assert dest.stat().st_size > 0
 
@@ -379,13 +379,13 @@ class TestWaylandSave:
                 kw["stdout"].write(FAKE_BMP)
             return MagicMock(returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
-            with patch("hermes_cli.clipboard._convert_to_png", return_value=True):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
+            with patch("aizen_cli.clipboard._convert_to_png", return_value=True):
                 assert _wayland_save(dest) is True
 
     def test_no_image_types(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="text/plain\ntext/html\n", returncode=0
             )
@@ -394,13 +394,13 @@ class TestWaylandSave:
     def test_wl_paste_not_installed(self, tmp_path):
         dest = tmp_path / "out.png"
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
         ):
             assert _wayland_save(dest) is False
 
     def test_list_types_fails(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="", returncode=1)
             assert _wayland_save(dest) is False
 
@@ -419,7 +419,7 @@ class TestWaylandSave:
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _wayland_save(dest) is True
         # Verify PNG was requested, not BMP
         extract_cmd = calls[1]
@@ -431,20 +431,20 @@ class TestWaylandSave:
 
 class TestXclipHasImage:
     def test_has_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 stdout="image/png\ntext/plain\n", returncode=0
             )
             assert _xclip_has_image() is True
 
     def test_no_image(self):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="text/plain\n", returncode=0)
             assert _xclip_has_image() is False
 
     def test_xclip_not_installed(self):
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
         ):
             assert _xclip_has_image() is False
 
@@ -452,12 +452,12 @@ class TestXclipHasImage:
 class TestXclipSave:
     def test_no_xclip_installed(self, tmp_path):
         with patch(
-            "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+            "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
         ):
             assert _xclip_save(tmp_path / "out.png") is False
 
     def test_no_image_in_clipboard(self, tmp_path):
-        with patch("hermes_cli.clipboard.subprocess.run") as mock_run:
+        with patch("aizen_cli.clipboard.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(stdout="text/plain\n", returncode=0)
             assert _xclip_save(tmp_path / "out.png") is False
 
@@ -471,7 +471,7 @@ class TestXclipSave:
                 kw["stdout"].write(FAKE_PNG)
             return MagicMock(returncode=0)
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _xclip_save(dest) is True
         assert dest.stat().st_size > 0
 
@@ -483,13 +483,13 @@ class TestXclipSave:
                 return MagicMock(stdout="image/png\n", returncode=0)
             raise subprocess.SubprocessError("pipe broke")
 
-        with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+        with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
             assert _xclip_save(dest) is False
         assert not dest.exists()
 
     def test_targets_check_timeout(self, tmp_path):
         with patch(
-            "hermes_cli.clipboard.subprocess.run",
+            "aizen_cli.clipboard.subprocess.run",
             side_effect=subprocess.TimeoutExpired("xclip", 3),
         ):
             assert _xclip_save(tmp_path / "out.png") is False
@@ -502,54 +502,54 @@ class TestLinuxSave:
     """Test that _linux_save dispatches correctly to WSL → Wayland → X11."""
 
     def setup_method(self):
-        import hermes_cli.clipboard as cb
+        import aizen_cli.clipboard as cb
 
         cb._wsl_detected = None
 
     def test_wsl_tried_first(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-            with patch("hermes_cli.clipboard._wsl_save", return_value=True) as m:
+        with patch("aizen_cli.clipboard._is_wsl", return_value=True):
+            with patch("aizen_cli.clipboard._wsl_save", return_value=True) as m:
                 assert _linux_save(dest) is True
                 m.assert_called_once_with(dest)
 
     def test_wsl_fails_falls_through_to_xclip(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=True):
-            with patch("hermes_cli.clipboard._wsl_save", return_value=False):
+        with patch("aizen_cli.clipboard._is_wsl", return_value=True):
+            with patch("aizen_cli.clipboard._wsl_save", return_value=False):
                 with patch.dict(os.environ, {}, clear=True):
                     with patch(
-                        "hermes_cli.clipboard._xclip_save", return_value=True
+                        "aizen_cli.clipboard._xclip_save", return_value=True
                     ) as m:
                         assert _linux_save(dest) is True
                         m.assert_called_once_with(dest)
 
     def test_wayland_tried_when_display_set(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+        with patch("aizen_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
                 with patch(
-                    "hermes_cli.clipboard._wayland_save", return_value=True
+                    "aizen_cli.clipboard._wayland_save", return_value=True
                 ) as m:
                     assert _linux_save(dest) is True
                     m.assert_called_once_with(dest)
 
     def test_wayland_fails_falls_through_to_xclip(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+        with patch("aizen_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
-                with patch("hermes_cli.clipboard._wayland_save", return_value=False):
+                with patch("aizen_cli.clipboard._wayland_save", return_value=False):
                     with patch(
-                        "hermes_cli.clipboard._xclip_save", return_value=True
+                        "aizen_cli.clipboard._xclip_save", return_value=True
                     ) as m:
                         assert _linux_save(dest) is True
                         m.assert_called_once_with(dest)
 
     def test_xclip_used_on_plain_x11(self, tmp_path):
         dest = tmp_path / "out.png"
-        with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+        with patch("aizen_cli.clipboard._is_wsl", return_value=False):
             with patch.dict(os.environ, {}, clear=True):
-                with patch("hermes_cli.clipboard._xclip_save", return_value=True) as m:
+                with patch("aizen_cli.clipboard._xclip_save", return_value=True) as m:
                     assert _linux_save(dest) is True
                     m.assert_called_once_with(dest)
 
@@ -581,9 +581,9 @@ class TestConvertToPng:
             return MagicMock(returncode=0)
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
-            with patch("hermes_cli.clipboard.subprocess.run", side_effect=fake_run):
+            with patch("aizen_cli.clipboard.subprocess.run", side_effect=fake_run):
                 # Force ImportError for Pillow
-                import hermes_cli.clipboard as cb
+                import aizen_cli.clipboard as cb
 
                 original = cb._convert_to_png
 
@@ -618,7 +618,7 @@ class TestConvertToPng:
         # Both Pillow and ImageMagick unavailable
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
             with patch(
-                "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+                "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
             ):
                 result = _convert_to_png(dest)
                 # Raw BMP is better than nothing — function should return True
@@ -637,7 +637,7 @@ class TestConvertToPng:
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
             with patch(
-                "hermes_cli.clipboard.subprocess.run", side_effect=fake_run_fail
+                "aizen_cli.clipboard.subprocess.run", side_effect=fake_run_fail
             ):
                 _convert_to_png(dest)
 
@@ -653,7 +653,7 @@ class TestConvertToPng:
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
             with patch(
-                "hermes_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
+                "aizen_cli.clipboard.subprocess.run", side_effect=FileNotFoundError
             ):
                 _convert_to_png(dest)
 
@@ -670,7 +670,7 @@ class TestConvertToPng:
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
             with patch(
-                "hermes_cli.clipboard.subprocess.run",
+                "aizen_cli.clipboard.subprocess.run",
                 side_effect=subprocess.TimeoutExpired("convert", 5),
             ):
                 _convert_to_png(dest)
@@ -684,45 +684,45 @@ class TestConvertToPng:
 
 class TestHasClipboardImage:
     def setup_method(self):
-        import hermes_cli.clipboard as cb
+        import aizen_cli.clipboard as cb
 
         cb._wsl_detected = None
 
     def test_macos_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("aizen_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "darwin"
-            with patch("hermes_cli.clipboard._macos_has_image", return_value=True) as m:
+            with patch("aizen_cli.clipboard._macos_has_image", return_value=True) as m:
                 assert has_clipboard_image() is True
                 m.assert_called_once()
 
     def test_linux_wsl_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("aizen_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._is_wsl", return_value=True):
+            with patch("aizen_cli.clipboard._is_wsl", return_value=True):
                 with patch(
-                    "hermes_cli.clipboard._wsl_has_image", return_value=True
+                    "aizen_cli.clipboard._wsl_has_image", return_value=True
                 ) as m:
                     assert has_clipboard_image() is True
                     m.assert_called_once()
 
     def test_linux_wayland_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("aizen_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+            with patch("aizen_cli.clipboard._is_wsl", return_value=False):
                 with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-0"}):
                     with patch(
-                        "hermes_cli.clipboard._wayland_has_image", return_value=True
+                        "aizen_cli.clipboard._wayland_has_image", return_value=True
                     ) as m:
                         assert has_clipboard_image() is True
                         m.assert_called_once()
 
     def test_linux_x11_dispatch(self):
-        with patch("hermes_cli.clipboard.sys") as mock_sys:
+        with patch("aizen_cli.clipboard.sys") as mock_sys:
             mock_sys.platform = "linux"
-            with patch("hermes_cli.clipboard._is_wsl", return_value=False):
+            with patch("aizen_cli.clipboard._is_wsl", return_value=False):
                 with patch.dict(os.environ, {}, clear=True):
                     with patch(
-                        "hermes_cli.clipboard._xclip_has_image", return_value=True
+                        "aizen_cli.clipboard._xclip_has_image", return_value=True
                     ) as m:
                         assert has_clipboard_image() is True
                         m.assert_called_once()
@@ -734,14 +734,14 @@ class TestHasClipboardImage:
 
 
 @pytest.mark.skip(
-    reason="HermesCLI._preprocess_images_with_vision not available in cli_fast.py"
+    reason="AizenCLI._preprocess_images_with_vision not available in cli_fast.py"
 )
 class TestPreprocessImagesWithVision:
     """Test vision-based image pre-processing for the CLI."""
 
     @pytest.fixture
     def cli(self):
-        """Minimal HermesCLI with mocked internals."""
+        """Minimal AizenCLI with mocked internals."""
         with patch("cli.load_cli_config") as mock_cfg:
             mock_cfg.return_value = {
                 "model": {
@@ -760,9 +760,9 @@ class TestPreprocessImagesWithVision:
             }
             with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
                 with patch("cli.CLI_CONFIG", mock_cfg.return_value):
-                    from cli import HermesCLI
+                    from cli import AizenCLI
 
-                    cli_obj = HermesCLI.__new__(HermesCLI)
+                    cli_obj = AizenCLI.__new__(AizenCLI)
                     # Manually init just enough state
                     cli_obj._attached_images = []
                     cli_obj._image_counter = 0
@@ -880,36 +880,36 @@ class TestPreprocessImagesWithVision:
 
 
 @pytest.mark.skip(
-    reason="HermesCLI._try_attach_clipboard_image not available in cli_fast.py"
+    reason="AizenCLI._try_attach_clipboard_image not available in cli_fast.py"
 )
 class TestTryAttachClipboardImage:
     """Test the clipboard → state flow."""
 
     @pytest.fixture
     def cli(self):
-        from cli import HermesCLI
+        from cli import AizenCLI
 
-        cli_obj = HermesCLI.__new__(HermesCLI)
+        cli_obj = AizenCLI.__new__(AizenCLI)
         cli_obj._attached_images = []
         cli_obj._image_counter = 0
         return cli_obj
 
     def test_image_found_attaches(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=True):
+        with patch("aizen_cli.clipboard.save_clipboard_image", return_value=True):
             result = cli._try_attach_clipboard_image()
         assert result is True
         assert len(cli._attached_images) == 1
         assert cli._image_counter == 1
 
     def test_no_image_doesnt_attach(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=False):
+        with patch("aizen_cli.clipboard.save_clipboard_image", return_value=False):
             result = cli._try_attach_clipboard_image()
         assert result is False
         assert len(cli._attached_images) == 0
         assert cli._image_counter == 0  # rolled back
 
     def test_multiple_attaches_increment_counter(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=True):
+        with patch("aizen_cli.clipboard.save_clipboard_image", return_value=True):
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
@@ -918,7 +918,7 @@ class TestTryAttachClipboardImage:
 
     def test_mixed_success_and_failure(self, cli):
         results = [True, False, True]
-        with patch("hermes_cli.clipboard.save_clipboard_image", side_effect=results):
+        with patch("aizen_cli.clipboard.save_clipboard_image", side_effect=results):
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
             cli._try_attach_clipboard_image()
@@ -926,10 +926,10 @@ class TestTryAttachClipboardImage:
         assert cli._image_counter == 2  # 3 attempts, 1 rolled back
 
     def test_image_path_follows_naming_convention(self, cli):
-        with patch("hermes_cli.clipboard.save_clipboard_image", return_value=True):
+        with patch("aizen_cli.clipboard.save_clipboard_image", return_value=True):
             cli._try_attach_clipboard_image()
         path = cli._attached_images[0]
-        assert path.parent == Path(os.environ["HERMES_HOME"]) / "images"
+        assert path.parent == Path(os.environ["AIZEN_HOME"]) / "images"
         assert path.name.startswith("clip_")
         assert path.suffix == ".png"
 

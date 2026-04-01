@@ -1,4 +1,4 @@
-"""Hermes Agent SDK - Simple embedding API.
+"""Aizen Agent SDK - Simple embedding API.
 
 Usage:
     from sdk import Agent
@@ -23,7 +23,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional
 
 
 class Agent:
-    """Simple Hermes Agent wrapper for embedding.
+    """Simple Aizen Agent wrapper for embedding.
     
     Example:
         agent = Agent(model="anthropic/claude-sonnet-4")
@@ -39,7 +39,7 @@ class Agent:
         tools: Optional[List[str]] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        hermes_home: Optional[Path] = None,
+        aizen_home: Optional[Path] = None,
     ):
         """Initialize Agent.
         
@@ -50,7 +50,7 @@ class Agent:
             tools: List of enabled toolsets (None = all available)
             api_key: API key (uses env var if not provided)
             base_url: Optional API base URL override
-            hermes_home: Optional HERMES_HOME path override
+            aizen_home: Optional AIZEN_HOME path override
         """
         self.model = model
         self.system = system
@@ -58,7 +58,7 @@ class Agent:
         self.tools = tools
         self.api_key = api_key
         self.base_url = base_url
-        self.hermes_home = hermes_home
+        self.aizen_home = aizen_home
         
         self._agent = None
         self._history: List[Dict[str, str]] = []
@@ -80,8 +80,8 @@ class Agent:
                 os.environ["ANTHROPIC_API_KEY"] = self.api_key
             if self.base_url:
                 kwargs["base_url"] = self.base_url
-            if self.hermes_home:
-                os.environ["HERMES_HOME"] = str(self.hermes_home)
+            if self.aizen_home:
+                os.environ["AIZEN_HOME"] = str(self.aizen_home)
             
             self._agent = AIAgent(**kwargs)
         return self._agent

@@ -4,11 +4,11 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from agent.skill_commands import scan_skill_commands
-from cli import HermesCLI
+from cli import AizenCLI
 
 
 def _make_cli():
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = AizenCLI.__new__(AizenCLI)
     cli_obj.config = {}
     cli_obj.console = MagicMock()
     cli_obj.agent = None
@@ -30,13 +30,13 @@ description: Plan mode skill.
 # Plan
 
 Use the current conversation context when no explicit instruction is provided.
-Save plans under the active workspace's .hermes/plans directory.
+Save plans under the active workspace's .aizen/plans directory.
 """
     )
 
 
 class TestCLIPlanCommand(unittest.TestCase):
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_plan_command_queues_plan_skill_message(self, tmp_path, monkeypatch):
         cli_obj = _make_cli()
 
@@ -50,12 +50,12 @@ class TestCLIPlanCommand(unittest.TestCase):
         queued = cli_obj._pending_input.put.call_args[0][0]
         assert "Plan mode skill" in queued
         assert "Add OAuth login" in queued
-        assert ".hermes/plans" in queued
+        assert ".aizen/plans" in queued
         assert str(tmp_path / "plans") not in queued
         assert "active workspace/backend cwd" in queued
         assert "Runtime note:" in queued
 
-    @unittest.skip("HermesCLI.process_command not yet implemented in cli_fast.py")
+    @unittest.skip("AizenCLI.process_command not yet implemented in cli_fast.py")
     def test_plan_without_args_uses_skill_context_guidance(self, tmp_path, monkeypatch):
         cli_obj = _make_cli()
 
@@ -66,5 +66,5 @@ class TestCLIPlanCommand(unittest.TestCase):
 
         queued = cli_obj._pending_input.put.call_args[0][0]
         assert "current conversation context" in queued
-        assert ".hermes/plans/" in queued
+        assert ".aizen/plans/" in queued
         assert "conversation-plan.md" in queued

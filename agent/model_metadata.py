@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 import requests
 import yaml
 
-from core.hermes_constants import OPENROUTER_MODELS_URL
+from core.aizen_constants import OPENROUTER_MODELS_URL
 
 logger = logging.getLogger(__name__)
 
@@ -500,8 +500,8 @@ def fetch_endpoint_model_metadata(
 
 def _get_context_cache_path() -> Path:
     """Return path to the persistent context length cache file."""
-    hermes_home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-    return hermes_home / "context_length_cache.yaml"
+    aizen_home = Path(os.environ.get("AIZEN_HOME", Path.home() / ".aizen"))
+    return aizen_home / "context_length_cache.yaml"
 
 
 def _load_context_cache() -> Dict[str, int]:
@@ -916,7 +916,7 @@ def estimate_request_tokens_rough(
 ) -> int:
     """Rough token estimate for a full chat-completions request.
 
-    Includes the major payload buckets Hermes sends to providers:
+    Includes the major payload buckets Aizen sends to providers:
     system prompt, conversation messages, and tool schemas.  With 50+
     tools enabled, schemas alone can add 20-30K tokens — a significant
     blind spot when only counting messages.
