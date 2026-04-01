@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ahmad-ubaidillah/aizen"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/aizen-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+  <a href="https://github.com/ahmad-ubaidillah/hermes"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/hermes-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
   <a href="https://github.com/ahmad-ubaidillah/aizen/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
 </p>
@@ -52,7 +52,7 @@ Aizen Agent is an autonomous AI team platform that helps you build software with
 
 ```bash
 # Install (one line!)
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash
 
 # Chat with Aizen
 aizen
@@ -68,7 +68,7 @@ aizen --model opencode/qwen3.6-plus-free
 ### One-Line Install (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/install.sh | bash
 ```
 
 This will:
@@ -83,7 +83,7 @@ This will:
 ### Manual Install
 
 ```bash
-git clone https://github.com/ahmad-ubaidillah/aizen.git ~/.aizen/aizen-agent
+git clone https://github.com/ahmad-ubaidillah/hermes.git ~/.aizen/aizen-agent
 cd ~/.aizen/aizen-agent
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv venv --python 3.11

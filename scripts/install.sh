@@ -60,7 +60,7 @@ echo -e "${C}▸ Installing Aizen...${N}"
 if [ -d "$INSTALL_DIR" ]; then
     cd "$INSTALL_DIR" && git pull origin "$BRANCH" >/dev/null 2>&1 || true
 else
-    git clone -b "$BRANCH" https://github.com/ahmad-ubaidillah/aizen.git "$INSTALL_DIR" >/dev/null 2>&1
+    git clone -b "$BRANCH" https://github.com/ahmad-ubaidillah/hermes.git "$INSTALL_DIR" >/dev/null 2>&1
     cd "$INSTALL_DIR"
 fi
 echo -e "${G}✓ Repository ready${N}"
