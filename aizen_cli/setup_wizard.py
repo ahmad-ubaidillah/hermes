@@ -76,13 +76,13 @@ class SetupWizard:
         """Show welcome message."""
         if RICH_AVAILABLE:
             console.print(Panel.fit(
-                "[bold magenta]⚕ Aizen v3.0 Setup Wizard[/bold magenta]\n\n"
-                "Configure your Autonomous AI Team\n"
+                "[bold #7C3AED]<z> Aizen Setup Wizard[/bold #7C3AED]\n\n"
+                "Code • Zen • Clarity\n"
                 "Free models via OpenCode included",
-                border_style="magenta"
+                border_style="#7C3AED"
             ))
         else:
-            print("\n⚕ Aizen v3.0 Setup Wizard\n")
+            print("\n<z> Aizen Setup Wizard\n")
     
     def _setup_model_provider(self):
         """Setup AI model provider."""
