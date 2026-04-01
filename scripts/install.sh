@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# Aizen v3.0 Installer - Simple & Comprehensive
+# Aizen Agent - One-Line Installer
 # ============================================================================
 #
 # Usage:
@@ -8,8 +8,8 @@
 #
 # Options:
 #   --skip-setup      Skip setup wizard
-#   --no-opencode     Skip OpenCode installation
-#   --minimal         Minimal install (no OpenCode, no dashboard)
+#   --no-opencode     Skip OpenCode check
+#   --minimal         Minimal install
 #   --branch NAME     Install specific branch
 #
 # ============================================================================
@@ -17,142 +17,151 @@
 set -e
 
 # Colors
-R='\033[0;31m'; G='\033[0;32m'; Y='\033[0;33m'; B='\033[0;34m'; M='\033[0;35m'; C='\033[0;36m'
-N='\033[0m'; BOLD='\033[1m'
-
-# Config
-REPO="https://github.com/ahmad-ubaidillah/aizen.git"
-HOME_HERMES="$HOME/.aizen"
-INSTALL_DIR="${AIZEN_INSTALL_DIR:-$HOME_HERMES/aizen-agent}"
-PYTHON_VER="3.11"
-BRANCH="main"
-RUN_SETUP=true
-INSTALL_OPENCODE=true
-MINIMAL=false
+R='\033[0;31m'; G='\033[0;32m'; Y='\033[0;33m'; C='\033[0;36m'; B='\033[1m'; N='\033[0m'
 
 # Parse args
+RUN_SETUP=true
+CHECK_OPENCODE=true
+MINIMAL=false
+BRANCH="main"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --skip-setup) RUN_SETUP=false; shift ;;
-        --no-opencode) INSTALL_OPENCODE=false; shift ;;
-        --minimal) MINIMAL=true; INSTALL_OPENCODE=false; shift ;;
+        --no-opencode) CHECK_OPENCODE=false; shift ;;
+        --minimal) MINIMAL=true; CHECK_OPENCODE=false; shift ;;
         --branch) BRANCH="$2"; shift 2 ;;
-        --dir) INSTALL_DIR="$2"; shift 2 ;;
-        -h|--help)
-            echo "Aizen v3.0 Installer"
-            echo "Usage: install.sh [OPTIONS]"
-            echo "  --skip-setup    Skip setup wizard"
-            echo "  --no-opencode   Skip OpenCode (free models)"
-            echo "  --minimal       Minimal install"
-            echo "  --branch NAME   Branch to install"
-            echo "  --dir PATH      Install directory"
-            exit 0 ;;
         *) shift ;;
     esac
 done
 
 # Banner
-echo -e "${M}${BOLD}"
-echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║              ⚕ Aizen v3.0 Installer                         ║"
-echo "║         Autonomous AI Team - Free + Powerful                 ║"
-echo "╚══════════════════════════════════════════════════════════════╝"
+echo -e "${C}${B}"
+echo "  ⚕ Aizen Agent Installer"
+echo "  Execute with Zen"
 echo -e "${N}"
 
 # OS check
 OS="$(uname -s)"
 [[ "$OS" != "Linux" && "$OS" != "Darwin" ]] && { echo -e "${R}Unsupported OS${N}"; exit 1; }
 
-# Step 1: Dependencies
-echo -e "${B}▸ Installing dependencies...${N}"
-if command -v apt-get &>/dev/null; then
-    sudo apt-get update -qq 2>/dev/null || true
-    sudo apt-get install -y -qq git curl python3 python3-pip python3-venv nodejs npm 2>/dev/null || true
-elif command -v brew &>/dev/null; then
-    brew install git curl python@3.11 node npm 2>/dev/null || true
-fi
-echo -e "${G}✓ Dependencies${N}"
+# Config
+INSTALL_DIR="$HOME/.aizen/aizen-agent"
 
-# Step 2: uv (fast Python installer)
-echo -e "${B}▸ Installing uv (fast Python installer)...${N}"
+# Step 1: Install uv
+echo -e "${C}▸ Installing uv...${N}"
 if ! command -v uv &>/dev/null; then
     curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1
     export PATH="$HOME/.local/bin:$PATH"
 fi
-echo -e "${G}✓ uv installed${N}"
+echo -e "${G}✓ uv ready${N}"
 
-# Step 3: Clone Aizen
-echo -e "${B}▸ Cloning Aizen v3.0...${N}"
+# Step 2: Clone/Update repository
+echo -e "${C}▸ Installing Aizen...${N}"
 if [ -d "$INSTALL_DIR" ]; then
     cd "$INSTALL_DIR" && git pull origin "$BRANCH" >/dev/null 2>&1 || true
 else
-    git clone -b "$BRANCH" "$REPO" "$INSTALL_DIR" >/dev/null 2>&1
+    git clone -b "$BRANCH" https://github.com/ahmad-ubaidillah/aizen.git "$INSTALL_DIR" >/dev/null 2>&1
     cd "$INSTALL_DIR"
 fi
 echo -e "${G}✓ Repository ready${N}"
 
-# Step 4: Python environment
-echo -e "${B}▸ Creating Python environment...${N}"
-uv venv venv --python "$PYTHON_VER" >/dev/null 2>&1
+# Step 3: Setup Python environment
+echo -e "${C}▸ Setting up Python environment...${N}"
+rm -rf "$INSTALL_DIR/venv" "$INSTALL_DIR/.venv"
+uv venv venv --python 3.11 >/dev/null 2>&1
 source venv/bin/activate
-uv pip install -e ".[all]" >/dev/null 2>&1
-echo -e "${G}✓ Python packages${N}"
+echo -e "${C}▸ Installing packages...${N}"
+uv pip install -e ".[all]" >/dev/null 2>&1 || uv pip install -e "." >/dev/null 2>&1
+echo -e "${G}✓ Environment ready${N}"
 
-# Step 5: OpenCode (free models)
-if [ "$INSTALL_OPENCODE" = true ] && [ "$MINIMAL" = false ]; then
-    echo -e "${B}▸ Installing OpenCode (free AI models)...${N}"
-    if command -v npm &>/dev/null; then
-        npm install -g @opencode-ai/opencode >/dev/null 2>&1 || true
-        echo -e "${G}✓ OpenCode installed${N}"
-        echo ""
-        echo -e "${C}  Free models available:${N}"
-        echo "    • opencode/qwen3.6-plus-free"
-        echo "    • opencode/mimo-v2-omni-free"
-        echo "    • opencode/minimax-m2.5-free"
-        echo "    • opencode/nemotron-3-super-free"
+# Step 4: Check & Install OpenCode
+if [ "$CHECK_OPENCODE" = true ]; then
+    echo -e "${C}▸ Checking OpenCode...${N}"
+    if ! command -v opencode &>/dev/null; then
+        echo -e "${Y}  OpenCode not found. Installing...${N}"
+        if command -v npm &>/dev/null; then
+            npm install -g @opencode-ai/opencode >/dev/null 2>&1 && \
+                echo -e "${G}✓ OpenCode installed${N}" || \
+                echo -e "${Y}⚠ OpenCode install failed (optional)${N}"
+        else
+            echo -e "${Y}⚠ npm not found, skipping OpenCode${N}"
+        fi
+    else
+        echo -e "${G}✓ OpenCode found${N}"
     fi
 fi
 
+# Step 5: Create config directory
+mkdir -p "$HOME/.aizen"
+
 # Step 6: Create aizen command
-echo -e "${B}▸ Creating aizen command...${N}"
+echo -e "${C}▸ Creating aizen command...${N}"
 mkdir -p "$HOME/.local/bin"
 cat > "$HOME/.local/bin/aizen" << 'CMD'
 #!/bin/bash
+# Aizen CLI - Auto-detects credentials from OpenCode if available
+# NEVER hardcodes API keys - respects user privacy
+
+# Try to detect OpenCode Z.AI credentials (optional convenience)
+if [ -z "$ZAI_API_KEY" ] && [ -f "$HOME/.local/share/opencode/auth.json" ]; then
+    ZAI_KEY=$(python3 -c "import json; d=json.load(open('$HOME/.local/share/opencode/auth.json')); print(d.get('zai-coding-plan',{}).get('key',''))" 2>/dev/null)
+    [ -n "$ZAI_KEY" ] && export ZAI_API_KEY="$ZAI_KEY"
+fi
+
+# Source .env if exists (user's own config)
+[ -f "$HOME/.aizen/.env" ] && export $(grep -v '^#' "$HOME/.aizen/.env" | xargs 2>/dev/null || true)
+
+# Activate and run
 source "$HOME/.aizen/aizen-agent/venv/bin/activate"
 python "$HOME/.aizen/aizen-agent/cli.py" "$@"
 CMD
 chmod +x "$HOME/.local/bin/aizen"
+echo -e "${G}✓ Command created${N}"
 
-# Create dashboard command
-cat > "$HOME/.local/bin/aizen-dashboard" << 'CMD'
-#!/bin/bash
-source "$HOME/.aizen/aizen-agent/venv/bin/activate"
-python -m web.backend.main "$@"
-CMD
-chmod +x "$HOME/.local/bin/aizen-dashboard"
-echo -e "${G}✓ Commands created${N}"
+# Step 7: Add to PATH
+for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+    if [ -f "$rc" ] && ! grep -q '\.local/bin' "$rc" 2>/dev/null; then
+        echo "" >> "$rc"
+        echo "# Aizen Agent" >> "$rc"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
+    fi
+done
+export PATH="$HOME/.local/bin:$PATH"
+echo -e "${G}✓ Added to PATH${N}"
 
-# Step 7: Config directory
-mkdir -p "$HOME_HERMES"
+# Step 8: Create default config
+if [ ! -f "$HOME/.aizen/config.yaml" ]; then
+    cat > "$HOME/.aizen/config.yaml" << 'EOF'
+# Aizen Agent Configuration
+# Run 'aizen setup' to configure
 
-# Step 8: Setup wizard
-if [ "$RUN_SETUP" = true ]; then
-    echo ""
-    echo -e "${B}▸ Running setup wizard...${N}"
-    python cli.py setup || true
+display:
+  tool_progress: true
+max_iterations: 90
+log_level: INFO
+EOF
+    echo -e "${G}✓ Default config created${N}"
 fi
 
-# Done
+# Step 9: Run setup wizard
+if [ "$RUN_SETUP" = true ]; then
+    echo ""
+    echo -e "${C}▸ Running setup wizard...${N}"
+    echo ""
+    "$HOME/.local/bin/aizen" setup || true
+fi
+
+# Done!
 echo ""
-echo -e "${G}${BOLD}╔══════════════════════════════════════════════════════════════╗${N}"
-echo -e "${G}${BOLD}║              ✓ Aizen v3.0 Installed!                        ║${N}"
-echo -e "${G}${BOLD}╚══════════════════════════════════════════════════════════════╝${N}"
+echo -e "${G}${B}╔══════════════════════════════════════════════════════════════╗${N}"
+echo -e "${G}${B}║              ✓ Aizen Installed Successfully!                ║${N}"
+echo -e "${G}${B}╚══════════════════════════════════════════════════════════════╝${N}"
 echo ""
-echo -e "${BOLD}Quick Start:${N}"
-echo ""
+echo "Quick Start:"
 echo "  ${C}aizen${N}              Start chatting"
-echo "  ${C}aizen-dashboard${N}    Start web dashboard"
-echo "  ${C}opencode run \"task\"${N} Free AI coding"
+echo "  ${C}aizen setup${N}        Configure provider"
 echo ""
-echo -e "${BOLD}Documentation:${N} https://github.com/ahmad-ubaidillah/aizen"
+echo "Docs: https://github.com/ahmad-ubaidillah/aizen"
+echo ""
+echo -e "${Y}Run: source ~/.bashrc${N}"
 echo ""

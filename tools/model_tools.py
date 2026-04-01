@@ -468,8 +468,6 @@ def handle_function_call(
                 function_args,
                 task_id=task_id,
                 enabled_tools=sandbox_enabled,
-                honcho_manager=honcho_manager,
-                honcho_session_key=honcho_session_key,
             )
         else:
             result = registry.dispatch(

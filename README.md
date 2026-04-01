@@ -52,12 +52,12 @@ Aizen Agent is an autonomous AI team platform that helps you build software with
 
 ```bash
 # Install
-pip install aizen-agent
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
 
 # Chat with Aizen
 aizen
 
-# Use free models via OpenCode
+# Use free models
 aizen --model opencode/qwen3.6-plus-free
 ```
 
@@ -88,22 +88,22 @@ aizen --model opencode/qwen3.6-plus-free
 
 ## Installation
 
-### Method 1: Quick Install (Recommended)
+### One-Line Install (Recommended)
 
 ```bash
-# Clone and install
-git clone https://github.com/ahmad-ubaidillah/aizen-agent.git
-cd aizen-agent
-pip install -e ".[cli]"
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/aizen/main/scripts/install.sh | bash
 ```
 
-### Method 2: Development Install
+### Manual Install
 
 ```bash
-# Clone with all dependencies
-git clone https://github.com/ahmad-ubaidillah/aizen-agent.git
-cd aizen-agent
-pip install -e ".[dev,cli]"
+git clone https://github.com/ahmad-ubaidillah/aizen.git ~/.aizen/aizen-agent
+cd ~/.aizen/aizen-agent
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv venv --python 3.11
+source venv/bin/activate
+uv pip install -e ".[all]"
+aizen setup
 ```
 
 ---
@@ -173,21 +173,6 @@ Aizen Agent includes specialized AI agents:
 | **Cody** | Developer | Implementation, coding |
 | **Nova** | PM | Requirements, backlog |
 | **Testa** | QA | Testing, bug reports |
-
----
-
-## Migration from Hermes
-
-If you used Hermes Agent before, run the migration script:
-
-```bash
-python scripts/migrate_hermes_to_aizen.py
-```
-
-This will:
-- Move `~/.hermes/` to `~/.aizen/`
-- Update all config references
-- Warn about deprecated modules (honcho, firecrawl)
 
 ---
 
