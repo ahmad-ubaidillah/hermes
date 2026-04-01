@@ -3,16 +3,15 @@ name: Nix
 on:
   push:
     branches: [main]
+    paths:
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
   pull_request:
     paths:
       - 'flake.nix'
       - 'flake.lock'
       - 'nix/**'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - 'hermes_cli/**'
-      - 'run_agent.py'
-      - 'acp_adapter/**'
 
 concurrency:
   group: nix-${{ github.ref }}
@@ -20,6 +19,7 @@ concurrency:
 
 jobs:
   nix:
+    if: hashFiles('flake.nix') != ''
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
