@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-import acp
+acp = pytest.importorskip("acp", reason="agent-client-protocol required for ACP tests")
 from acp.schema import ToolCallStart, ToolCallProgress, AgentThoughtChunk, AgentMessageChunk
 
 from acp_adapter.events import (

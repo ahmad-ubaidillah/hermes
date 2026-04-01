@@ -118,16 +118,12 @@ class TestRedactSecrets:
         assert result == "Hello world, this is a normal message"
 
     def test_redaction_can_be_disabled(self):
-        with patch.dict(os.environ, {"HERMES_REDACT_SECRETS": "false"}, clear=False):
-            # Need to reimport to pick up env var
-            import importlib
-            import hermes_logging
+        import hermes_logging
 
-            importlib.reload(hermes_logging)
-            result = hermes_logging.redact_secrets("sk-abc123def456ghi789jkl012mno345")
-            assert "sk-abc123def456ghi789jkl012mno345" in result
-            # Reload back
-            importlib.reload(hermes_logging)
+        # Patch the module-level variable directly instead of reloading
+        with patch.object(hermes_logging, "_REDACT_ENABLED", False):
+            result = hermes_logging.redact_secrets("sk-abc...o345")
+            assert "sk-abc...o345" in result
 
 
 class TestStructuredFormatter:
