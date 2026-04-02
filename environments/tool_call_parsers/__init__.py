@@ -107,14 +107,19 @@ def list_parsers() -> List[str]:
 
 # Import all parser modules to trigger registration via @register_parser decorators
 # Each module registers itself when imported
-from environments.tool_call_parsers.aizen_parser import AizenToolCallParser  # noqa: E402, F401
+from environments.tool_call_parsers.hermes_parser import AizenToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.longcat_parser import LongcatToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.mistral_parser import MistralToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.llama_parser import LlamaToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.qwen_parser import QwenToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.deepseek_v3_parser import DeepSeekV3ToolCallParser  # noqa: E402, F401
-from environments.tool_call_parsers.deepseek_v3_1_parser import DeepSeekV31ToolCallParser  # noqa: E402, F401
+from environments.tool_call_parsers.deepseek_v3_1_parser import (
+    DeepSeekV31ToolCallParser,
+)  # noqa: E402, F401
 from environments.tool_call_parsers.kimi_k2_parser import KimiK2ToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.glm45_parser import Glm45ToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.glm47_parser import Glm47ToolCallParser  # noqa: E402, F401
 from environments.tool_call_parsers.qwen3_coder_parser import Qwen3CoderToolCallParser  # noqa: E402, F401
+
+# Register Qwen3.5 as an alias to Qwen3-Coder (same format)
+PARSER_REGISTRY["qwen3.5"] = Qwen3CoderToolCallParser
