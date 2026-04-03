@@ -16,7 +16,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from aizen_logging import get_logger, get_aizen_home
+from src.shared.logging import get_logger, get_aizen_home
 
 logger = get_logger(__name__)
 

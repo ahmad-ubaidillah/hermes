@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, Optional, TypeVar
 
-from aizen_logging import get_logger
+from src.shared.logging import get_logger
 
 logger = get_logger(__name__)
 

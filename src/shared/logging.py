@@ -212,6 +212,19 @@ _SECRET_PATTERNS = [
         re.compile(r"(password['\"]?\s*[:=]\s*['\"]?)[^\s,'\"]{4,}"),
         lambda m: m.group(1) + "***",
     ),
+    (
+        re.compile(r"(sudo_password['\"]?\s*[:=]\s*['\"]?)[^\s,'\"]{4,}"),
+        lambda m: m.group(1) + "***",
+    ),
+    # Telegram bot tokens: 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ1234567890
+    (re.compile(r"\d{9,10}:[A-Za-z0-9_-]{35,}"), lambda m: "***TELEGRAM_BOT_TOKEN***"),
+    # Discord bot tokens: base64-like strings (typically 50-70 chars)
+    (re.compile(r"[A-Za-z0-9_-]{50,}"), lambda m: "***DISCORD_BOT_TOKEN***"),
+    # Webhook secrets (in WEBHOOK_SECRET env or config)
+    (
+        re.compile(r"(webhook_secret['\"]?\s*[:=]\s*['\"]?)[^\s,'\"]{4,}"),
+        lambda m: m.group(1) + "***",
+    ),
 ]
 
 _REDACT_ENABLED = os.getenv("AIZEN_REDACT_SECRETS", "true").lower() != "false"

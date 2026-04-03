@@ -41,7 +41,9 @@ class SetupWizard:
         if self.config_path.exists():
             try:
                 self.config = json.loads(self.config_path.read_text())
-            except:
+            except Exception as e:
+            # catch any exception - this is best effort
+            pass
                 self.config = {}
     
     def _save_config(self):

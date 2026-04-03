@@ -40,8 +40,19 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style as PTStyle
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.application import Application
-from prompt_toolkit.layout import Layout, HSplit, Window, FormattedTextControl, ConditionalContainer
-from prompt_toolkit.layout.processors import Processor, Transformation, PasswordProcessor, ConditionalProcessor
+from prompt_toolkit.layout import (
+    Layout,
+    HSplit,
+    Window,
+    FormattedTextControl,
+    ConditionalContainer,
+)
+from prompt_toolkit.layout.processors import (
+    Processor,
+    Transformation,
+    PasswordProcessor,
+    ConditionalProcessor,
+)
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.menus import CompletionsMenu
@@ -49,8 +60,10 @@ from prompt_toolkit.widgets import TextArea
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit import print_formatted_text as _pt_print
 from prompt_toolkit.formatted_text import ANSI as _PT_ANSI
+
 try:
     from prompt_toolkit.cursor_shapes import CursorShape
+
     _STEADY_CURSOR = CursorShape.BLOCK  # Non-blinking block cursor
 except (ImportError, AttributeError):
     _STEADY_CURSOR = None
@@ -74,20 +87,21 @@ from core.aizen_constants import get_aizen_home, display_aizen_home, OPENROUTER_
 from aizen_cli.env_loader import load_aizen_dotenv
 
 _aizen_home = get_aizen_home()
-_project_env = Path(__file__).parent / '.env'
+_project_env = Path(__file__).parent / ".env"
 load_aizen_dotenv(aizen_home=_aizen_home, project_env=_project_env)
 
 
 # =============================================================================
-# Configuration Loading
+# SECTION 1: Configuration Loading
 # =============================================================================
+
 
 def _load_prefill_messages(file_path: str) -> List[Dict[str, Any]]:
     """Load ephemeral prefill messages from a JSON file.
-    
+
     The file should contain a JSON array of {role, content} dicts, e.g.:
         [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello!"}]
-    
+
     Relative paths are resolved from ~/.aizen/.
     Returns an empty list if the path is empty or the file doesn't exist.
     """
@@ -114,6 +128,7 @@ def _load_prefill_messages(file_path: str) -> List[Dict[str, Any]]:
 def _parse_reasoning_config(effort: str) -> dict | None:
     """Parse a reasoning effort level into an OpenRouter reasoning config dict."""
     from core.aizen_constants import parse_reasoning_effort
+
     result = parse_reasoning_effort(effort)
     if effort and effort.strip() and result is None:
         logger.warning("Unknown reasoning_effort '%s', using default (medium)", effort)
@@ -123,17 +138,17 @@ def _parse_reasoning_config(effort: str) -> dict | None:
 def load_cli_config() -> Dict[str, Any]:
     """
     Load CLI configuration from config files.
-    
+
     Config lookup order:
     1. ~/.aizen/config.yaml (user config - preferred)
     2. ./cli-config.yaml (project config - fallback)
-    
+
     Environment variables take precedence over config file values.
     Returns default values if no config file exists.
     """
     # Check user config first ({AIZEN_HOME}/config.yaml)
-    user_config_path = _aizen_home / 'config.yaml'
-    project_config_path = Path(__file__).parent / 'cli-config.yaml'
+    user_config_path = _aizen_home / "config.yaml"
+    project_config_path = Path(__file__).parent / "cli-config.yaml"
 
     # Use user config if it exists, otherwise project config
     if user_config_path.exists():
@@ -166,8 +181,8 @@ def load_cli_config() -> Dict[str, Any]:
             "record_sessions": False,  # Auto-record browser sessions as WebM videos
         },
         "compression": {
-            "enabled": True,      # Auto-compress when approaching context limit
-            "threshold": 0.50,    # Compress at 50% of model's context limit
+            "enabled": True,  # Auto-compress when approaching context limit
+            "threshold": 0.50,  # Compress at 50% of model's context limit
             "summary_model": "",  # Model for summaries (empty = use main model)
         },
         "smart_model_routing": {
@@ -199,21 +214,20 @@ def load_cli_config() -> Dict[str, Any]:
                 "hype": "YOOO LET'S GOOOO!!! I am SO PUMPED to help you today! Every question is AMAZING and we're gonna CRUSH IT together! This is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS!",
             },
         },
-
         "display": {
             "compact": False,
             "resume_display": "full",
             "show_reasoning": False,
             "streaming": True,
             "busy_input_mode": "interrupt",
-
+            "tui_mode": "classic",  # "classic" or "dashboard"
             "skin": "default",
         },
         "clarify": {
             "timeout": 120,  # Seconds to wait for a clarify answer before auto-proceeding
         },
         "code_execution": {
-            "timeout": 300,    # Max seconds a sandbox script can run before being killed (5 min)
+            "timeout": 300,  # Max seconds a sandbox script can run before being killed (5 min)
             "max_tool_calls": 50,  # Max RPC tool calls per execution
         },
         "auxiliary": {
@@ -232,14 +246,18 @@ def load_cli_config() -> Dict[str, Any]:
         },
         "delegation": {
             "max_iterations": 45,  # Max tool-calling turns per child agent
-            "default_toolsets": ["terminal", "file", "web"],  # Default toolsets for subagents
-            "model": "",       # Subagent model override (empty = inherit parent model)
-            "provider": "",    # Subagent provider override (empty = inherit parent provider)
-            "base_url": "",    # Direct OpenAI-compatible endpoint for subagents
-            "api_key": "",     # API key for delegation.base_url (falls back to OPENAI_API_KEY)
+            "default_toolsets": [
+                "terminal",
+                "file",
+                "web",
+            ],  # Default toolsets for subagents
+            "model": "",  # Subagent model override (empty = inherit parent model)
+            "provider": "",  # Subagent provider override (empty = inherit parent provider)
+            "base_url": "",  # Direct OpenAI-compatible endpoint for subagents
+            "api_key": "",  # API key for delegation.base_url (falls back to OPENAI_API_KEY)
         },
     }
-    
+
     # Track whether the config file explicitly set terminal config.
     # When using defaults (no config file / no terminal section), we should NOT
     # overwrite env vars that were already set by .env -- only a user's config
@@ -251,7 +269,7 @@ def load_cli_config() -> Dict[str, Any]:
         try:
             with open(config_path, "r") as f:
                 file_config = yaml.safe_load(f) or {}
-            
+
             _file_has_terminal_config = "terminal" in file_config
 
             # Handle model config - can be string (new format) or dict (old format)
@@ -274,24 +292,26 @@ def load_cli_config() -> Dict[str, Any]:
                 defaults["model"]["provider"] = file_config["provider"]
             if "base_url" in file_config and file_config["base_url"]:
                 defaults["model"]["base_url"] = file_config["base_url"]
-            
+
             # Deep merge file_config into defaults.
             # First: merge keys that exist in both (deep-merge dicts, overwrite scalars)
             for key in defaults:
                 if key == "model":
                     continue  # Already handled above
                 if key in file_config:
-                    if isinstance(defaults[key], dict) and isinstance(file_config[key], dict):
+                    if isinstance(defaults[key], dict) and isinstance(
+                        file_config[key], dict
+                    ):
                         defaults[key].update(file_config[key])
                     else:
                         defaults[key] = file_config[key]
-            
+
             # Second: carry over keys from file_config that aren't in defaults
             # (e.g. platform_toolsets, provider_routing, memory, etc.)
             for key in file_config:
                 if key not in defaults and key != "model":
                     defaults[key] = file_config[key]
-            
+
             # Handle legacy root-level max_turns (backwards compat) - copy to
             # agent.max_turns whenever the nested key is missing.
             agent_file_config = file_config.get("agent")
@@ -305,17 +325,18 @@ def load_cli_config() -> Dict[str, Any]:
 
     # Expand ${ENV_VAR} references in config values before bridging to env vars.
     from aizen_cli.config import _expand_env_vars
+
     defaults = _expand_env_vars(defaults)
 
     # Apply terminal config to environment variables (so terminal_tool picks them up)
     terminal_config = defaults.get("terminal", {})
-    
+
     # Normalize config key: the new config system (aizen_cli/config.py) and all
     # documentation use "backend", the legacy cli-config.yaml uses "env_type".
     # Accept both, with "backend" taking precedence (it's the documented key).
     if "backend" in terminal_config:
         terminal_config["env_type"] = terminal_config["backend"]
-    
+
     # Handle special cwd values: "." or "auto" means use current working directory.
     # Only resolve to the host's CWD for the local backend where the host
     # filesystem is directly accessible.  For ALL remote/container backends
@@ -329,7 +350,7 @@ def load_cli_config() -> Dict[str, Any]:
         else:
             # Remove so TERMINAL_CWD stays unset → tool picks backend default
             terminal_config.pop("cwd", None)
-    
+
     env_mappings = {
         "env_type": "TERMINAL_ENV",
         "cwd": "TERMINAL_CWD",
@@ -358,7 +379,7 @@ def load_cli_config() -> Dict[str, Any]:
         # Sudo support (works with all backends)
         "sudo_password": "SUDO_PASSWORD",
     }
-    
+
     # Apply config values to env vars so terminal_tool picks them up.
     # If the config file explicitly has a [terminal] section, those values are
     # authoritative and override any .env settings.  When using defaults only
@@ -370,20 +391,21 @@ def load_cli_config() -> Dict[str, Any]:
                 val = terminal_config[config_key]
                 if isinstance(val, list):
                     import json
+
                     os.environ[env_var] = json.dumps(val)
                 else:
                     os.environ[env_var] = str(val)
-    
+
     # Apply browser config to environment variables
     browser_config = defaults.get("browser", {})
     browser_env_mappings = {
         "inactivity_timeout": "BROWSER_INACTIVITY_TIMEOUT",
     }
-    
+
     for config_key, env_var in browser_env_mappings.items():
         if config_key in browser_config:
             os.environ[env_var] = str(browser_config[config_key])
-    
+
     # Apply auxiliary model/direct-endpoint overrides to environment variables.
     # Vision and web_extract each have their own provider/model/base_url/api_key tuple.
     # Compression config is read directly from config.yaml by run_agent.py and
@@ -412,7 +434,7 @@ def load_cli_config() -> Dict[str, Any]:
             "api_key": "AUXILIARY_APPROVAL_API_KEY",
         },
     }
-    
+
     for task_key, env_map in auxiliary_task_env.items():
         task_cfg = auxiliary_config.get(task_key, {})
         if not isinstance(task_cfg, dict):
@@ -429,7 +451,7 @@ def load_cli_config() -> Dict[str, Any]:
             os.environ[env_map["base_url"]] = base_url
         if api_key:
             os.environ[env_map["api_key"]] = api_key
-    
+
     # Security settings
     security_config = defaults.get("security", {})
     if isinstance(security_config, dict):
@@ -439,12 +461,14 @@ def load_cli_config() -> Dict[str, Any]:
 
     return defaults
 
+
 # Load configuration at module startup
 CLI_CONFIG = load_cli_config()
 
 # Initialize the skin engine from config
 try:
     from aizen_cli.skin_engine import init_skin_from_config
+
     init_skin_from_config(CLI_CONFIG)
 except Exception:
     pass  # Skin engine is optional — default skin used if unavailable
@@ -452,6 +476,7 @@ except Exception:
 # Initialize tool preview length from config
 try:
     from agent.display import set_tool_preview_max_len
+
     _tpl = CLI_CONFIG.get("display", {}).get("tool_preview_length", 0)
     set_tool_preview_max_len(int(_tpl) if _tpl else 0)
 except Exception:
@@ -464,6 +489,7 @@ except Exception:
 # "Event loop is closed" / "Press ENTER to continue..." errors.
 try:
     from agent.auxiliary_client import neuter_async_httpx_del
+
     neuter_async_httpx_del()
 except Exception:
     pass
@@ -498,6 +524,12 @@ from tools.browser_tool import _emergency_cleanup_all_sessions as _cleanup_all_b
 # Guard to prevent cleanup from running multiple times on exit
 _cleanup_done = False
 
+
+# =============================================================================
+# SECTION 2: Worktree/Git Helpers
+# =============================================================================
+
+
 def _run_cleanup():
     """Run resource cleanup exactly once."""
     global _cleanup_done
@@ -514,6 +546,7 @@ def _run_cleanup():
         pass
     try:
         from tools.mcp_tool import shutdown_mcp_servers
+
         shutdown_mcp_servers()
     except Exception:
         pass
@@ -522,6 +555,7 @@ def _run_cleanup():
     # and trigger prompt_toolkit's "Press ENTER to continue..." handler.
     try:
         from agent.auxiliary_client import shutdown_cached_clients
+
         shutdown_cached_clients()
     except Exception:
         pass
@@ -538,10 +572,13 @@ _active_worktree: Optional[Dict[str, str]] = None
 def _git_repo_root() -> Optional[str]:
     """Return the git repo root for CWD, or None if not in a repo."""
     import subprocess
+
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -599,10 +636,15 @@ def _setup_worktree(repo_root: str = None) -> Optional[Dict[str, str]]:
     try:
         result = subprocess.run(
             ["git", "worktree", "add", str(wt_path), "-b", branch_name, "HEAD"],
-            capture_output=True, text=True, timeout=30, cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            cwd=repo_root,
         )
         if result.returncode != 0:
-            print(f"\033[31m✗ Failed to create worktree: {result.stderr.strip()}\033[0m")
+            print(
+                f"\033[31m✗ Failed to create worktree: {result.stderr.strip()}\033[0m"
+            )
             return None
     except Exception as e:
         print(f"\033[31m✗ Failed to create worktree: {e}\033[0m")
@@ -630,10 +672,15 @@ def _setup_worktree(repo_root: str = None) -> Optional[Dict[str, str]]:
                     logger.debug("Skipping invalid .worktreeinclude entry: %s", entry)
                     continue
                 if not _path_is_within_root(src_resolved, repo_root_resolved):
-                    logger.warning("Skipping .worktreeinclude entry outside repo root: %s", entry)
+                    logger.warning(
+                        "Skipping .worktreeinclude entry outside repo root: %s", entry
+                    )
                     continue
                 if not _path_is_within_root(dst_resolved, wt_path_resolved):
-                    logger.warning("Skipping .worktreeinclude entry that escapes worktree: %s", entry)
+                    logger.warning(
+                        "Skipping .worktreeinclude entry that escapes worktree: %s",
+                        entry,
+                    )
                     continue
                 if src.is_file():
                     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -681,14 +728,19 @@ def _cleanup_worktree(info: Dict[str, str] = None) -> None:
     try:
         status = subprocess.run(
             ["git", "status", "--porcelain"],
-            capture_output=True, text=True, timeout=10, cwd=wt_path,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=wt_path,
         )
         has_changes = bool(status.stdout.strip())
     except Exception:
         has_changes = True  # Assume dirty on error — don't delete
 
     if has_changes:
-        print(f"\n\033[33m⚠ Worktree has uncommitted changes, keeping: {wt_path}\033[0m")
+        print(
+            f"\n\033[33m⚠ Worktree has uncommitted changes, keeping: {wt_path}\033[0m"
+        )
         print(f"  To clean up manually: git worktree remove {wt_path}")
         _active_worktree = None
         return
@@ -697,7 +749,10 @@ def _cleanup_worktree(info: Dict[str, str] = None) -> None:
     try:
         subprocess.run(
             ["git", "worktree", "remove", wt_path, "--force"],
-            capture_output=True, text=True, timeout=15, cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd=repo_root,
         )
     except Exception as e:
         logger.debug("Failed to remove worktree: %s", e)
@@ -706,7 +761,10 @@ def _cleanup_worktree(info: Dict[str, str] = None) -> None:
     try:
         subprocess.run(
             ["git", "branch", "-D", branch],
-            capture_output=True, text=True, timeout=10, cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=repo_root,
         )
     except Exception as e:
         logger.debug("Failed to delete branch %s: %s", branch, e)
@@ -746,7 +804,10 @@ def _prune_stale_worktrees(repo_root: str, max_age_hours: int = 24) -> None:
         try:
             status = subprocess.run(
                 ["git", "status", "--porcelain"],
-                capture_output=True, text=True, timeout=5, cwd=str(entry),
+                capture_output=True,
+                text=True,
+                timeout=5,
+                cwd=str(entry),
             )
             if status.stdout.strip():
                 continue  # Has changes — skip
@@ -757,22 +818,32 @@ def _prune_stale_worktrees(repo_root: str, max_age_hours: int = 24) -> None:
         try:
             branch_result = subprocess.run(
                 ["git", "branch", "--show-current"],
-                capture_output=True, text=True, timeout=5, cwd=str(entry),
+                capture_output=True,
+                text=True,
+                timeout=5,
+                cwd=str(entry),
             )
             branch = branch_result.stdout.strip()
 
             subprocess.run(
                 ["git", "worktree", "remove", str(entry), "--force"],
-                capture_output=True, text=True, timeout=15, cwd=repo_root,
+                capture_output=True,
+                text=True,
+                timeout=15,
+                cwd=repo_root,
             )
             if branch:
                 subprocess.run(
                     ["git", "branch", "-D", branch],
-                    capture_output=True, text=True, timeout=10, cwd=repo_root,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    cwd=repo_root,
                 )
             logger.debug("Pruned stale worktree: %s", entry.name)
         except Exception as e:
             logger.debug("Failed to prune worktree %s: %s", entry.name, e)
+
 
 # ============================================================================
 # ASCII Art & Branding
@@ -791,10 +862,12 @@ _BOLD = "\033[1m"
 _DIM = "\033[2m"
 _RST = "\033[0m"
 
+
 def _accent_hex() -> str:
     """Return the active skin accent color for legacy CLI output lines."""
     try:
         from aizen_cli.skin_engine import get_active_skin
+
         return get_active_skin().get_color("ui_accent", "#FFBF00")
     except Exception:
         return "#FFBF00"
@@ -819,6 +892,11 @@ def _cprint(text: str):
     _pt_print(_PT_ANSI(text))
 
 
+# =============================================================================
+# SECTION 3: ChatConsole Class
+# =============================================================================
+
+
 class ChatConsole:
     """Rich Console adapter for prompt_toolkit's patch_stdout context.
 
@@ -830,6 +908,7 @@ class ChatConsole:
 
     def __init__(self):
         from io import StringIO
+
         self._buffer = StringIO()
         self._inner = Console(
             file=self._buffer,
@@ -847,6 +926,7 @@ class ChatConsole:
         output = self._buffer.getvalue()
         for line in output.rstrip("\n").split("\n"):
             _cprint(line)
+
 
 # ASCII Art - HERMES-AGENT logo (full width, single line - requires ~95 char terminal)
 AIZEN_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
@@ -893,15 +973,14 @@ def _build_compact_banner() -> str:
     line1 = "⚕ NOUS HERMES - AI Agent Framework"
     line2 = "Messenger of the Digital Gods  ·  Nous Research"
     # Truncate and pad to fit
-    line1 = line1[:inner - 2].ljust(inner - 2)
-    line2 = line2[:inner - 2].ljust(inner - 2)
+    line1 = line1[: inner - 2].ljust(inner - 2)
+    line2 = line2[: inner - 2].ljust(inner - 2)
     return (
         f"\n[bold #FFD700]╔{bar}╗[/]\n"
         f"[bold #FFD700]║[/] [#FFBF00]{line1}[/] [bold #FFD700]║[/]\n"
         f"[bold #FFD700]║[/] [dim #B8860B]{line2}[/] [bold #FFD700]║[/]\n"
         f"[bold #FFD700]╚{bar}╝[/]\n"
     )
-
 
 
 # ============================================================================
@@ -922,12 +1001,15 @@ def _get_plugin_cmd_handler_names() -> set:
     """Return plugin command names (without slash prefix) for dispatch matching."""
     try:
         from aizen_cli.plugins import get_plugin_manager
+
         return set(get_plugin_manager()._plugin_commands.keys())
     except Exception:
         return set()
 
 
-def _parse_skills_argument(skills: str | list[str] | tuple[str, ...] | None) -> list[str]:
+def _parse_skills_argument(
+    skills: str | list[str] | tuple[str, ...] | None,
+) -> list[str]:
     """Normalize a CLI skills flag into a deduplicated list of skill identifiers."""
     if not skills:
         return []
@@ -954,73 +1036,72 @@ def _parse_skills_argument(skills: str | list[str] | tuple[str, ...] | None) -> 
 def save_config_value(key_path: str, value: any) -> bool:
     """
     Save a value to the active config file at the specified key path.
-    
+
     Respects the same lookup order as load_cli_config():
     1. ~/.aizen/config.yaml (user config - preferred, used if it exists)
     2. ./cli-config.yaml (project config - fallback)
-    
+
     Args:
         key_path: Dot-separated path like "agent.system_prompt"
         value: Value to save
-    
+
     Returns:
         True if successful, False otherwise
     """
     # Use the same precedence as load_cli_config: user config first, then project config
-    user_config_path = _aizen_home / 'config.yaml'
-    project_config_path = Path(__file__).parent / 'cli-config.yaml'
+    user_config_path = _aizen_home / "config.yaml"
+    project_config_path = Path(__file__).parent / "cli-config.yaml"
     config_path = user_config_path if user_config_path.exists() else project_config_path
-    
+
     try:
         # Ensure parent directory exists (for ~/.aizen/config.yaml on first use)
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Load existing config
         if config_path.exists():
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 config = yaml.safe_load(f) or {}
         else:
             config = {}
-        
+
         # Navigate to the key and set value
-        keys = key_path.split('.')
+        keys = key_path.split(".")
         current = config
         for key in keys[:-1]:
             if key not in current or not isinstance(current[key], dict):
                 current[key] = {}
             current = current[key]
         current[keys[-1]] = value
-        
+
         # Save back
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             yaml.dump(config, f, default_flow_style=False, sort_keys=False)
-        
+
         # Enforce owner-only permissions on config files (contain API keys)
         try:
             os.chmod(config_path, 0o600)
         except (OSError, NotImplementedError):
             pass
-        
+
         return True
     except Exception as e:
         logger.error("Failed to save config: %s", e)
         return False
 
 
-
-
 # ============================================================================
-# AizenCLI Class
+# SECTION 4: AizenCLI Class
 # ============================================================================
+
 
 class AizenCLI:
     """
     Interactive CLI for the Aizen Agent.
-    
+
     Provides a REPL interface with rich formatting, command history,
     and tool execution capabilities.
     """
-    
+
     def __init__(
         self,
         model: str = None,
@@ -1053,7 +1134,13 @@ class AizenCLI:
         # Initialize Rich console
         self.console = Console()
         self.config = CLI_CONFIG
-        self.compact = compact if compact is not None else CLI_CONFIG["display"].get("compact", False)
+        self.compact = (
+            compact
+            if compact is not None
+            else CLI_CONFIG["display"].get("compact", False)
+        )
+        # tui_mode: "classic" (linear REPL) | "dashboard" (full-screen multi-panel)
+        self.tui_mode = CLI_CONFIG["display"].get("tui_mode", "classic")
         # tool_progress: "off", "new", "all", "verbose" (from config.yaml display section)
         # YAML 1.1 parses bare `off` as boolean False — normalise to string.
         _raw_tp = CLI_CONFIG["display"].get("tool_progress", "all")
@@ -1066,34 +1153,51 @@ class AizenCLI:
         self.show_reasoning = CLI_CONFIG["display"].get("show_reasoning", False)
         # busy_input_mode: "interrupt" (Enter interrupts current run) or "queue" (Enter queues for next turn)
         _bim = CLI_CONFIG["display"].get("busy_input_mode", "interrupt")
-        self.busy_input_mode = "queue" if str(_bim).strip().lower() == "queue" else "interrupt"
+        self.busy_input_mode = (
+            "queue" if str(_bim).strip().lower() == "queue" else "interrupt"
+        )
 
-        self.verbose = verbose if verbose is not None else (self.tool_progress_mode == "verbose")
-        
+        self.verbose = (
+            verbose if verbose is not None else (self.tool_progress_mode == "verbose")
+        )
+
         # streaming: stream tokens to the terminal as they arrive (display.streaming in config.yaml)
         self.streaming_enabled = CLI_CONFIG["display"].get("streaming", False)
 
         # Streaming display state
-        self._stream_buf = ""        # Partial line buffer for line-buffered rendering
+        self._stream_buf = ""  # Partial line buffer for line-buffered rendering
         self._stream_started = False  # True once first delta arrives
         self._stream_box_opened = False  # True once the response box header is printed
-        self._reasoning_stream_started = False  # True once live reasoning starts streaming
-        self._reasoning_preview_buf = ""  # Coalesce tiny reasoning chunks for [thinking] output
-        
+        self._reasoning_stream_started = (
+            False  # True once live reasoning starts streaming
+        )
+        self._reasoning_preview_buf = (
+            ""  # Coalesce tiny reasoning chunks for [thinking] output
+        )
+
         # Configuration - priority: CLI args > env vars > config file
         # Model comes from: CLI arg or config.yaml (single source of truth).
         # LLM_MODEL/OPENAI_MODEL env vars are NOT checked — config.yaml is
         # authoritative.  This avoids conflicts in multi-agent setups where
         # env vars would stomp each other.
         _model_config = CLI_CONFIG.get("model", {})
-        _config_model = (_model_config.get("default") or _model_config.get("model") or "") if isinstance(_model_config, dict) else (_model_config or "")
+        _config_model = (
+            (_model_config.get("default") or _model_config.get("model") or "")
+            if isinstance(_model_config, dict)
+            else (_model_config or "")
+        )
         _DEFAULT_CONFIG_MODEL = "anthropic/claude-opus-4.6"
         self.model = model or _config_model or _DEFAULT_CONFIG_MODEL
         # Auto-detect model from local server if still on default
         if self.model == _DEFAULT_CONFIG_MODEL:
-            _base_url = (_model_config.get("base_url") or "") if isinstance(_model_config, dict) else ""
+            _base_url = (
+                (_model_config.get("base_url") or "")
+                if isinstance(_model_config, dict)
+                else ""
+            )
             if "localhost" in _base_url or "127.0.0.1" in _base_url:
                 from aizen_cli.runtime_provider import _auto_detect_local_model
+
                 _detected = _auto_detect_local_model(_base_url)
                 if _detected:
                     self.model = _detected
@@ -1131,9 +1235,17 @@ class AizenCLI:
         # custom endpoint → prefer OPENAI_API_KEY (issue #560).
         # Note: _ensure_runtime_credentials() re-resolves this before first use.
         if self.base_url and "openrouter.ai" in self.base_url:
-            self.api_key = api_key or os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+            self.api_key = (
+                api_key
+                or os.getenv("OPENROUTER_API_KEY")
+                or os.getenv("OPENAI_API_KEY")
+            )
         else:
-            self.api_key = api_key or os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+            self.api_key = (
+                api_key
+                or os.getenv("OPENAI_API_KEY")
+                or os.getenv("OPENROUTER_API_KEY")
+            )
         self._nous_key_expires_at: Optional[str] = None
         self._nous_key_source: Optional[str] = None
         # Max turns priority: CLI arg > config file > env var > default
@@ -1147,15 +1259,17 @@ class AizenCLI:
             self.max_turns = int(os.getenv("AIZEN_MAX_ITERATIONS"))
         else:
             self.max_turns = 90
-        
+
         # Parse and validate toolsets
         self.enabled_toolsets = toolsets
         if toolsets and "all" not in toolsets and "*" not in toolsets:
             # Validate each toolset
             invalid = [t for t in toolsets if not validate_toolset(t)]
             if invalid:
-                self.console.print(f"[bold red]Warning: Unknown toolsets: {', '.join(invalid)}[/]")
-        
+                self.console.print(
+                    f"[bold red]Warning: Unknown toolsets: {', '.join(invalid)}[/]"
+                )
+
         # Filesystem checkpoints: CLI flag > config
         cp_cfg = CLI_CONFIG.get("checkpoints", {})
         if isinstance(cp_cfg, bool):
@@ -1163,24 +1277,23 @@ class AizenCLI:
         self.checkpoints_enabled = checkpoints or cp_cfg.get("enabled", False)
         self.checkpoint_max_snapshots = cp_cfg.get("max_snapshots", 50)
         self.pass_session_id = pass_session_id
-        
+
         # Ephemeral system prompt: env var takes precedence, then config
-        self.system_prompt = (
-            os.getenv("AIZEN_EPHEMERAL_SYSTEM_PROMPT", "")
-            or CLI_CONFIG["agent"].get("system_prompt", "")
-        )
+        self.system_prompt = os.getenv(
+            "AIZEN_EPHEMERAL_SYSTEM_PROMPT", ""
+        ) or CLI_CONFIG["agent"].get("system_prompt", "")
         self.personalities = CLI_CONFIG["agent"].get("personalities", {})
-        
+
         # Ephemeral prefill messages (few-shot priming, never persisted)
         self.prefill_messages = _load_prefill_messages(
             CLI_CONFIG["agent"].get("prefill_messages_file", "")
         )
-        
+
         # Reasoning config (OpenRouter reasoning effort level)
         self.reasoning_config = _parse_reasoning_config(
             CLI_CONFIG["agent"].get("reasoning_effort", "")
         )
-        
+
         # OpenRouter provider routing preferences
         pr = CLI_CONFIG.get("provider_routing", {}) or {}
         self._provider_sort = pr.get("sort")
@@ -1189,10 +1302,14 @@ class AizenCLI:
         self._providers_order = pr.get("order")
         self._provider_require_params = pr.get("require_parameters", False)
         self._provider_data_collection = pr.get("data_collection")
-        
+
         # Fallback provider chain — tried in order when primary fails after retries.
         # Supports new list format (fallback_providers) and legacy single-dict (fallback_model).
-        fb = CLI_CONFIG.get("fallback_providers") or CLI_CONFIG.get("fallback_model") or []
+        fb = (
+            CLI_CONFIG.get("fallback_providers")
+            or CLI_CONFIG.get("fallback_model")
+            or []
+        )
         # Normalize legacy single-dict to a one-element list
         if isinstance(fb, dict):
             fb = [fb] if fb.get("provider") and fb.get("model") else []
@@ -1205,7 +1322,7 @@ class AizenCLI:
         # Agent will be initialized on first use
         self.agent: Optional[AIAgent] = None
         self._app = None  # prompt_toolkit Application (set in run())
-        
+
         # Conversation state
         self.conversation_history: List[Dict[str, Any]] = []
         self.session_start = datetime.now()
@@ -1214,13 +1331,17 @@ class AizenCLI:
         self._session_db = None
         try:
             from core.aizen_state import SessionDB
+
             self._session_db = SessionDB()
         except Exception as e:
-            logger.warning("Failed to initialize SessionDB — session will NOT be indexed for search: %s", e)
-        
+            logger.warning(
+                "Failed to initialize SessionDB — session will NOT be indexed for search: %s",
+                e,
+            )
+
         # Deferred title: stored in memory until the session is created in the DB
         self._pending_title: Optional[str] = None
-        
+
         # Session ID: reuse existing one when resuming, otherwise generate fresh
         if resume:
             self.session_id = resume
@@ -1229,7 +1350,7 @@ class AizenCLI:
             timestamp_str = self.session_start.strftime("%Y%m%d_%H%M%S")
             short_uuid = uuid.uuid4().hex[:6]
             self.session_id = f"{timestamp_str}_{short_uuid}"
-        
+
         # History file for persistent input recall across sessions
         self._history_file = _aizen_home / ".aizen_history"
         self._last_invalidate: float = 0.0  # throttle UI repaints
@@ -1282,8 +1403,13 @@ class AizenCLI:
     def _invalidate(self, min_interval: float = 0.25) -> None:
         """Throttled UI repaint — prevents terminal blinking on slow/SSH connections."""
         import time as _time
+
         now = _time.monotonic()
-        if hasattr(self, "_app") and self._app and (now - self._last_invalidate) >= min_interval:
+        if (
+            hasattr(self, "_app")
+            and self._app
+            and (now - self._last_invalidate) >= min_interval
+        ):
             self._last_invalidate = now
             self._app.invalidate()
 
@@ -1311,7 +1437,9 @@ class AizenCLI:
         if len(model_short) > 26:
             model_short = f"{model_short[:23]}..."
 
-        elapsed_seconds = max(0.0, (datetime.now() - self.session_start).total_seconds())
+        elapsed_seconds = max(
+            0.0, (datetime.now() - self.session_start).total_seconds()
+        )
         snapshot = {
             "model_name": model_name,
             "model_short": model_short,
@@ -1334,13 +1462,27 @@ class AizenCLI:
         if not agent:
             return snapshot
 
-        snapshot["session_input_tokens"] = getattr(agent, "session_input_tokens", 0) or 0
-        snapshot["session_output_tokens"] = getattr(agent, "session_output_tokens", 0) or 0
-        snapshot["session_cache_read_tokens"] = getattr(agent, "session_cache_read_tokens", 0) or 0
-        snapshot["session_cache_write_tokens"] = getattr(agent, "session_cache_write_tokens", 0) or 0
-        snapshot["session_prompt_tokens"] = getattr(agent, "session_prompt_tokens", 0) or 0
-        snapshot["session_completion_tokens"] = getattr(agent, "session_completion_tokens", 0) or 0
-        snapshot["session_total_tokens"] = getattr(agent, "session_total_tokens", 0) or 0
+        snapshot["session_input_tokens"] = (
+            getattr(agent, "session_input_tokens", 0) or 0
+        )
+        snapshot["session_output_tokens"] = (
+            getattr(agent, "session_output_tokens", 0) or 0
+        )
+        snapshot["session_cache_read_tokens"] = (
+            getattr(agent, "session_cache_read_tokens", 0) or 0
+        )
+        snapshot["session_cache_write_tokens"] = (
+            getattr(agent, "session_cache_write_tokens", 0) or 0
+        )
+        snapshot["session_prompt_tokens"] = (
+            getattr(agent, "session_prompt_tokens", 0) or 0
+        )
+        snapshot["session_completion_tokens"] = (
+            getattr(agent, "session_completion_tokens", 0) or 0
+        )
+        snapshot["session_total_tokens"] = (
+            getattr(agent, "session_total_tokens", 0) or 0
+        )
         snapshot["session_api_calls"] = getattr(agent, "session_api_calls", 0) or 0
 
         compressor = getattr(agent, "context_compressor", None)
@@ -1351,7 +1493,9 @@ class AizenCLI:
             snapshot["context_length"] = context_length or None
             snapshot["compressions"] = getattr(compressor, "compression_count", 0) or 0
             if context_length:
-                snapshot["context_percent"] = max(0, min(100, round((context_tokens / context_length) * 100)))
+                snapshot["context_percent"] = max(
+                    0, min(100, round((context_tokens / context_length) * 100))
+                )
 
         return snapshot
 
@@ -1366,6 +1510,7 @@ class AizenCLI:
         """
         try:
             from prompt_toolkit.utils import get_cwidth
+
             return get_cwidth(text or "")
         except Exception:
             return len(text or "")
@@ -1404,6 +1549,7 @@ class AizenCLI:
             if width is None:
                 try:
                     from prompt_toolkit.application import get_app
+
                     width = get_app().output.get_size().columns
                 except Exception:
                     width = shutil.get_terminal_size((80, 24)).columns
@@ -1444,6 +1590,7 @@ class AizenCLI:
             # line and produce duplicated status bar rows over long sessions.
             try:
                 from prompt_toolkit.application import get_app
+
                 width = get_app().output.get_size().columns
             except Exception:
                 width = shutil.get_terminal_size((80, 24)).columns
@@ -1473,7 +1620,9 @@ class AizenCLI:
                 else:
                     if snapshot["context_length"]:
                         ctx_total = _format_context_length(snapshot["context_length"])
-                        ctx_used = format_token_count_compact(snapshot["context_tokens"])
+                        ctx_used = format_token_count_compact(
+                            snapshot["context_tokens"]
+                        )
                         context_label = f"{ctx_used}/{ctx_total}"
                     else:
                         context_label = "ctx --"
@@ -1509,9 +1658,14 @@ class AizenCLI:
 
         if resolved_provider == "copilot":
             try:
-                from aizen_cli.models import copilot_model_api_mode, normalize_copilot_model_id
+                from aizen_cli.models import (
+                    copilot_model_api_mode,
+                    normalize_copilot_model_id,
+                )
 
-                canonical = normalize_copilot_model_id(current_model, api_key=self.api_key)
+                canonical = normalize_copilot_model_id(
+                    current_model, api_key=self.api_key
+                )
                 if canonical and canonical != current_model:
                     if not self._model_is_default:
                         self.console.print(
@@ -1521,7 +1675,9 @@ class AizenCLI:
                     current_model = canonical
                     changed = True
 
-                resolved_mode = copilot_model_api_mode(current_model, api_key=self.api_key)
+                resolved_mode = copilot_model_api_mode(
+                    current_model, api_key=self.api_key
+                )
                 if resolved_mode != self.api_mode:
                     self.api_mode = resolved_mode
                     changed = True
@@ -1600,7 +1756,9 @@ class AizenCLI:
         paragraphs = []
         raw_paragraphs = re.split(r"\n\s*\n+", preview_text.replace("\r\n", "\n"))
         for paragraph in raw_paragraphs:
-            compact = " ".join(line.strip() for line in paragraph.splitlines() if line.strip())
+            compact = " ".join(
+                line.strip() for line in paragraph.splitlines() if line.strip()
+            )
             if compact:
                 paragraphs.append(textwrap.fill(compact, width=wrap_width))
         preview_text = "\n".join(paragraphs)
@@ -1656,7 +1814,9 @@ class AizenCLI:
                 buf = buf[line_break + 1 :]
             elif len(buf) >= target_width:
                 search_start = max(20, target_width // 2)
-                search_end = min(len(buf), max(target_width + (target_width // 3), target_width + 8))
+                search_end = min(
+                    len(buf), max(target_width + (target_width // 3), target_width + 8)
+                )
                 cut = -1
                 for boundary in (" ", "\t", ".", "!", "?", ",", ";", ":"):
                     cut = max(cut, buf.rfind(boundary, search_start, search_end))
@@ -1748,8 +1908,20 @@ class AizenCLI:
         # suppress them during streaming too — unless show_reasoning is
         # enabled, in which case we route the inner content to the
         # reasoning display box instead of discarding it.
-        _OPEN_TAGS = ("<REASONING_SCRATCHPAD>", "<think>", "<reasoning>", "<THINKING>", "<thinking>")
-        _CLOSE_TAGS = ("</REASONING_SCRATCHPAD>", "</think>", "</reasoning>", "</THINKING>", "</thinking>")
+        _OPEN_TAGS = (
+            "<REASONING_SCRATCHPAD>",
+            "<think>",
+            "<reasoning>",
+            "<THINKING>",
+            "<thinking>",
+        )
+        _CLOSE_TAGS = (
+            "</REASONING_SCRATCHPAD>",
+            "</think>",
+            "</reasoning>",
+            "</THINKING>",
+            "</thinking>",
+        )
 
         # Append to a pre-filter buffer first
         self._stream_prefilt = getattr(self, "_stream_prefilt", "") + text
@@ -1764,7 +1936,7 @@ class AizenCLI:
                     if before:
                         self._emit_stream_text(before)
                     self._in_reasoning_block = True
-                    self._stream_prefilt = self._stream_prefilt[idx + len(tag):]
+                    self._stream_prefilt = self._stream_prefilt[idx + len(tag) :]
                     break
 
             # Could also be a partial open tag at the end — hold it back
@@ -1778,7 +1950,7 @@ class AizenCLI:
                             break
                 if safe:
                     self._emit_stream_text(safe)
-                    self._stream_prefilt = self._stream_prefilt[len(safe):]
+                    self._stream_prefilt = self._stream_prefilt[len(safe) :]
                 return
 
         # Inside a reasoning block — look for close tag.
@@ -1795,7 +1967,7 @@ class AizenCLI:
                         inner = self._stream_prefilt[:idx]
                         if inner:
                             self._stream_reasoning_delta(inner)
-                    after = self._stream_prefilt[idx + len(tag):]
+                    after = self._stream_prefilt[idx + len(tag) :]
                     self._stream_prefilt = ""
                     # Process remaining text after close tag through full
                     # filtering (it could contain another open tag)
@@ -1831,6 +2003,7 @@ class AizenCLI:
             self._stream_box_opened = True
             try:
                 from aizen_cli.skin_engine import get_active_skin
+
                 _skin = get_active_skin()
                 label = _skin.get_branding("response_label", "⚕ Aizen")
                 _text_hex = _skin.get_color("banner_text", "#FFF8DC")
@@ -1961,19 +2134,28 @@ class AizenCLI:
             # no API key was found, use a placeholder so the OpenAI SDK
             # doesn't reject the request and local servers just ignore it.
             _source = runtime.get("source", "")
-            _has_custom_base = isinstance(base_url, str) and base_url and "openrouter.ai" not in base_url
+            _has_custom_base = (
+                isinstance(base_url, str)
+                and base_url
+                and "openrouter.ai" not in base_url
+            )
             if _has_custom_base:
                 api_key = "no-key-required"
                 logger.debug(
                     "No API key for custom endpoint %s (source=%s), "
                     "using placeholder — local servers typically ignore auth",
-                    base_url, _source,
+                    base_url,
+                    _source,
                 )
             else:
-                self.console.print("[bold red]Provider resolver returned an empty API key.[/]")
+                self.console.print(
+                    "[bold red]Provider resolver returned an empty API key.[/]"
+                )
                 return False
         if not isinstance(base_url, str) or not base_url:
-            self.console.print("[bold red]Provider resolver returned an empty base URL.[/]")
+            self.console.print(
+                "[bold red]Provider resolver returned an empty base URL.[/]"
+            )
             return False
 
         credentials_changed = api_key != self.api_key or base_url != self.base_url
@@ -1997,7 +2179,9 @@ class AizenCLI:
 
         # AIAgent/OpenAI client holds auth at init time, so rebuild if key,
         # routing, or the effective model changed.
-        if (credentials_changed or routing_changed or model_changed) and self.agent is not None:
+        if (
+            credentials_changed or routing_changed or model_changed
+        ) and self.agent is not None:
             self.agent = None
             self._active_agent_route_signature = None
 
@@ -2021,11 +2205,17 @@ class AizenCLI:
             },
         )
 
-    def _init_agent(self, *, model_override: str = None, runtime_override: dict = None, route_label: str = None) -> bool:
+    def _init_agent(
+        self,
+        *,
+        model_override: str = None,
+        runtime_override: dict = None,
+        route_label: str = None,
+    ) -> bool:
         """
         Initialize the agent on first use.
         When resuming a session, restores conversation history from SQLite.
-        
+
         Returns:
             bool: True if successful, False otherwise
         """
@@ -2039,10 +2229,14 @@ class AizenCLI:
         if self._session_db is None:
             try:
                 from core.aizen_state import SessionDB
+
                 self._session_db = SessionDB()
             except Exception as e:
-                logger.warning("SQLite session store not available — session will NOT be indexed: %s", e)
-        
+                logger.warning(
+                    "SQLite session store not available — session will NOT be indexed: %s",
+                    e,
+                )
+
         # If resuming, validate the session exists and load its history.
         # _preload_resumed_session() may have already loaded it (called from
         # run() for immediate display).  In that case, conversation_history
@@ -2051,7 +2245,9 @@ class AizenCLI:
             session_meta = self._session_db.get_session(self.session_id)
             if not session_meta:
                 _cprint(f"\033[1;31mSession not found: {self.session_id}{_RST}")
-                _cprint(f"{_DIM}Use a session ID from a previous CLI run (aizen sessions list).{_RST}")
+                _cprint(
+                    f"{_DIM}Use a session ID from a previous CLI run (aizen sessions list).{_RST}"
+                )
                 return False
             restored = self._session_db.get_messages_as_conversation(self.session_id)
             if restored:
@@ -2059,7 +2255,7 @@ class AizenCLI:
                 msg_count = len([m for m in restored if m.get("role") == "user"])
                 title_part = ""
                 if session_meta.get("title"):
-                    title_part = f" \"{session_meta['title']}\""
+                    title_part = f' "{session_meta["title"]}"'
                 ChatConsole().print(
                     f"[bold {_accent_hex()}]↻ Resumed session[/] "
                     f"[bold]{_escape(self.session_id)}[/]"
@@ -2079,7 +2275,7 @@ class AizenCLI:
                 self._session_db._conn.commit()
             except Exception:
                 pass
-        
+
         try:
             runtime = runtime_override or {
                 "api_key": self.api_key,
@@ -2102,7 +2298,9 @@ class AizenCLI:
                 enabled_toolsets=self.enabled_toolsets,
                 verbose_logging=self.verbose,
                 quiet_mode=not self.verbose,
-                ephemeral_system_prompt=self.system_prompt if self.system_prompt else None,
+                ephemeral_system_prompt=self.system_prompt
+                if self.system_prompt
+                else None,
                 prefill_messages=self.prefill_messages or None,
                 reasoning_config=self.reasoning_config,
                 providers_allowed=self._providers_only,
@@ -2122,8 +2320,12 @@ class AizenCLI:
                 checkpoint_max_snapshots=self.checkpoint_max_snapshots,
                 pass_session_id=self.pass_session_id,
                 tool_progress_callback=self._on_tool_progress,
-                stream_delta_callback=self._stream_delta if self.streaming_enabled else None,
-                tool_gen_callback=self._on_tool_gen_start if self.streaming_enabled else None,
+                stream_delta_callback=self._stream_delta
+                if self.streaming_enabled
+                else None,
+                tool_gen_callback=self._on_tool_gen_start
+                if self.streaming_enabled
+                else None,
             )
             # Route agent status output through prompt_toolkit so ANSI escape
             # sequences aren't garbled by patch_stdout's StdoutProxy (#2262).
@@ -2139,7 +2341,9 @@ class AizenCLI:
 
             if self._pending_title and self._session_db:
                 try:
-                    self._session_db.set_session_title(self.session_id, self._pending_title)
+                    self._session_db.set_session_title(
+                        self.session_id, self._pending_title
+                    )
                     _cprint(f"  Session title applied: {self._pending_title}")
                     self._pending_title = None
                 except (ValueError, Exception) as e:
@@ -2149,31 +2353,37 @@ class AizenCLI:
         except Exception as e:
             self.console.print(f"[bold red]Failed to initialize agent: {e}[/]")
             return False
-    
+
     def show_banner(self):
         """Display the welcome banner in Claude Code style."""
         self.console.clear()
-        
+
         # Auto-compact for narrow terminals — the full banner with caduceus
         # + tool list needs ~80 columns minimum to render without wrapping.
         term_width = shutil.get_terminal_size().columns
         use_compact = self.compact or term_width < 80
-        
+
         if use_compact:
             self.console.print(_build_compact_banner())
             self._show_status()
         else:
             # Get tools for display
-            tools = get_tool_definitions(enabled_toolsets=self.enabled_toolsets, quiet_mode=True)
-            
+            tools = get_tool_definitions(
+                enabled_toolsets=self.enabled_toolsets, quiet_mode=True
+            )
+
             # Get terminal working directory (where commands will execute)
             cwd = os.getenv("TERMINAL_CWD", os.getcwd())
-            
+
             # Get context length for display
             ctx_len = None
-            if hasattr(self, 'agent') and self.agent and hasattr(self.agent, 'context_compressor'):
+            if (
+                hasattr(self, "agent")
+                and self.agent
+                and hasattr(self.agent, "context_compressor")
+            ):
                 ctx_len = self.agent.context_compressor.context_length
-            
+
             # Build and display the banner
             build_welcome_banner(
                 console=self.console,
@@ -2184,10 +2394,10 @@ class AizenCLI:
                 session_id=self.session_id,
                 context_length=ctx_len,
             )
-        
+
         # Show tool availability warnings if any tools are disabled
         self._show_tool_availability_warnings()
-        
+
         self.console.print()
 
     def _preload_resumed_session(self) -> bool:
@@ -2206,9 +2416,7 @@ class AizenCLI:
 
         session_meta = self._session_db.get_session(self.session_id)
         if not session_meta:
-            self.console.print(
-                f"[bold red]Session not found: {self.session_id}[/]"
-            )
+            self.console.print(f"[bold red]Session not found: {self.session_id}[/]")
             self.console.print(
                 "[dim]Use a session ID from a previous CLI run "
                 "(aizen sessions list).[/]"
@@ -2238,8 +2446,7 @@ class AizenCLI:
         # Re-open the session (clear ended_at so it's active again)
         try:
             self._session_db._conn.execute(
-                "UPDATE sessions SET ended_at = NULL, end_reason = NULL "
-                "WHERE id = ?",
+                "UPDATE sessions SET ended_at = NULL, end_reason = NULL WHERE id = ?",
                 (self.session_id,),
             )
             self._session_db._conn.commit()
@@ -2263,23 +2470,28 @@ class AizenCLI:
         if self.resume_display == "minimal":
             return
 
-        MAX_DISPLAY_EXCHANGES = 10   # max user+assistant pairs to show
-        MAX_USER_LEN = 300           # truncate user messages
-        MAX_ASST_LEN = 200           # truncate assistant text
-        MAX_ASST_LINES = 3           # max lines of assistant text
+        MAX_DISPLAY_EXCHANGES = 10  # max user+assistant pairs to show
+        MAX_USER_LEN = 300  # truncate user messages
+        MAX_ASST_LEN = 200  # truncate assistant text
+        MAX_ASST_LINES = 3  # max lines of assistant text
 
         def _strip_reasoning(text: str) -> str:
             """Remove <REASONING_SCRATCHPAD>...</REASONING_SCRATCHPAD> blocks
             from displayed text (reasoning model internal thoughts)."""
             import re
+
             cleaned = re.sub(
                 r"<REASONING_SCRATCHPAD>.*?</REASONING_SCRATCHPAD>\s*",
-                "", text, flags=re.DOTALL,
+                "",
+                text,
+                flags=re.DOTALL,
             )
             # Also strip unclosed reasoning tags at the end
             cleaned = re.sub(
                 r"<REASONING_SCRATCHPAD>.*$",
-                "", cleaned, flags=re.DOTALL,
+                "",
+                cleaned,
+                flags=re.DOTALL,
             )
             return cleaned.strip()
 
@@ -2327,7 +2539,11 @@ class AizenCLI:
                     names = []
                     for tc in tool_calls:
                         fn = tc.get("function", {})
-                        name = fn.get("name", "unknown") if isinstance(fn, dict) else "unknown"
+                        name = (
+                            fn.get("name", "unknown")
+                            if isinstance(fn, dict)
+                            else "unknown"
+                        )
                         if name not in names:
                             names.append(name)
                     names_str = ", ".join(names[:4])
@@ -2355,6 +2571,7 @@ class AizenCLI:
 
         try:
             from aizen_cli.skin_engine import get_active_skin
+
             _skin = get_active_skin()
             _history_text_c = _skin.get_color("banner_text", "#FFF8DC")
             _session_label_c = _skin.get_color("session_label", "#DAA520")
@@ -2429,7 +2646,7 @@ class AizenCLI:
         """
         from tools.checkpoint_manager import format_checkpoint_list
 
-        if not hasattr(self, 'agent') or not self.agent:
+        if not hasattr(self, "agent") or not self.agent:
             print("  No active agent session.")
             return
 
@@ -2476,7 +2693,9 @@ class AizenCLI:
                         diff_lines = diff.splitlines()
                         if len(diff_lines) > 80:
                             print("\n".join(diff_lines[:80]))
-                            print(f"\n  ... ({len(diff_lines) - 80} more lines, showing first 80)")
+                            print(
+                                f"\n  ... ({len(diff_lines) - 80} more lines, showing first 80)"
+                            )
                         else:
                             print(f"\n{diff}")
             else:
@@ -2499,9 +2718,13 @@ class AizenCLI:
         result = mgr.restore(cwd, target_hash, file_path=file_path)
         if result["success"]:
             if file_path:
-                print(f"  ✅ Restored {file_path} from checkpoint {result['restored_to']}: {result['reason']}")
+                print(
+                    f"  ✅ Restored {file_path} from checkpoint {result['restored_to']}: {result['reason']}"
+                )
             else:
-                print(f"  ✅ Restored to checkpoint {result['restored_to']}: {result['reason']}")
+                print(
+                    f"  ✅ Restored to checkpoint {result['restored_to']}: {result['reason']}"
+                )
             print("  A pre-rollback snapshot was saved automatically.")
 
             # Also undo the last conversation turn so the agent's context
@@ -2552,12 +2775,15 @@ class AizenCLI:
         Windows Terminal with WSL2).
         """
         from aizen_cli.clipboard import has_clipboard_image
+
         if has_clipboard_image():
             if self._try_attach_clipboard_image():
                 n = len(self._attached_images)
                 _cprint(f"  📎 Image #{n} attached from clipboard")
             else:
-                _cprint(f"  {_DIM}(>_<) Clipboard has an image but extraction failed{_RST}")
+                _cprint(
+                    f"  {_DIM}(>_<) Clipboard has an image but extraction failed{_RST}"
+                )
         else:
             _cprint(f"  {_DIM}(._.) No image found in clipboard{_RST}")
 
@@ -2591,7 +2817,9 @@ class AizenCLI:
             _cprint(f"  {_DIM}👁️  analyzing {img_path.name} ({size_kb}KB)...{_RST}")
             try:
                 result_json = _asyncio.run(
-                    vision_analyze_tool(image_url=str(img_path), user_prompt=analysis_prompt)
+                    vision_analyze_tool(
+                        image_url=str(img_path), user_prompt=analysis_prompt
+                    )
                 )
                 result = _json.loads(result_json)
                 if result.get("success"):
@@ -2608,14 +2836,18 @@ class AizenCLI:
                         f"You can try examining it with vision_analyze using "
                         f"image_url: {img_path}]"
                     )
-                    _cprint(f"  {_DIM}⚠ vision analysis failed — path included for retry{_RST}")
+                    _cprint(
+                        f"  {_DIM}⚠ vision analysis failed — path included for retry{_RST}"
+                    )
             except Exception as e:
                 enriched_parts.append(
                     f"[The user attached an image but analysis failed ({e}). "
                     f"You can try examining it with vision_analyze using "
                     f"image_url: {img_path}]"
                 )
-                _cprint(f"  {_DIM}⚠ vision analysis error — path included for retry{_RST}")
+                _cprint(
+                    f"  {_DIM}⚠ vision analysis error — path included for retry{_RST}"
+                )
 
         # Combine: vision descriptions first, then the user's original text
         user_text = text if isinstance(text, str) and text else ""
@@ -2628,41 +2860,47 @@ class AizenCLI:
         """Show warnings about disabled tools due to missing API keys."""
         try:
             from tools.model_tools import check_tool_availability
-            
+
             available, unavailable = check_tool_availability()
-            
+
             # Filter to only those missing API keys (not system deps)
             api_key_missing = [u for u in unavailable if u["missing_vars"]]
-            
+
             if api_key_missing:
                 self.console.print()
-                self.console.print("[yellow]⚠️  Some tools disabled (missing API keys):[/]")
+                self.console.print(
+                    "[yellow]⚠️  Some tools disabled (missing API keys):[/]"
+                )
                 for item in api_key_missing:
                     tools_str = ", ".join(item["tools"][:2])  # Show first 2 tools
                     if len(item["tools"]) > 2:
-                        tools_str += f", +{len(item['tools'])-2} more"
-                    self.console.print(f"   [dim]• {item['name']}[/] [dim italic]({', '.join(item['missing_vars'])})[/]")
+                        tools_str += f", +{len(item['tools']) - 2} more"
+                    self.console.print(
+                        f"   [dim]• {item['name']}[/] [dim italic]({', '.join(item['missing_vars'])})[/]"
+                    )
                 self.console.print("[dim]   Run 'aizen setup' to configure[/]")
         except Exception:
             pass  # Don't crash on import errors
-    
+
     def _show_status(self):
         """Show current status bar."""
         # Get tool count
-        tools = get_tool_definitions(enabled_toolsets=self.enabled_toolsets, quiet_mode=True)
+        tools = get_tool_definitions(
+            enabled_toolsets=self.enabled_toolsets, quiet_mode=True
+        )
         tool_count = len(tools) if tools else 0
-        
+
         # Format model name (shorten if needed)
         model_short = self.model.split("/")[-1] if "/" in self.model else self.model
         if len(model_short) > 30:
             model_short = model_short[:27] + "..."
-        
+
         # Get API status indicator
         if self.api_key:
             api_indicator = "[green bold]●[/]"
         else:
             api_indicator = "[red bold]●[/]"
-        
+
         # Build status line with proper markup
         toolsets_info = ""
         if self.enabled_toolsets and "all" not in self.enabled_toolsets:
@@ -2677,13 +2915,14 @@ class AizenCLI:
             f"[dim #B8860B]·[/] [bold cyan]{tool_count} tools[/]"
             f"{toolsets_info}{provider_info}"
         )
-    
+
     def show_help(self):
         """Display help information with categorized commands."""
         from aizen_cli.commands import COMMANDS_BY_CATEGORY
 
         try:
             from aizen_cli.skin_engine import get_active_help_header
+
             header = get_active_help_header("(^_^)? Available Commands")
         except Exception:
             header = "(^_^)? Available Commands"
@@ -2698,10 +2937,14 @@ class AizenCLI:
         for category, commands in COMMANDS_BY_CATEGORY.items():
             _cprint(f"\n  {_BOLD}── {category} ──{_RST}")
             for cmd, desc in commands.items():
-                ChatConsole().print(f"    [bold {_accent_hex()}]{cmd:<15}[/] [dim]-[/] {_escape(desc)}")
+                ChatConsole().print(
+                    f"    [bold {_accent_hex()}]{cmd:<15}[/] [dim]-[/] {_escape(desc)}"
+                )
 
         if _skill_commands:
-            _cprint(f"\n  ⚡ {_BOLD}Skill Commands{_RST} ({len(_skill_commands)} installed):")
+            _cprint(
+                f"\n  ⚡ {_BOLD}Skill Commands{_RST} ({len(_skill_commands)} installed):"
+            )
             for cmd, info in sorted(_skill_commands.items()):
                 ChatConsole().print(
                     f"    [bold {_accent_hex()}]{cmd:<22}[/] [dim]-[/] {_escape(info['description'])}"
@@ -2710,15 +2953,17 @@ class AizenCLI:
         _cprint(f"\n  {_DIM}Tip: Just type your message to chat with Aizen!{_RST}")
         _cprint(f"  {_DIM}Multi-line: Alt+Enter for a new line{_RST}")
         _cprint(f"  {_DIM}Paste image: Alt+V (or /paste){_RST}\n")
-    
+
     def show_tools(self):
         """Display available tools with kawaii ASCII art."""
-        tools = get_tool_definitions(enabled_toolsets=self.enabled_toolsets, quiet_mode=True)
-        
+        tools = get_tool_definitions(
+            enabled_toolsets=self.enabled_toolsets, quiet_mode=True
+        )
+
         if not tools:
             print("(;_;) No tools available")
             return
-        
+
         # Header
         print()
         title = "(^_^)/ Available Tools"
@@ -2728,7 +2973,7 @@ class AizenCLI:
         print("|" + " " * (pad // 2) + title + " " * (pad - pad // 2) + "|")
         print("+" + "-" * width + "+")
         print()
-        
+
         # Group tools by toolset
         toolsets = {}
         for tool in sorted(tools, key=lambda t: t["function"]["name"]):
@@ -2740,16 +2985,16 @@ class AizenCLI:
             # First sentence: split on ". " (period+space) to avoid breaking on "e.g." or "v2.0"
             desc = desc.split("\n")[0]
             if ". " in desc:
-                desc = desc[:desc.index(". ") + 1]
+                desc = desc[: desc.index(". ") + 1]
             toolsets[toolset].append((name, desc))
-        
+
         # Display by toolset
         for toolset in sorted(toolsets.keys()):
             print(f"  [{toolset}]")
             for name, desc in toolsets[toolset]:
                 print(f"    * {name:<20} - {desc}")
             print()
-        
+
         print(f"  Total: {len(tools)} tools  ヽ(^o^)ノ")
         print()
 
@@ -2777,8 +3022,7 @@ class AizenCLI:
             return
 
         if subcommand == "list":
-            tools_disable_enable_command(
-                Namespace(tools_action="list", platform="cli"))
+            tools_disable_enable_command(Namespace(tools_action="list", platform="cli"))
             return
 
         names = parts[2:]
@@ -2796,11 +3040,13 @@ class AizenCLI:
         _cprint(f"{_GOLD}{verb} {label}...{_RST}")
 
         tools_disable_enable_command(
-            Namespace(tools_action=subcommand, names=names, platform="cli"))
+            Namespace(tools_action=subcommand, names=names, platform="cli")
+        )
 
         # Reset session so the new tool config is picked up from a clean state
         from aizen_cli.tools_config import _get_platform_tools
         from aizen_cli.config import load_config
+
         self.enabled_toolsets = _get_platform_tools(load_config(), "cli")
         self.new_session()
         _cprint(f"{_DIM}Session reset. New tool configuration is active.{_RST}")
@@ -2808,7 +3054,7 @@ class AizenCLI:
     def show_toolsets(self):
         """Display available toolsets with kawaii ASCII art."""
         all_toolsets = get_all_toolsets()
-        
+
         # Header
         print()
         title = "(^_^)b Available Toolsets"
@@ -2818,24 +3064,28 @@ class AizenCLI:
         print("|" + " " * (pad // 2) + title + " " * (pad - pad // 2) + "|")
         print("+" + "-" * width + "+")
         print()
-        
+
         for name in sorted(all_toolsets.keys()):
             info = get_toolset_info(name)
             if info:
                 tool_count = info["tool_count"]
                 desc = info["description"]
-                
+
                 # Mark if currently enabled
-                marker = "(*)" if self.enabled_toolsets and name in self.enabled_toolsets else "   "
+                marker = (
+                    "(*)"
+                    if self.enabled_toolsets and name in self.enabled_toolsets
+                    else "   "
+                )
                 print(f"  {marker} {name:<18} [{tool_count:>2} tools] - {desc}")
-        
+
         print()
         print("  (*) = currently enabled")
         print()
         print("  Tip: Use 'all' or '*' to enable all toolsets")
         print("  Example: python cli.py --toolsets web,terminal")
         print()
-    
+
     def _handle_profile_command(self):
         """Display active profile name and home directory."""
         from core.aizen_constants import get_aizen_home, display_aizen_home
@@ -2864,17 +3114,21 @@ class AizenCLI:
         terminal_env = os.getenv("TERMINAL_ENV", "local")
         terminal_cwd = os.getenv("TERMINAL_CWD", os.getcwd())
         terminal_timeout = os.getenv("TERMINAL_TIMEOUT", "60")
-        
-        user_config_path = _aizen_home / 'config.yaml'
-        project_config_path = Path(__file__).parent / 'cli-config.yaml'
+
+        user_config_path = _aizen_home / "config.yaml"
+        project_config_path = Path(__file__).parent / "cli-config.yaml"
         if user_config_path.exists():
             config_path = user_config_path
         else:
             config_path = project_config_path
         config_status = "(loaded)" if config_path.exists() else "(not found)"
-        
-        api_key_display = '********' + self.api_key[-4:] if self.api_key and len(self.api_key) > 4 else 'Not set!'
-        
+
+        api_key_display = (
+            "********" + self.api_key[-4:]
+            if self.api_key and len(self.api_key) > 4
+            else "Not set!"
+        )
+
         print()
         title = "(^_^) Configuration"
         width = 50
@@ -2900,14 +3154,16 @@ class AizenCLI:
         print()
         print("  -- Agent --")
         print(f"  Max Turns:  {self.max_turns}")
-        print(f"  Toolsets:   {', '.join(self.enabled_toolsets) if self.enabled_toolsets else 'all'}")
+        print(
+            f"  Toolsets:   {', '.join(self.enabled_toolsets) if self.enabled_toolsets else 'all'}"
+        )
         print(f"  Verbose:    {self.verbose}")
         print()
         print("  -- Session --")
         print(f"  Started:     {self.session_start.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"  Config File: {config_path} {config_status}")
         print()
-    
+
     def show_history(self):
         """Display conversation history."""
         if not self.conversation_history:
@@ -2973,7 +3229,7 @@ class AizenCLI:
 
         flush_tool_summary()
         print()
-    
+
     def new_session(self, silent=False):
         """Start a fresh session with a new session ID and cleared agent state."""
         if self.agent and self.conversation_history:
@@ -3006,6 +3262,7 @@ class AizenCLI:
             if hasattr(self.agent, "_todo_store"):
                 try:
                     from tools.todo_tool import TodoStore
+
                     self.agent._todo_store = TodoStore()
                 except Exception:
                     pass
@@ -3045,13 +3302,16 @@ class AizenCLI:
 
         # Resolve title or ID
         from aizen_cli.main import _resolve_session_by_name_or_id
+
         resolved = _resolve_session_by_name_or_id(target)
         target_id = resolved or target
 
         session_meta = self._session_db.get_session(target_id)
         if not session_meta:
             _cprint(f"  Session not found: {target}")
-            _cprint("  Use /history or `aizen sessions list` to see available sessions.")
+            _cprint(
+                "  Use /history or `aizen sessions list` to see available sessions."
+            )
             return
 
         if target_id == self.session_id:
@@ -3088,14 +3348,17 @@ class AizenCLI:
             if hasattr(self.agent, "_todo_store"):
                 try:
                     from tools.todo_tool import TodoStore
+
                     self.agent._todo_store = TodoStore()
                 except Exception:
                     pass
             if hasattr(self.agent, "_invalidate_system_prompt"):
                 self.agent._invalidate_system_prompt()
 
-        title_part = f" \"{session_meta['title']}\"" if session_meta.get("title") else ""
-        msg_count = len([m for m in self.conversation_history if m.get("role") == "user"])
+        title_part = f' "{session_meta["title"]}"' if session_meta.get("title") else ""
+        msg_count = len(
+            [m for m in self.conversation_history if m.get("role") == "user"]
+        )
         if self.conversation_history:
             _cprint(
                 f"  ↻ Resumed session {target_id}{title_part}"
@@ -3103,35 +3366,42 @@ class AizenCLI:
                 f" {len(self.conversation_history)} total)"
             )
         else:
-            _cprint(f"  ↻ Resumed session {target_id}{title_part} — no messages, starting fresh.")
+            _cprint(
+                f"  ↻ Resumed session {target_id}{title_part} — no messages, starting fresh."
+            )
 
     def reset_conversation(self):
         """Reset the conversation by starting a new session."""
         self.new_session()
-    
+
     def save_conversation(self):
         """Save the current conversation to a file."""
         if not self.conversation_history:
             print("(;_;) No conversation to save.")
             return
-        
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"aizen_conversation_{timestamp}.json"
-        
+
         try:
             with open(filename, "w", encoding="utf-8") as f:
-                json.dump({
-                    "model": self.model,
-                    "session_start": self.session_start.isoformat(),
-                    "messages": self.conversation_history,
-                }, f, indent=2, ensure_ascii=False)
+                json.dump(
+                    {
+                        "model": self.model,
+                        "session_start": self.session_start.isoformat(),
+                        "messages": self.conversation_history,
+                    },
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
             print(f"(^_^)v Conversation saved to: {filename}")
         except Exception as e:
             print(f"(x_x) Failed to save: {e}")
-    
+
     def retry_last(self):
         """Retry the last user message by removing the last exchange and re-sending.
-        
+
         Removes the last assistant response (and any tool-call messages) and
         the last user message, then re-sends that user message to the agent.
         Returns the message to re-send, or None if there's nothing to retry.
@@ -3139,57 +3409,61 @@ class AizenCLI:
         if not self.conversation_history:
             print("(._.) No messages to retry.")
             return None
-        
+
         # Walk backwards to find the last user message
         last_user_idx = None
         for i in range(len(self.conversation_history) - 1, -1, -1):
             if self.conversation_history[i].get("role") == "user":
                 last_user_idx = i
                 break
-        
+
         if last_user_idx is None:
             print("(._.) No user message found to retry.")
             return None
-        
+
         # Extract the message text and remove everything from that point forward
         last_message = self.conversation_history[last_user_idx].get("content", "")
         self.conversation_history = self.conversation_history[:last_user_idx]
-        
-        print(f"(^_^)b Retrying: \"{last_message[:60]}{'...' if len(last_message) > 60 else ''}\"")
+
+        print(
+            f'(^_^)b Retrying: "{last_message[:60]}{"..." if len(last_message) > 60 else ""}"'
+        )
         return last_message
-    
+
     def undo_last(self):
         """Remove the last user/assistant exchange from conversation history.
-        
+
         Walks backwards and removes all messages from the last user message
         onward (including assistant responses, tool calls, etc.).
         """
         if not self.conversation_history:
             print("(._.) No messages to undo.")
             return
-        
+
         # Walk backwards to find the last user message
         last_user_idx = None
         for i in range(len(self.conversation_history) - 1, -1, -1):
             if self.conversation_history[i].get("role") == "user":
                 last_user_idx = i
                 break
-        
+
         if last_user_idx is None:
             print("(._.) No user message found to undo.")
             return
-        
+
         # Count how many messages we're removing
         removed_count = len(self.conversation_history) - last_user_idx
         removed_msg = self.conversation_history[last_user_idx].get("content", "")
-        
+
         # Truncate history to before the last user message
         self.conversation_history = self.conversation_history[:last_user_idx]
-        
-        print(f"(^_^)b Undid {removed_count} message(s). Removed: \"{removed_msg[:60]}{'...' if len(removed_msg) > 60 else ''}\"")
+
+        print(
+            f'(^_^)b Undid {removed_count} message(s). Removed: "{removed_msg[:60]}{"..." if len(removed_msg) > 60 else ""}"'
+        )
         remaining = len(self.conversation_history)
         print(f"  {remaining} message(s) remaining in history.")
-    
+
     def _show_model_and_providers(self):
         """Show current model + provider and list all authenticated providers.
 
@@ -3197,8 +3471,10 @@ class AizenCLI:
         providers with their available models.
         """
         from aizen_cli.models import (
-            curated_models_for_provider, list_available_providers,
-            normalize_provider, _PROVIDER_LABELS,
+            curated_models_for_provider,
+            list_available_providers,
+            normalize_provider,
+            _PROVIDER_LABELS,
         )
         from aizen_cli.auth import resolve_provider as _resolve_provider
 
@@ -3234,10 +3510,13 @@ class AizenCLI:
                 curated = curated_models_for_provider(p["id"])
                 if curated:
                     for mid, desc in curated:
-                        current_marker = " ← current" if (is_active and mid == self.model) else ""
+                        current_marker = (
+                            " ← current" if (is_active and mid == self.model) else ""
+                        )
                         print(f"      {mid}{current_marker}")
                 elif p["id"] == "custom":
                     from aizen_cli.models import _get_custom_base_url
+
                     custom_url = _get_custom_base_url()
                     if custom_url:
                         print(f"      endpoint: {custom_url}")
@@ -3259,11 +3538,11 @@ class AizenCLI:
     def _handle_prompt_command(self, cmd: str):
         """Handle the /prompt command to view or set system prompt."""
         parts = cmd.split(maxsplit=1)
-        
+
         if len(parts) > 1:
             # Set new prompt
             new_prompt = parts[1].strip()
-            
+
             if new_prompt.lower() == "clear":
                 self.system_prompt = ""
                 self.agent = None  # Force re-init
@@ -3278,7 +3557,7 @@ class AizenCLI:
                     print("(^_^)b System prompt set (saved to config)")
                 else:
                     print("(^_^) System prompt set (session only)")
-                print(f"  \"{new_prompt[:60]}{'...' if len(new_prompt) > 60 else ''}\"")
+                print(f'  "{new_prompt[:60]}{"..." if len(new_prompt) > 60 else ""}"')
         else:
             # Show current prompt
             print()
@@ -3309,7 +3588,6 @@ class AizenCLI:
             print("    /prompt clear   - Remove custom prompt")
             print("    /personality    - Use a predefined personality")
             print()
-    
 
     @staticmethod
     def _resolve_personality_prompt(value) -> str:
@@ -3317,20 +3595,20 @@ class AizenCLI:
         if isinstance(value, dict):
             parts = [value.get("system_prompt", "")]
             if value.get("tone"):
-                parts.append(f'Tone: {value["tone"]}' )
+                parts.append(f"Tone: {value['tone']}")
             if value.get("style"):
-                parts.append(f'Style: {value["style"]}' )
+                parts.append(f"Style: {value['style']}")
             return "\n".join(p for p in parts if p)
         return str(value)
 
     def _handle_personality_command(self, cmd: str):
         """Handle the /personality command to set predefined personalities."""
         parts = cmd.split(maxsplit=1)
-        
+
         if len(parts) > 1:
             # Set personality
             personality_name = parts[1].strip().lower()
-            
+
             if personality_name in ("none", "default", "neutral"):
                 self.system_prompt = ""
                 self.agent = None  # Force re-init
@@ -3340,13 +3618,21 @@ class AizenCLI:
                     print("(^_^) Personality cleared (session only)")
                 print("  No personality overlay — using base agent behavior.")
             elif personality_name in self.personalities:
-                self.system_prompt = self._resolve_personality_prompt(self.personalities[personality_name])
+                self.system_prompt = self._resolve_personality_prompt(
+                    self.personalities[personality_name]
+                )
                 self.agent = None  # Force re-init
                 if save_config_value("agent.system_prompt", self.system_prompt):
-                    print(f"(^_^)b Personality set to '{personality_name}' (saved to config)")
+                    print(
+                        f"(^_^)b Personality set to '{personality_name}' (saved to config)"
+                    )
                 else:
-                    print(f"(^_^) Personality set to '{personality_name}' (session only)")
-                print(f"  \"{self.system_prompt[:60]}{'...' if len(self.system_prompt) > 60 else ''}\"")
+                    print(
+                        f"(^_^) Personality set to '{personality_name}' (session only)"
+                    )
+                print(
+                    f'  "{self.system_prompt[:60]}{"..." if len(self.system_prompt) > 60 else ""}"'
+                )
             else:
                 print(f"(._.) Unknown personality: {personality_name}")
                 print(f"  Available: none, {', '.join(self.personalities.keys())}")
@@ -3360,14 +3646,17 @@ class AizenCLI:
             print(f"  {'none':<12} - (no personality overlay)")
             for name, prompt in self.personalities.items():
                 if isinstance(prompt, dict):
-                    preview = prompt.get("description") or prompt.get("system_prompt", "")[:50]
+                    preview = (
+                        prompt.get("description")
+                        or prompt.get("system_prompt", "")[:50]
+                    )
                 else:
                     preview = str(prompt)[:50]
                 print(f"  {name:<12} - {preview}")
             print()
             print("  Usage: /personality <name>")
             print()
-    
+
     def _handle_cron_command(self, cmd: str):
         """Handle the /cron command to manage scheduled tasks."""
         import shlex
@@ -3450,7 +3739,9 @@ class AizenCLI:
             print()
             print("  Commands:")
             print("    /cron list")
-            print('    /cron add "every 2h" "Check server status" [--skill blogwatcher]')
+            print(
+                '    /cron add "every 2h" "Check server status" [--skill blogwatcher]'
+            )
             print('    /cron edit <job_id> --schedule "every 4h" --prompt "New task"')
             print("    /cron edit <job_id> --skill blogwatcher --skill find-nearby")
             print("    /cron edit <job_id> --remove-skill blogwatcher")
@@ -3467,7 +3758,9 @@ class AizenCLI:
                 print("  " + "-" * 63)
                 for job in jobs:
                     repeat_str = job.get("repeat", "?")
-                    print(f"    {job['job_id'][:12]:<12} | {job['schedule']:<15} | {repeat_str:<8}")
+                    print(
+                        f"    {job['job_id'][:12]:<12} | {job['schedule']:<15} | {repeat_str:<8}"
+                    )
                     if job.get("skills"):
                         print(f"      Skills: {', '.join(job['skills'])}")
                     print(f"      {job.get('prompt_preview', '')}")
@@ -3504,7 +3797,9 @@ class AizenCLI:
                     print(f"  Skills: {', '.join(job['skills'])}")
                 print(f"  Prompt: {job.get('prompt_preview', '')}")
                 if job.get("last_run_at"):
-                    print(f"  Last run: {job['last_run_at']} ({job.get('last_status', '?')})")
+                    print(
+                        f"  Last run: {job['last_run_at']} ({job.get('last_status', '?')})"
+                    )
                 print()
             return
 
@@ -3541,7 +3836,9 @@ class AizenCLI:
         if subcommand == "edit":
             positionals = opts["positionals"]
             if not positionals:
-                print("(._.) Usage: /cron edit <job_id> [--schedule ...] [--prompt ...] [--skill ...]")
+                print(
+                    "(._.) Usage: /cron edit <job_id> [--schedule ...] [--prompt ...] [--skill ...]"
+                )
                 return
             job_id = positionals[0]
             existing = get_job(job_id)
@@ -3553,13 +3850,18 @@ class AizenCLI:
             replacement_skills = _normalize_skills(opts["skills"])
             add_skills = _normalize_skills(opts["add_skills"])
             remove_skills = set(_normalize_skills(opts["remove_skills"]))
-            existing_skills = list(existing.get("skills") or ([] if not existing.get("skill") else [existing.get("skill")]))
+            existing_skills = list(
+                existing.get("skills")
+                or ([] if not existing.get("skill") else [existing.get("skill")])
+            )
             if opts["clear_skills"]:
                 final_skills = []
             elif replacement_skills:
                 final_skills = replacement_skills
             elif add_skills or remove_skills:
-                final_skills = [skill for skill in existing_skills if skill not in remove_skills]
+                final_skills = [
+                    skill for skill in existing_skills if skill not in remove_skills
+                ]
                 for skill in add_skills:
                     if skill not in final_skills:
                         final_skills.append(skill)
@@ -3592,8 +3894,14 @@ class AizenCLI:
                 print(f"(._.) Usage: /cron {subcommand} <job_id>")
                 return
             job_id = positionals[0]
-            action = "remove" if subcommand in {"remove", "rm", "delete"} else subcommand
-            result = _cron_api(action=action, job_id=job_id, reason="paused from /cron" if action == "pause" else None)
+            action = (
+                "remove" if subcommand in {"remove", "rm", "delete"} else subcommand
+            )
+            result = _cron_api(
+                action=action,
+                job_id=job_id,
+                reason="paused from /cron" if action == "pause" else None,
+            )
             if not result.get("success"):
                 print(f"(x_x) Failed to {action} job: {result.get('error')}")
                 return
@@ -3612,35 +3920,36 @@ class AizenCLI:
 
         print(f"(._.) Unknown cron command: {subcommand}")
         print("  Available: list, add, edit, pause, resume, run, remove")
-    
+
     def _handle_skills_command(self, cmd: str):
         """Handle /skills slash command — delegates to aizen_cli.skills_hub."""
         from aizen_cli.skills_hub import handle_skills_slash
+
         handle_skills_slash(cmd, ChatConsole())
 
     def _show_gateway_status(self):
         """Show status of the gateway and connected messaging platforms."""
         from gateway.config import load_gateway_config, Platform
-        
+
         print()
         print("+" + "-" * 60 + "+")
         print("|" + " " * 15 + "(✿◠‿◠) Gateway Status" + " " * 17 + "|")
         print("+" + "-" * 60 + "+")
         print()
-        
+
         try:
             config = load_gateway_config()
             connected = config.get_connected_platforms()
-            
+
             print("  Messaging Platform Configuration:")
             print("  " + "-" * 55)
-            
+
             platform_status = {
                 Platform.TELEGRAM: ("Telegram", "TELEGRAM_BOT_TOKEN"),
                 Platform.DISCORD: ("Discord", "DISCORD_BOT_TOKEN"),
                 Platform.WHATSAPP: ("WhatsApp", "WHATSAPP_ENABLED"),
             }
-            
+
             for platform, (name, env_var) in platform_status.items():
                 pconfig = config.platforms.get(platform)
                 if pconfig and pconfig.enabled:
@@ -3649,7 +3958,7 @@ class AizenCLI:
                     print(f"    ✓ {name:<12} Enabled{home_str}")
                 else:
                     print(f"    ○ {name:<12} Not configured ({env_var})")
-            
+
             print()
             print("  Session Reset Policy:")
             print("  " + "-" * 55)
@@ -3657,14 +3966,14 @@ class AizenCLI:
             print(f"    Mode: {policy.mode}")
             print(f"    Daily reset at: {policy.at_hour}:00")
             print(f"    Idle timeout: {policy.idle_minutes} minutes")
-            
+
             print()
             print("  To start the gateway:")
             print("    python cli.py --gateway")
             print()
             print(f"  Configuration file: {display_aizen_home()}/config.yaml")
             print()
-            
+
         except Exception as e:
             print(f"  Error loading gateway config: {e}")
             print()
@@ -3674,14 +3983,14 @@ class AizenCLI:
             print("       DISCORD_BOT_TOKEN=your_token")
             print(f"    2. Or configure settings in {display_aizen_home()}/config.yaml")
             print()
-    
+
     def process_command(self, command: str) -> bool:
         """
         Process a slash command.
-        
+
         Args:
             command: The command string (starting with /)
-            
+
         Returns:
             bool: True to continue, False to exit
         """
@@ -3692,10 +4001,11 @@ class AizenCLI:
         # Resolve aliases via central registry so adding an alias is a one-line
         # change in aizen_cli/commands.py instead of touching every dispatch site.
         from aizen_cli.commands import resolve_command as _resolve_cmd
+
         _base_word = cmd_lower.split()[0].lstrip("/")
         _cmd_def = _resolve_cmd(_base_word)
         canonical = _cmd_def.name if _cmd_def else _base_word
-        
+
         if canonical in ("quit", "exit", "q"):
             return False
         elif canonical == "help":
@@ -3731,10 +4041,16 @@ class AizenCLI:
                 if self.compact or term_w < 80:
                     cc.print(_build_compact_banner())
                 else:
-                    tools = get_tool_definitions(enabled_toolsets=self.enabled_toolsets, quiet_mode=True)
+                    tools = get_tool_definitions(
+                        enabled_toolsets=self.enabled_toolsets, quiet_mode=True
+                    )
                     cwd = os.getenv("TERMINAL_CWD", os.getcwd())
                     ctx_len = None
-                    if hasattr(self, 'agent') and self.agent and hasattr(self.agent, 'context_compressor'):
+                    if (
+                        hasattr(self, "agent")
+                        and self.agent
+                        and hasattr(self.agent, "context_compressor")
+                    ):
                         ctx_len = self.agent.context_compressor.context_length
                     build_welcome_banner(
                         console=cc,
@@ -3745,10 +4061,14 @@ class AizenCLI:
                         session_id=self.session_id,
                         context_length=ctx_len,
                     )
-                _cprint("  ✨ (◕‿◕)✨ Fresh start! Screen cleared and conversation reset.\n")
+                _cprint(
+                    "  ✨ (◕‿◕)✨ Fresh start! Screen cleared and conversation reset.\n"
+                )
             else:
                 self.show_banner()
-                print("  ✨ (◕‿◕)✨ Fresh start! Screen cleared and conversation reset.\n")
+                print(
+                    "  ✨ (◕‿◕)✨ Fresh start! Screen cleared and conversation reset.\n"
+                )
         elif canonical == "history":
             self.show_history()
         elif canonical == "title":
@@ -3760,16 +4080,21 @@ class AizenCLI:
                         # Sanitize the title early so feedback matches what gets stored
                         try:
                             from core.aizen_state import SessionDB
+
                             new_title = SessionDB.sanitize_title(raw_title)
                         except ValueError as e:
                             _cprint(f"  {e}")
                             new_title = None
                         if not new_title:
-                            _cprint("  Title is empty after cleanup. Please use printable characters.")
+                            _cprint(
+                                "  Title is empty after cleanup. Please use printable characters."
+                            )
                         elif self._session_db.get_session(self.session_id):
                             # Session exists in DB — set title directly
                             try:
-                                if self._session_db.set_session_title(self.session_id, new_title):
+                                if self._session_db.set_session_title(
+                                    self.session_id, new_title
+                                ):
                                     _cprint(f"  Session title set: {new_title}")
                                 else:
                                     _cprint("  Session not found in database.")
@@ -3780,10 +4105,14 @@ class AizenCLI:
                             # Check uniqueness proactively with the sanitized title
                             existing = self._session_db.get_session_by_title(new_title)
                             if existing:
-                                _cprint(f"  Title '{new_title}' is already in use by session {existing['id']}")
+                                _cprint(
+                                    f"  Title '{new_title}' is already in use by session {existing['id']}"
+                                )
                             else:
                                 self._pending_title = new_title
-                                _cprint(f"  Session title queued: {new_title} (will be saved on first message)")
+                                _cprint(
+                                    f"  Session title queued: {new_title} (will be saved on first message)"
+                                )
                     else:
                         _cprint("  Session database not available.")
                 else:
@@ -3817,7 +4146,7 @@ class AizenCLI:
             self._handle_plan_command(cmd_original)
         elif canonical == "retry":
             retry_msg = self.retry_last()
-            if retry_msg and hasattr(self, '_pending_input'):
+            if retry_msg and hasattr(self, "_pending_input"):
                 # Re-queue the message so process_loop sends it to the agent
                 self._pending_input.put(retry_msg)
         elif canonical == "undo":
@@ -3857,11 +4186,14 @@ class AizenCLI:
         elif canonical == "plugins":
             try:
                 from aizen_cli.plugins import get_plugin_manager
+
                 mgr = get_plugin_manager()
                 plugins = mgr.list_plugins()
                 if not plugins:
                     print("No plugins installed.")
-                    print(f"Drop plugin directories into {display_aizen_home()}/plugins/ to get started.")
+                    print(
+                        f"Drop plugin directories into {display_aizen_home()}/plugins/ to get started."
+                    )
                 else:
                     print(f"Plugins ({len(plugins)}):")
                     for p in plugins:
@@ -3892,9 +4224,13 @@ class AizenCLI:
             else:
                 self._pending_input.put(payload)
                 if self._agent_running:
-                    _cprint(f"  Queued for the next turn: {payload[:80]}{'...' if len(payload) > 80 else ''}")
+                    _cprint(
+                        f"  Queued for the next turn: {payload[:80]}{'...' if len(payload) > 80 else ''}"
+                    )
                 else:
-                    _cprint(f"  Queued: {payload[:80]}{'...' if len(payload) > 80 else ''}")
+                    _cprint(
+                        f"  Queued: {payload[:80]}{'...' if len(payload) > 80 else ''}"
+                    )
         elif canonical == "skin":
             self._handle_skin_command(cmd_original)
         elif canonical == "voice":
@@ -3907,12 +4243,16 @@ class AizenCLI:
                 qcmd = quick_commands[base_cmd.lstrip("/")]
                 if qcmd.get("type") == "exec":
                     import subprocess
+
                     exec_cmd = qcmd.get("command", "")
                     if exec_cmd:
                         try:
                             result = subprocess.run(
-                                exec_cmd, shell=True, capture_output=True,
-                                text=True, timeout=30
+                                exec_cmd,
+                                shell=True,
+                                capture_output=True,
+                                text=True,
+                                timeout=30,
                             )
                             output = result.stdout.strip() or result.stderr.strip()
                             if output:
@@ -3920,28 +4260,37 @@ class AizenCLI:
                             else:
                                 self.console.print("[dim]Command returned no output[/]")
                         except subprocess.TimeoutExpired:
-                            self.console.print("[bold red]Quick command timed out (30s)[/]")
+                            self.console.print(
+                                "[bold red]Quick command timed out (30s)[/]"
+                            )
                         except Exception as e:
                             self.console.print(f"[bold red]Quick command error: {e}[/]")
                     else:
-                        self.console.print(f"[bold red]Quick command '{base_cmd}' has no command defined[/]")
+                        self.console.print(
+                            f"[bold red]Quick command '{base_cmd}' has no command defined[/]"
+                        )
                 elif qcmd.get("type") == "alias":
                     target = qcmd.get("target", "").strip()
                     if target:
                         target = target if target.startswith("/") else f"/{target}"
-                        user_args = cmd_original[len(base_cmd):].strip()
+                        user_args = cmd_original[len(base_cmd) :].strip()
                         aliased_command = f"{target} {user_args}".strip()
                         return self.process_command(aliased_command)
                     else:
-                        self.console.print(f"[bold red]Quick command '{base_cmd}' has no target defined[/]")
+                        self.console.print(
+                            f"[bold red]Quick command '{base_cmd}' has no target defined[/]"
+                        )
                 else:
-                    self.console.print(f"[bold red]Quick command '{base_cmd}' has unsupported type (supported: 'exec', 'alias')[/]")
+                    self.console.print(
+                        f"[bold red]Quick command '{base_cmd}' has unsupported type (supported: 'exec', 'alias')[/]"
+                    )
             # Check for plugin-registered slash commands
             elif base_cmd.lstrip("/") in _get_plugin_cmd_handler_names():
                 from aizen_cli.plugins import get_plugin_command_handler
+
                 plugin_handler = get_plugin_command_handler(base_cmd.lstrip("/"))
                 if plugin_handler:
-                    user_args = cmd_original[len(base_cmd):].strip()
+                    user_args = cmd_original[len(base_cmd) :].strip()
                     try:
                         result = plugin_handler(user_args)
                         if result:
@@ -3950,22 +4299,25 @@ class AizenCLI:
                         _cprint(f"\033[1;31mPlugin command error: {e}{_RST}")
             # Check for skill slash commands (/gif-search, /axolotl, etc.)
             elif base_cmd in _skill_commands:
-                user_instruction = cmd_original[len(base_cmd):].strip()
+                user_instruction = cmd_original[len(base_cmd) :].strip()
                 msg = build_skill_invocation_message(
                     base_cmd, user_instruction, task_id=self.session_id
                 )
                 if msg:
                     skill_name = _skill_commands[base_cmd]["name"]
                     print(f"\n⚡ Loading skill: {skill_name}")
-                    if hasattr(self, '_pending_input'):
+                    if hasattr(self, "_pending_input"):
                         self._pending_input.put(msg)
                 else:
-                    self.console.print(f"[bold red]Failed to load skill for {base_cmd}[/]")
+                    self.console.print(
+                        f"[bold red]Failed to load skill for {base_cmd}[/]"
+                    )
             else:
                 # Prefix matching: if input uniquely identifies one command, execute it.
                 # Matches against both built-in COMMANDS and installed skill commands so
                 # that execution-time resolution agrees with tab-completion.
                 from aizen_cli.commands import COMMANDS
+
                 typed_base = cmd_lower.split()[0]
                 all_known = set(COMMANDS) | set(_skill_commands)
                 matches = [c for c in all_known if c.startswith(typed_base)]
@@ -3992,7 +4344,7 @@ class AizenCLI:
                         _cprint(f"\033[1;31mUnknown command: {cmd_lower}{_RST}")
                         _cprint(f"{_DIM}{_GOLD}Type /help for available commands{_RST}")
                     else:
-                        remainder = cmd_original.strip()[len(typed_base):]
+                        remainder = cmd_original.strip()[len(typed_base) :]
                         full_cmd = full_name + remainder
                         return self.process_command(full_cmd)
                 elif len(matches) > 1:
@@ -4001,9 +4353,9 @@ class AizenCLI:
                 else:
                     _cprint(f"\033[1;31mUnknown command: {cmd_lower}{_RST}")
                     _cprint(f"{_DIM}{_GOLD}Type /help for available commands{_RST}")
-        
+
         return True
-    
+
     def _handle_plan_command(self, cmd: str):
         """Handle /plan [request] — load the bundled plan skill."""
         parts = cmd.strip().split(maxsplit=1)
@@ -4025,11 +4377,13 @@ class AizenCLI:
             return
 
         _cprint(f"  📝 Plan mode queued via skill. Markdown plan target: {plan_path}")
-        if hasattr(self, '_pending_input'):
+        if hasattr(self, "_pending_input"):
             self._pending_input.put(msg)
         else:
-            self.console.print("[bold red]Plan mode unavailable: input queue not initialized[/]")
-    
+            self.console.print(
+                "[bold red]Plan mode unavailable: input queue not initialized[/]"
+            )
+
     def _handle_background_command(self, cmd: str):
         """Handle /background <prompt> — run a prompt in a separate background session.
 
@@ -4041,7 +4395,9 @@ class AizenCLI:
         if len(parts) < 2 or not parts[1].strip():
             _cprint("  Usage: /background <prompt>")
             _cprint("  Example: /background Summarize the top HN stories today")
-            _cprint("  The task runs in a separate session and results display here when done.")
+            _cprint(
+                "  The task runs in a separate session and results display here when done."
+            )
             return
 
         prompt = parts[1].strip()
@@ -4054,7 +4410,9 @@ class AizenCLI:
             _cprint("  (>_<) Cannot start background task: no valid credentials.")
             return
 
-        _cprint(f"  🔄 Background task #{task_num} started: \"{prompt[:60]}{'...' if len(prompt) > 60 else ''}\"")
+        _cprint(
+            f'  🔄 Background task #{task_num} started: "{prompt[:60]}{"..." if len(prompt) > 60 else ""}"'
+        )
         _cprint(f"  Task ID: {task_id}")
         _cprint("  You can continue chatting — results will appear when done.\n")
 
@@ -4113,15 +4471,17 @@ class AizenCLI:
                 if self._app:
                     self._app.invalidate()
                     import time as _tmod
+
                     _tmod.sleep(0.05)  # brief pause for refresh
                 print()
                 ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
                 _cprint(f"  ✅ Background task #{task_num} complete")
-                _cprint(f"  Prompt: \"{prompt[:60]}{'...' if len(prompt) > 60 else ''}\"")
+                _cprint(f'  Prompt: "{prompt[:60]}{"..." if len(prompt) > 60 else ""}"')
                 ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
                 if response:
                     try:
                         from aizen_cli.skin_engine import get_active_skin
+
                         _skin = get_active_skin()
                         label = _skin.get_branding("response_label", "⚕ Aizen")
                         _resp_color = _skin.get_color("response_border", "#CD7F32")
@@ -4132,15 +4492,17 @@ class AizenCLI:
                         _resp_text = "#FFF8DC"
 
                     _chat_console = ChatConsole()
-                    _chat_console.print(Panel(
-                        _rich_text_from_ansi(response),
-                        title=f"[{_resp_color} bold]{label} (background #{task_num})[/]",
-                        title_align="left",
-                        border_style=_resp_color,
-                        style=_resp_text,
-                        box=rich_box.HORIZONTALS,
-                        padding=(1, 2),
-                    ))
+                    _chat_console.print(
+                        Panel(
+                            _rich_text_from_ansi(response),
+                            title=f"[{_resp_color} bold]{label} (background #{task_num})[/]",
+                            title_align="left",
+                            border_style=_resp_color,
+                            style=_resp_text,
+                            box=rich_box.HORIZONTALS,
+                            padding=(1, 2),
+                        )
+                    )
                 else:
                     _cprint("  (No response generated)")
 
@@ -4154,6 +4516,7 @@ class AizenCLI:
                 if self._app:
                     self._app.invalidate()
                     import time as _tmod
+
                     _tmod.sleep(0.05)
                 print()
                 _cprint(f"  ❌ Background task #{task_num} failed: {e}")
@@ -4165,7 +4528,9 @@ class AizenCLI:
                 if self._app:
                     self._invalidate(min_interval=0)
 
-        thread = threading.Thread(target=run_background, daemon=True, name=f"bg-task-{task_id}")
+        thread = threading.Thread(
+            target=run_background, daemon=True, name=f"bg-task-{task_id}"
+        )
         self._background_tasks[task_id] = thread
         thread.start()
 
@@ -4251,19 +4616,22 @@ class AizenCLI:
                 if response:
                     try:
                         from aizen_cli.skin_engine import get_active_skin
+
                         _skin = get_active_skin()
                         _resp_color = _skin.get_color("response_border", "#4F6D4A")
                     except Exception:
                         _resp_color = "#4F6D4A"
 
-                    ChatConsole().print(Panel(
-                        _rich_text_from_ansi(response),
-                        title=f"[{_resp_color} bold]⚕ /btw[/]",
-                        title_align="left",
-                        border_style=_resp_color,
-                        box=rich_box.HORIZONTALS,
-                        padding=(1, 2),
-                    ))
+                    ChatConsole().print(
+                        Panel(
+                            _rich_text_from_ansi(response),
+                            title=f"[{_resp_color} bold]⚕ /btw[/]",
+                            title_align="left",
+                            border_style=_resp_color,
+                            box=rich_box.HORIZONTALS,
+                            padding=(1, 2),
+                        )
+                    )
                 else:
                     _cprint("  💬 /btw: (no response)")
 
@@ -4306,8 +4674,14 @@ class AizenCLI:
                     candidates.append(app)
         else:
             # Linux: try common binary names
-            for name in ("google-chrome", "google-chrome-stable", "chromium-browser",
-                         "chromium", "brave-browser", "microsoft-edge"):
+            for name in (
+                "google-chrome",
+                "google-chrome-stable",
+                "chromium-browser",
+                "chromium",
+                "brave-browser",
+                "microsoft-edge",
+            ):
                 path = shutil.which(name)
                 if path:
                     candidates.append(path)
@@ -4339,12 +4713,17 @@ class AizenCLI:
 
         if sub.startswith("connect"):
             # Optionally accept a custom CDP URL: /browser connect ws://host:port
-            connect_parts = cmd.strip().split(None, 2)  # ["/browser", "connect", "ws://..."]
-            cdp_url = connect_parts[2].strip() if len(connect_parts) > 2 else _DEFAULT_CDP
+            connect_parts = cmd.strip().split(
+                None, 2
+            )  # ["/browser", "connect", "ws://..."]
+            cdp_url = (
+                connect_parts[2].strip() if len(connect_parts) > 2 else _DEFAULT_CDP
+            )
 
             # Clear any existing browser sessions so the next tool call uses the new backend
             try:
                 from tools.browser_tool import cleanup_all_browsers
+
                 cleanup_all_browsers()
             except Exception:
                 pass
@@ -4360,6 +4739,7 @@ class AizenCLI:
 
             # Check if Chrome is already listening on the debug port
             import socket
+
             _already_open = False
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -4374,11 +4754,14 @@ class AizenCLI:
                 print(f"   ✓ Chrome is already listening on port {_port}")
             elif cdp_url == _DEFAULT_CDP:
                 # Try to auto-launch Chrome with remote debugging
-                print("   Chrome isn't running with remote debugging — attempting to launch...")
+                print(
+                    "   Chrome isn't running with remote debugging — attempting to launch..."
+                )
                 _launched = self._try_launch_chrome_debug(_port, _plat.system())
                 if _launched:
                     # Wait for the port to come up
                     import time as _time
+
                     for _wait in range(10):
                         try:
                             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -4392,8 +4775,12 @@ class AizenCLI:
                     if _already_open:
                         print(f"   ✓ Chrome launched and listening on port {_port}")
                     else:
-                        print(f"   ⚠ Chrome launched but port {_port} isn't responding yet")
-                        print("     You may need to close existing Chrome windows first and retry")
+                        print(
+                            f"   ⚠ Chrome launched but port {_port} isn't responding yet"
+                        )
+                        print(
+                            "     You may need to close existing Chrome windows first and retry"
+                        )
                 else:
                     print("   ⚠ Could not auto-launch Chrome")
                     # Show manual instructions as fallback
@@ -4401,7 +4788,7 @@ class AizenCLI:
                     if sys_name == "Darwin":
                         chrome_cmd = 'open -a "Google Chrome" --args --remote-debugging-port=9222'
                     elif sys_name == "Windows":
-                        chrome_cmd = 'chrome.exe --remote-debugging-port=9222'
+                        chrome_cmd = "chrome.exe --remote-debugging-port=9222"
                     else:
                         chrome_cmd = "google-chrome --remote-debugging-port=9222"
                     print(f"     Launch Chrome manually: {chrome_cmd}")
@@ -4415,7 +4802,7 @@ class AizenCLI:
             print()
 
             # Inject context message so the model knows
-            if hasattr(self, '_pending_input'):
+            if hasattr(self, "_pending_input"):
                 self._pending_input.put(
                     "[System note: The user has connected your browser tools to their live Chrome browser "
                     "via Chrome DevTools Protocol. Your browser_navigate, browser_snapshot, browser_click, "
@@ -4431,22 +4818,27 @@ class AizenCLI:
                 os.environ.pop("BROWSER_CDP_URL", None)
                 try:
                     from tools.browser_tool import cleanup_all_browsers
+
                     cleanup_all_browsers()
                 except Exception:
                     pass
                 print()
                 print("🌐 Browser disconnected from live Chrome")
-                print("   Browser tools reverted to default mode (local headless or Browserbase)")
+                print(
+                    "   Browser tools reverted to default mode (local headless or Browserbase)"
+                )
                 print()
 
-                if hasattr(self, '_pending_input'):
+                if hasattr(self, "_pending_input"):
                     self._pending_input.put(
                         "[System note: The user has disconnected the browser tools from their live Chrome. "
                         "Browser tools are back to default mode (headless local browser or Browserbase cloud).]"
                     )
             else:
                 print()
-                print("Browser is not connected to live Chrome (already using default mode)")
+                print(
+                    "Browser is not connected to live Chrome (already using default mode)"
+                )
                 print()
 
         elif sub == "status":
@@ -4462,6 +4854,7 @@ class AizenCLI:
                     pass
                 try:
                     import socket
+
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.settimeout(1)
                     s.connect(("127.0.0.1", _port))
@@ -4490,7 +4883,11 @@ class AizenCLI:
     def _handle_skin_command(self, cmd: str):
         """Handle /skin [name] — show or change the display skin."""
         try:
-            from aizen_cli.skin_engine import list_skins, set_active_skin, get_active_skin_name
+            from aizen_cli.skin_engine import (
+                list_skins,
+                set_active_skin,
+                get_active_skin_name,
+            )
         except ImportError:
             print("Skin engine not available.")
             return
@@ -4507,7 +4904,9 @@ class AizenCLI:
                 source = f" ({s['source']})" if s["source"] == "user" else ""
                 print(f"   {marker} {s['name']}{source} — {s['description']}")
             print("\n  Usage: /skin <name>")
-            print(f"  Custom skins: drop a YAML file in {display_aizen_home()}/skins/\n")
+            print(
+                f"  Custom skins: drop a YAML file in {display_aizen_home()}/skins/\n"
+            )
             return
 
         new_skin = parts[1].strip().lower()
@@ -4546,6 +4945,7 @@ class AizenCLI:
         # writes directly to stdout which patch_stdout's StdoutProxy mangles
         # into garbled sequences like '?[33mTool progress: NEW?[0m' (#2262).
         from aizen_cli.colors import Colors as _Colors
+
         labels = {
             "off": f"{_Colors.DIM}Tool progress: OFF{_Colors.RESET} — silent mode, just the final response.",
             "new": f"{_Colors.YELLOW}Tool progress: NEW{_Colors.RESET} — show each new tool (skip repeats).",
@@ -4557,13 +4957,18 @@ class AizenCLI:
     def _toggle_yolo(self):
         """Toggle YOLO mode — skip all dangerous command approval prompts."""
         import os
+
         current = bool(os.environ.get("AIZEN_YOLO_MODE"))
         if current:
             os.environ.pop("AIZEN_YOLO_MODE", None)
-            self.console.print("  ⚠ YOLO mode [bold red]OFF[/] — dangerous commands will require approval.")
+            self.console.print(
+                "  ⚠ YOLO mode [bold red]OFF[/] — dangerous commands will require approval."
+            )
         else:
             os.environ["AIZEN_YOLO_MODE"] = "1"
-            self.console.print("  ⚡ YOLO mode [bold green]ON[/] — all commands auto-approved. Use with caution.")
+            self.console.print(
+                "  ⚡ YOLO mode [bold green]ON[/] — all commands auto-approved. Use with caution."
+            )
 
     def _handle_reasoning_command(self, cmd: str):
         """Handle /reasoning — manage effort level and display toggle.
@@ -4588,7 +4993,9 @@ class AizenCLI:
             display_state = "on ✓" if self.show_reasoning else "off"
             _cprint(f"  {_GOLD}Reasoning effort:  {level}{_RST}")
             _cprint(f"  {_GOLD}Reasoning display: {display_state}{_RST}")
-            _cprint(f"  {_DIM}Usage: /reasoning <none|low|medium|high|xhigh|show|hide>{_RST}")
+            _cprint(
+                f"  {_DIM}Usage: /reasoning <none|low|medium|high|xhigh|show|hide>{_RST}"
+            )
             return
 
         arg = parts[1].strip().lower()
@@ -4600,7 +5007,9 @@ class AizenCLI:
                 self.agent.reasoning_callback = self._current_reasoning_callback()
             save_config_value("display.show_reasoning", True)
             _cprint(f"  {_GOLD}✓ Reasoning display: ON (saved){_RST}")
-            _cprint(f"  {_DIM}  Model thinking will be shown during and after each response.{_RST}")
+            _cprint(
+                f"  {_DIM}  Model thinking will be shown during and after each response.{_RST}"
+            )
             return
         if arg in ("hide", "off"):
             self.show_reasoning = False
@@ -4614,7 +5023,9 @@ class AizenCLI:
         parsed = _parse_reasoning_config(arg)
         if parsed is None:
             _cprint(f"  {_DIM}(._.) Unknown argument: {arg}{_RST}")
-            _cprint(f"  {_DIM}Valid levels: none, low, minimal, medium, high, xhigh{_RST}")
+            _cprint(
+                f"  {_DIM}Valid levels: none, low, minimal, medium, high, xhigh{_RST}"
+            )
             _cprint(f"  {_DIM}Display:      show, hide{_RST}")
             return
 
@@ -4622,7 +5033,9 @@ class AizenCLI:
         self.agent = None  # Force agent re-init with new reasoning config
 
         if save_config_value("agent.reasoning_effort", arg):
-            _cprint(f"  {_GOLD}✓ Reasoning effort set to '{arg}' (saved to config){_RST}")
+            _cprint(
+                f"  {_GOLD}✓ Reasoning effort set to '{arg}' (saved to config){_RST}"
+            )
         else:
             _cprint(f"  {_GOLD}✓ Reasoning effort set to '{arg}' (session only){_RST}")
 
@@ -4630,13 +5043,17 @@ class AizenCLI:
         """Callback for intermediate reasoning display during tool-call loops."""
         if not reasoning_text:
             return
-        self._reasoning_preview_buf = getattr(self, "_reasoning_preview_buf", "") + reasoning_text
+        self._reasoning_preview_buf = (
+            getattr(self, "_reasoning_preview_buf", "") + reasoning_text
+        )
         self._flush_reasoning_preview(force=False)
 
     def _manual_compress(self):
         """Manually trigger context compression on the current conversation."""
         if not self.conversation_history or len(self.conversation_history) < 4:
-            print("(._.) Not enough conversation to compress (need at least 4 messages).")
+            print(
+                "(._.) Not enough conversation to compress (need at least 4 messages)."
+            )
             return
 
         if not self.agent:
@@ -4650,8 +5067,11 @@ class AizenCLI:
         original_count = len(self.conversation_history)
         try:
             from agent.model_metadata import estimate_messages_tokens_rough
+
             approx_tokens = estimate_messages_tokens_rough(self.conversation_history)
-            print(f"🗜️  Compressing {original_count} messages (~{approx_tokens:,} tokens)...")
+            print(
+                f"🗜️  Compressing {original_count} messages (~{approx_tokens:,} tokens)..."
+            )
 
             compressed, new_system = self.agent._compress_context(
                 self.conversation_history,
@@ -4707,7 +5127,9 @@ class AizenCLI:
             provider=getattr(agent, "provider", None),
             base_url=getattr(agent, "base_url", None),
         )
-        elapsed = format_duration_compact((datetime.now() - self.session_start).total_seconds())
+        elapsed = format_duration_compact(
+            (datetime.now() - self.session_start).total_seconds()
+        )
 
         print("  📊 Session Token Usage")
         print(f"  {'─' * 40}")
@@ -4725,7 +5147,9 @@ class AizenCLI:
         print(f"  Cost source:              {cost_result.source:>10}")
         if cost_result.amount_usd is not None:
             prefix = "~" if cost_result.status == "estimated" else ""
-            print(f"  Total cost:              {prefix}${float(cost_result.amount_usd):>10.4f}")
+            print(
+                f"  Total cost:              {prefix}${float(cost_result.amount_usd):>10.4f}"
+            )
         elif cost_result.status == "included":
             print(f"  Total cost:              {'included':>10}")
         else:
@@ -4739,11 +5163,26 @@ class AizenCLI:
 
         if self.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
-            for noisy in ('openai', 'openai._base_client', 'httpx', 'httpcore', 'asyncio', 'hpack', 'grpc', 'modal'):
+            for noisy in (
+                "openai",
+                "openai._base_client",
+                "httpx",
+                "httpcore",
+                "asyncio",
+                "hpack",
+                "grpc",
+                "modal",
+            ):
                 logging.getLogger(noisy).setLevel(logging.WARNING)
         else:
             logging.getLogger().setLevel(logging.INFO)
-            for quiet_logger in ('tools', 'run_agent', 'trajectory_compressor', 'cron', 'aizen_cli'):
+            for quiet_logger in (
+                "tools",
+                "run_agent",
+                "trajectory_compressor",
+                "cron",
+                "aizen_cli",
+            ):
                 logging.getLogger(quiet_logger).setLevel(logging.ERROR)
 
     def _show_insights(self, command: str = "/insights"):
@@ -4798,6 +5237,7 @@ class AizenCLI:
         self._last_config_check = now
 
         from aizen_cli.config import get_config_path as _get_config_path
+
         cfg_path = _get_config_path()
         if not cfg_path.exists():
             return
@@ -4836,7 +5276,12 @@ class AizenCLI:
         sees the updated tools on the next turn.
         """
         try:
-            from tools.mcp_tool import shutdown_mcp_servers, discover_mcp_tools, _servers, _lock
+            from tools.mcp_tool import (
+                shutdown_mcp_servers,
+                discover_mcp_tools,
+                _servers,
+                _lock,
+            )
 
             # Capture old server names
             with _lock:
@@ -4868,19 +5313,25 @@ class AizenCLI:
             if not connected_servers:
                 print("  No MCP servers connected.")
             else:
-                print(f"  🔧 {len(new_tools)} tool(s) available from {len(connected_servers)} server(s)")
+                print(
+                    f"  🔧 {len(new_tools)} tool(s) available from {len(connected_servers)} server(s)"
+                )
 
             # Refresh the agent's tool list so the model can call new tools
             if self.agent is not None:
                 from tools.model_tools import get_tool_definitions
+
                 self.agent.tools = get_tool_definitions(
                     enabled_toolsets=self.agent.enabled_toolsets
-                    if hasattr(self.agent, "enabled_toolsets") else None,
+                    if hasattr(self.agent, "enabled_toolsets")
+                    else None,
                     quiet_mode=True,
                 )
-                self.agent.valid_tool_names = {
-                    tool["function"]["name"] for tool in self.agent.tools
-                } if self.agent.tools else set()
+                self.agent.valid_tool_names = (
+                    {tool["function"]["name"] for tool in self.agent.tools}
+                    if self.agent.tools
+                    else set()
+                )
 
             # Inject a message at the END of conversation history so the
             # model knows tools changed.  Appended after all existing
@@ -4891,13 +5342,21 @@ class AizenCLI:
             if removed:
                 change_parts.append(f"Removed servers: {', '.join(sorted(removed))}")
             if reconnected:
-                change_parts.append(f"Reconnected servers: {', '.join(sorted(reconnected))}")
-            tool_summary = f"{len(new_tools)} MCP tool(s) now available" if new_tools else "No MCP tools available"
+                change_parts.append(
+                    f"Reconnected servers: {', '.join(sorted(reconnected))}"
+                )
+            tool_summary = (
+                f"{len(new_tools)} MCP tool(s) now available"
+                if new_tools
+                else "No MCP tools available"
+            )
             change_detail = ". ".join(change_parts) + ". " if change_parts else ""
-            self.conversation_history.append({
-                "role": "user",
-                "content": f"[SYSTEM: MCP servers have been reloaded. {change_detail}{tool_summary}. The tool list for this conversation has been updated accordingly.]",
-            })
+            self.conversation_history.append(
+                {
+                    "role": "user",
+                    "content": f"[SYSTEM: MCP servers have been reloaded. {change_detail}{tool_summary}. The tool list for this conversation has been updated accordingly.]",
+                }
+            )
 
             # Persist session immediately so the session log reflects the
             # updated tools list (self.agent.tools was refreshed above).
@@ -4910,7 +5369,9 @@ class AizenCLI:
                 except Exception:
                     pass  # Best-effort
 
-            print(f"  ✅ Agent updated — {len(self.agent.tools if self.agent else [])} tool(s) available")
+            print(
+                f"  ✅ Agent updated — {len(self.agent.tools if self.agent else [])} tool(s) available"
+            )
 
         except Exception as e:
             print(f"  ❌ MCP reload failed: {e}")
@@ -4932,6 +5393,7 @@ class AizenCLI:
         self._close_reasoning_box()
 
         from agent.display import get_tool_emoji
+
         emoji = get_tool_emoji(tool_name, default="⚡")
         _cprint(f"  ┊ {emoji} preparing {tool_name}…")
 
@@ -4948,12 +5410,14 @@ class AizenCLI:
         """
         if not function_name.startswith("_"):
             from agent.display import get_tool_emoji
+
             emoji = get_tool_emoji(function_name)
             label = preview or function_name
             from agent.display import get_tool_preview_max_len
+
             _pl = get_tool_preview_max_len()
             if _pl > 0 and len(label) > _pl:
-                label = label[:_pl - 3] + "..."
+                label = label[: _pl - 3] + "..."
             self._spinner_text = f"{emoji} {label}"
             self._invalidate()
 
@@ -4963,6 +5427,7 @@ class AizenCLI:
             return
         try:
             from tools.voice_mode import play_beep
+
             threading.Thread(
                 target=play_beep,
                 kwargs={"frequency": 1200, "duration": 0.06, "count": 1},
@@ -4977,7 +5442,7 @@ class AizenCLI:
 
     def _voice_start_recording(self):
         """Start capturing audio from the microphone."""
-        if getattr(self, '_should_exit', False):
+        if getattr(self, "_should_exit", False):
             return
         from tools.voice_mode import AudioRecorder, check_voice_requirements
 
@@ -5006,6 +5471,7 @@ class AizenCLI:
         voice_cfg = {}
         try:
             from aizen_cli.config import load_config
+
             voice_cfg = load_config().get("voice", {})
         except Exception:
             pass
@@ -5014,7 +5480,9 @@ class AizenCLI:
             self._voice_recorder = AudioRecorder()
 
         # Apply config-driven silence params
-        self._voice_recorder._silence_threshold = voice_cfg.get("silence_threshold", 200)
+        self._voice_recorder._silence_threshold = voice_cfg.get(
+            "silence_threshold", 200
+        )
         self._voice_recorder._silence_duration = voice_cfg.get("silence_duration", 3.0)
 
         def _on_silence():
@@ -5023,13 +5491,14 @@ class AizenCLI:
                 if not self._voice_recording:
                     return
             _cprint(f"\n{_DIM}Silence detected, auto-stopping...{_RST}")
-            if hasattr(self, '_app') and self._app:
+            if hasattr(self, "_app") and self._app:
                 self._app.invalidate()
             self._voice_stop_and_transcribe()
 
         # Audio cue: single beep BEFORE starting stream (avoid CoreAudio conflict)
         try:
             from tools.voice_mode import play_beep
+
             play_beep(frequency=880, count=1)
         except Exception:
             pass
@@ -5040,7 +5509,9 @@ class AizenCLI:
             with self._voice_lock:
                 self._voice_recording = False
             raise
-        _cprint(f"\n{_GOLD}● Recording...{_RST} {_DIM}(auto-stops on silence | Ctrl+B to stop & exit continuous){_RST}")
+        _cprint(
+            f"\n{_GOLD}● Recording...{_RST} {_DIM}(auto-stops on silence | Ctrl+B to stop & exit continuous){_RST}"
+        )
 
         # Periodically refresh prompt to update audio level indicator
         def _refresh_level():
@@ -5049,9 +5520,10 @@ class AizenCLI:
                     still_recording = self._voice_recording
                 if not still_recording:
                     break
-                if hasattr(self, '_app') and self._app:
+                if hasattr(self, "_app") and self._app:
                     self._app.invalidate()
                 time.sleep(0.15)
+
         threading.Thread(target=_refresh_level, daemon=True).start()
 
     def _voice_stop_and_transcribe(self):
@@ -5076,6 +5548,7 @@ class AizenCLI:
             # Audio cue: double beep after stream stopped (no CoreAudio conflict)
             try:
                 from tools.voice_mode import play_beep
+
                 play_beep(frequency=660, count=2)
             except Exception:
                 pass
@@ -5085,7 +5558,7 @@ class AizenCLI:
                 return
 
             # _voice_processing is already True (set atomically above)
-            if hasattr(self, '_app') and self._app:
+            if hasattr(self, "_app") and self._app:
                 self._app.invalidate()
             _cprint(f"{_DIM}Transcribing...{_RST}")
 
@@ -5093,12 +5566,14 @@ class AizenCLI:
             stt_model = None
             try:
                 from aizen_cli.config import load_config
+
                 stt_config = load_config().get("stt", {})
                 stt_model = stt_config.get("model")
             except Exception:
                 pass
 
             from tools.voice_mode import transcribe_recording
+
             result = transcribe_recording(wav_path, model=stt_model)
 
             if result.get("success") and result.get("transcript", "").strip():
@@ -5116,7 +5591,7 @@ class AizenCLI:
         finally:
             with self._voice_lock:
                 self._voice_processing = False
-            if hasattr(self, '_app') and self._app:
+            if hasattr(self, "_app") and self._app:
                 self._app.invalidate()
             # Clean up temp file
             try:
@@ -5127,11 +5602,13 @@ class AizenCLI:
 
             # Track consecutive no-speech cycles to avoid infinite restart loops.
             if not submitted:
-                self._no_speech_count = getattr(self, '_no_speech_count', 0) + 1
+                self._no_speech_count = getattr(self, "_no_speech_count", 0) + 1
                 if self._no_speech_count >= 3:
                     self._voice_continuous = False
                     self._no_speech_count = 0
-                    _cprint(f"{_DIM}No speech detected 3 times, continuous mode stopped.{_RST}")
+                    _cprint(
+                        f"{_DIM}No speech detected 3 times, continuous mode stopped.{_RST}"
+                    )
                     return
             else:
                 self._no_speech_count = 0
@@ -5141,13 +5618,15 @@ class AizenCLI:
             # (When transcript IS submitted, process_loop handles restart
             # after chat() completes.)
             if self._voice_continuous and not submitted and not self._voice_recording:
+
                 def _restart_recording():
                     try:
                         self._voice_start_recording()
-                        if hasattr(self, '_app') and self._app:
+                        if hasattr(self, "_app") and self._app:
                             self._app.invalidate()
                     except Exception as e:
                         _cprint(f"{_DIM}Voice auto-restart failed: {e}{_RST}")
+
                 threading.Thread(target=_restart_recording, daemon=True).start()
 
     def _voice_speak_response(self, text: str):
@@ -5162,25 +5641,32 @@ class AizenCLI:
 
             # Strip markdown and non-speech content for cleaner TTS
             tts_text = text[:4000] if len(text) > 4000 else text
-            tts_text = re.sub(r'```[\s\S]*?```', ' ', tts_text)   # fenced code blocks
-            tts_text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', tts_text)  # [text](url) -> text
-            tts_text = re.sub(r'https?://\S+', '', tts_text)      # URLs
-            tts_text = re.sub(r'\*\*(.+?)\*\*', r'\1', tts_text)  # bold
-            tts_text = re.sub(r'\*(.+?)\*', r'\1', tts_text)      # italic
-            tts_text = re.sub(r'`(.+?)`', r'\1', tts_text)        # inline code
-            tts_text = re.sub(r'^#+\s*', '', tts_text, flags=re.MULTILINE)  # headers
-            tts_text = re.sub(r'^\s*[-*]\s+', '', tts_text, flags=re.MULTILINE)  # list items
-            tts_text = re.sub(r'---+', '', tts_text)              # horizontal rules
-            tts_text = re.sub(r'\n{3,}', '\n\n', tts_text)        # excessive newlines
+            tts_text = re.sub(r"```[\s\S]*?```", " ", tts_text)  # fenced code blocks
+            tts_text = re.sub(
+                r"\[([^\]]+)\]\([^)]+\)", r"\1", tts_text
+            )  # [text](url) -> text
+            tts_text = re.sub(r"https?://\S+", "", tts_text)  # URLs
+            tts_text = re.sub(r"\*\*(.+?)\*\*", r"\1", tts_text)  # bold
+            tts_text = re.sub(r"\*(.+?)\*", r"\1", tts_text)  # italic
+            tts_text = re.sub(r"`(.+?)`", r"\1", tts_text)  # inline code
+            tts_text = re.sub(r"^#+\s*", "", tts_text, flags=re.MULTILINE)  # headers
+            tts_text = re.sub(
+                r"^\s*[-*]\s+", "", tts_text, flags=re.MULTILINE
+            )  # list items
+            tts_text = re.sub(r"---+", "", tts_text)  # horizontal rules
+            tts_text = re.sub(r"\n{3,}", "\n\n", tts_text)  # excessive newlines
             tts_text = tts_text.strip()
             if not tts_text:
                 return
 
             # Use MP3 output for CLI playback (afplay doesn't handle OGG well).
             # The TTS tool may auto-convert MP3->OGG, but the original MP3 remains.
-            os.makedirs(os.path.join(tempfile.gettempdir(), "aizen_voice"), exist_ok=True)
+            os.makedirs(
+                os.path.join(tempfile.gettempdir(), "aizen_voice"), exist_ok=True
+            )
             mp3_path = os.path.join(
-                tempfile.gettempdir(), "aizen_voice",
+                tempfile.gettempdir(),
+                "aizen_voice",
                 f"tts_{time.strftime('%Y%m%d_%H%M%S')}.mp3",
             )
 
@@ -5248,7 +5734,9 @@ class AizenCLI:
             for line in reqs["details"].split("\n"):
                 _cprint(f"  {_DIM}{line}{_RST}")
             if reqs["missing_packages"]:
-                _cprint(f"\n  {_BOLD}Install: pip install {' '.join(reqs['missing_packages'])}{_RST}")
+                _cprint(
+                    f"\n  {_BOLD}Install: pip install {' '.join(reqs['missing_packages'])}{_RST}"
+                )
                 _cprint(f"  {_DIM}Or: pip install aizen-agent[voice]{_RST}")
             return
 
@@ -5258,6 +5746,7 @@ class AizenCLI:
         # Check config for auto_tts
         try:
             from aizen_cli.config import load_config
+
             voice_config = load_config().get("voice", {})
             if voice_config.get("auto_tts", False):
                 with self._voice_lock:
@@ -5272,6 +5761,7 @@ class AizenCLI:
         tts_status = " (TTS enabled)" if self._voice_tts else ""
         try:
             from aizen_cli.config import load_config
+
             _raw_ptt = load_config().get("voice", {}).get("record_key", "ctrl+b")
             _ptt_key = _raw_ptt.lower().replace("ctrl+", "c-").replace("alt+", "a-")
         except Exception:
@@ -5296,17 +5786,20 @@ class AizenCLI:
 
         # Shut down the persistent audio stream in background
         if recorder is not None:
+
             def _bg_shutdown(rec=recorder):
                 try:
                     rec.shutdown()
                 except Exception:
                     pass
+
             threading.Thread(target=_bg_shutdown, daemon=True).start()
             self._voice_recorder = None
 
         # Stop any active TTS playback
         try:
             from tools.voice_mode import stop_playback
+
             stop_playback()
         except Exception:
             pass
@@ -5326,8 +5819,11 @@ class AizenCLI:
 
         if self._voice_tts:
             from tools.tts_tool import check_tts_requirements
+
             if not check_tts_requirements():
-                _cprint(f"{_DIM}Warning: No TTS provider available. Install edge-tts or set API keys.{_RST}")
+                _cprint(
+                    f"{_DIM}Warning: No TTS provider available. Install edge-tts or set API keys.{_RST}"
+                )
 
         _cprint(f"{_GOLD}Voice TTS {status}.{_RST}")
 
@@ -5343,7 +5839,11 @@ class AizenCLI:
         _cprint(f"  TTS:       {'ON' if self._voice_tts else 'OFF'}")
         _cprint(f"  Recording: {'YES' if self._voice_recording else 'no'}")
         _raw_key = load_config().get("voice", {}).get("record_key", "ctrl+b")
-        _display_key = _raw_key.replace("ctrl+", "Ctrl+").upper() if "ctrl+" in _raw_key.lower() else _raw_key
+        _display_key = (
+            _raw_key.replace("ctrl+", "Ctrl+").upper()
+            if "ctrl+" in _raw_key.lower()
+            else _raw_key
+        )
         _cprint(f"  Record key: {_display_key}")
         _cprint(f"\n  {_BOLD}Requirements:{_RST}")
         for line in reqs["details"].split("\n"):
@@ -5410,7 +5910,9 @@ class AizenCLI:
         self._clarify_freetext = False
         self._clarify_deadline = 0
         self._invalidate()
-        _cprint(f"\n{_DIM}(clarify timed out after {timeout}s — agent will decide){_RST}")
+        _cprint(
+            f"\n{_DIM}(clarify timed out after {timeout}s — agent will decide){_RST}"
+        )
         return (
             "The user did not provide a response within the time limit. "
             "Use your best judgement to make the choice and proceed."
@@ -5419,7 +5921,7 @@ class AizenCLI:
     def _sudo_password_callback(self) -> str:
         """
         Prompt for sudo password through the prompt_toolkit UI.
-        
+
         Called from the agent thread when a sudo command is encountered.
         Uses the same clarify-style mechanism: sets UI state, waits on a
         queue for the user's response via the Enter key binding.
@@ -5459,8 +5961,9 @@ class AizenCLI:
         _cprint(f"\n{_DIM}  ⏱ Timeout — continuing without sudo{_RST}")
         return ""
 
-    def _approval_callback(self, command: str, description: str,
-                           *, allow_permanent: bool = True) -> str:
+    def _approval_callback(
+        self, command: str, description: str, *, allow_permanent: bool = True
+    ) -> str:
         """
         Prompt for dangerous command approval through the prompt_toolkit UI.
 
@@ -5483,7 +5986,9 @@ class AizenCLI:
             self._approval_state = {
                 "command": command,
                 "description": description,
-                "choices": self._approval_choices(command, allow_permanent=allow_permanent),
+                "choices": self._approval_choices(
+                    command, allow_permanent=allow_permanent
+                ),
                 "selected": 0,
                 "response_queue": response_queue,
             }
@@ -5514,9 +6019,15 @@ class AizenCLI:
             _cprint(f"\n{_DIM}  ⏱ Timeout — denying command{_RST}")
             return "deny"
 
-    def _approval_choices(self, command: str, *, allow_permanent: bool = True) -> list[str]:
+    def _approval_choices(
+        self, command: str, *, allow_permanent: bool = True
+    ) -> list[str]:
         """Return approval choices for a dangerous command prompt."""
-        choices = ["once", "session", "always", "deny"] if allow_permanent else ["once", "session", "deny"]
+        choices = (
+            ["once", "session", "always", "deny"]
+            if allow_permanent
+            else ["once", "session", "deny"]
+        )
         if len(command) > 70:
             choices.append("view")
         return choices
@@ -5551,13 +6062,26 @@ class AizenCLI:
         if not state:
             return []
 
-        def _panel_box_width(title_text: str, content_lines: list[str], min_width: int = 46, max_width: int = 76) -> int:
+        def _panel_box_width(
+            title_text: str,
+            content_lines: list[str],
+            min_width: int = 46,
+            max_width: int = 76,
+        ) -> int:
             term_cols = shutil.get_terminal_size((100, 20)).columns
-            longest = max([len(title_text)] + [len(line) for line in content_lines] + [min_width - 4])
-            inner = min(max(longest + 4, min_width - 2), max_width - 2, max(24, term_cols - 6))
+            longest = max(
+                [len(title_text)]
+                + [len(line) for line in content_lines]
+                + [min_width - 4]
+            )
+            inner = min(
+                max(longest + 4, min_width - 2), max_width - 2, max(24, term_cols - 6)
+            )
             return inner + 2
 
-        def _wrap_panel_text(text: str, width: int, subsequent_indent: str = "") -> list[str]:
+        def _wrap_panel_text(
+            text: str, width: int, subsequent_indent: str = ""
+        ) -> list[str]:
             wrapped = textwrap.wrap(
                 text,
                 width=max(8, width),
@@ -5567,7 +6091,9 @@ class AizenCLI:
             )
             return wrapped or [""]
 
-        def _append_panel_line(lines, border_style: str, content_style: str, text: str, box_width: int) -> None:
+        def _append_panel_line(
+            lines, border_style: str, content_style: str, text: str, box_width: int
+        ) -> None:
             inner_width = max(0, box_width - 2)
             lines.append((border_style, "│ "))
             lines.append((content_style, text.ljust(inner_width)))
@@ -5583,7 +6109,9 @@ class AizenCLI:
         show_full = state.get("show_full", False)
 
         title = "⚠️  Dangerous Command"
-        cmd_display = command if show_full or len(command) <= 70 else command[:70] + '...'
+        cmd_display = (
+            command if show_full or len(command) <= 70 else command[:70] + "..."
+        )
         choice_labels = {
             "once": "Allow once",
             "session": "Allow for this session",
@@ -5595,36 +6123,56 @@ class AizenCLI:
         preview_lines = _wrap_panel_text(description, 60)
         preview_lines.extend(_wrap_panel_text(cmd_display, 60))
         for i, choice in enumerate(choices):
-            prefix = '❯ ' if i == selected else '  '
-            preview_lines.extend(_wrap_panel_text(
-                f"{prefix}{choice_labels.get(choice, choice)}",
-                60,
-                subsequent_indent="  ",
-            ))
+            prefix = "❯ " if i == selected else "  "
+            preview_lines.extend(
+                _wrap_panel_text(
+                    f"{prefix}{choice_labels.get(choice, choice)}",
+                    60,
+                    subsequent_indent="  ",
+                )
+            )
 
         box_width = _panel_box_width(title, preview_lines)
         inner_text_width = max(8, box_width - 2)
 
         lines = []
-        lines.append(('class:approval-border', '╭' + ('─' * box_width) + '╮\n'))
-        _append_panel_line(lines, 'class:approval-border', 'class:approval-title', title, box_width)
-        _append_blank_panel_line(lines, 'class:approval-border', box_width)
+        lines.append(("class:approval-border", "╭" + ("─" * box_width) + "╮\n"))
+        _append_panel_line(
+            lines, "class:approval-border", "class:approval-title", title, box_width
+        )
+        _append_blank_panel_line(lines, "class:approval-border", box_width)
         for wrapped in _wrap_panel_text(description, inner_text_width):
-            _append_panel_line(lines, 'class:approval-border', 'class:approval-desc', wrapped, box_width)
+            _append_panel_line(
+                lines,
+                "class:approval-border",
+                "class:approval-desc",
+                wrapped,
+                box_width,
+            )
         for wrapped in _wrap_panel_text(cmd_display, inner_text_width):
-            _append_panel_line(lines, 'class:approval-border', 'class:approval-cmd', wrapped, box_width)
-        _append_blank_panel_line(lines, 'class:approval-border', box_width)
+            _append_panel_line(
+                lines, "class:approval-border", "class:approval-cmd", wrapped, box_width
+            )
+        _append_blank_panel_line(lines, "class:approval-border", box_width)
         for i, choice in enumerate(choices):
             label = choice_labels.get(choice, choice)
-            style = 'class:approval-selected' if i == selected else 'class:approval-choice'
-            prefix = '❯ ' if i == selected else '  '
-            for wrapped in _wrap_panel_text(f"{prefix}{label}", inner_text_width, subsequent_indent="  "):
-                _append_panel_line(lines, 'class:approval-border', style, wrapped, box_width)
-        _append_blank_panel_line(lines, 'class:approval-border', box_width)
-        lines.append(('class:approval-border', '╰' + ('─' * box_width) + '╯\n'))
+            style = (
+                "class:approval-selected" if i == selected else "class:approval-choice"
+            )
+            prefix = "❯ " if i == selected else "  "
+            for wrapped in _wrap_panel_text(
+                f"{prefix}{label}", inner_text_width, subsequent_indent="  "
+            ):
+                _append_panel_line(
+                    lines, "class:approval-border", style, wrapped, box_width
+                )
+        _append_blank_panel_line(lines, "class:approval-border", box_width)
+        lines.append(("class:approval-border", "╰" + ("─" * box_width) + "╯\n"))
         return lines
 
-    def _secret_capture_callback(self, var_name: str, prompt: str, metadata=None) -> dict:
+    def _secret_capture_callback(
+        self, var_name: str, prompt: str, metadata=None
+    ) -> dict:
         return prompt_for_secret(self, var_name, prompt, metadata)
 
     def _submit_secret_response(self, value: str) -> None:
@@ -5652,23 +6200,22 @@ class AizenCLI:
             except Exception:
                 pass
 
-
     def chat(self, message, images: list = None) -> Optional[str]:
         """
         Send a message to the agent and get a response.
-        
+
         Handles streaming output, interrupt detection (user typing while agent
         is working), and re-queueing of interrupted messages.
-        
+
         Uses a dedicated _interrupt_queue (separate from _pending_input) to avoid
         race conditions between the process_loop and interrupt monitoring. Messages
         typed while the agent is running go to _interrupt_queue; messages typed while
         idle go to _pending_input.
-        
+
         Args:
             message: The user's message (str or multimodal content list)
             images: Optional list of Path objects for attached images
-            
+
         Returns:
             The agent's response, or None on error
         """
@@ -5693,7 +6240,7 @@ class AizenCLI:
             route_label=turn_route["label"],
         ):
             return None
-        
+
         # Pre-process images through the vision tool (Gemini Flash) so the
         # main model receives text descriptions instead of raw base64 image
         # content — works with any model, not just vision-capable ones.
@@ -5707,19 +6254,26 @@ class AizenCLI:
             try:
                 from agent.context_references import preprocess_context_references
                 from agent.model_metadata import get_model_context_length
+
                 _ctx_len = get_model_context_length(
-                    self.model, base_url=self.base_url or "", api_key=self.api_key or "")
+                    self.model, base_url=self.base_url or "", api_key=self.api_key or ""
+                )
                 _ctx_result = preprocess_context_references(
-                    message, cwd=os.getcwd(), context_length=_ctx_len)
+                    message, cwd=os.getcwd(), context_length=_ctx_len
+                )
                 if _ctx_result.expanded or _ctx_result.blocked:
                     if _ctx_result.references:
                         _cprint(
                             f"  {_DIM}[@ context: {len(_ctx_result.references)} ref(s), "
-                            f"{_ctx_result.injected_tokens} tokens]{_RST}")
+                            f"{_ctx_result.injected_tokens} tokens]{_RST}"
+                        )
                     for w in _ctx_result.warnings:
                         _cprint(f"  {_DIM}⚠ {w}{_RST}")
                     if _ctx_result.blocked:
-                        return "\n".join(_ctx_result.warnings) or "Context injection refused."
+                        return (
+                            "\n".join(_ctx_result.warnings)
+                            or "Context injection refused."
+                        )
                     message = _ctx_result.message
             except Exception as e:
                 logging.debug("@ context reference expansion failed: %s", e)
@@ -5729,6 +6283,7 @@ class AizenCLI:
         # UTF-8 and crash JSON serialization in the OpenAI SDK.
         if isinstance(message, str):
             from run_agent import _sanitize_surrogates
+
             message = _sanitize_surrogates(message)
 
         # Add user message to history
@@ -5736,7 +6291,7 @@ class AizenCLI:
 
         ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
         print(flush=True)
-        
+
         try:
             # Run the conversation with interrupt monitoring
             result = None
@@ -5768,6 +6323,7 @@ class AizenCLI:
                         _import_sounddevice,
                         stream_tts_to_speaker,
                     )
+
                     _tts_cfg = _load_tts_cfg()
                     if _get_prov(_tts_cfg) == "elevenlabs":
                         # Verify both ElevenLabs SDK and audio output are available
@@ -5822,14 +6378,18 @@ class AizenCLI:
                 try:
                     result = self.agent.run_conversation(
                         user_message=agent_message,
-                        conversation_history=self.conversation_history[:-1],  # Exclude the message we just added
+                        conversation_history=self.conversation_history[
+                            :-1
+                        ],  # Exclude the message we just added
                         stream_callback=stream_callback,
                         task_id=self.session_id,
                         persist_user_message=message if _voice_prefix else None,
                     )
                 except Exception as exc:
                     logging.error("run_conversation raised: %s", exc, exc_info=True)
-                    _summary = getattr(self.agent, '_summarize_api_error', lambda e: str(e)[:300])(exc)
+                    _summary = getattr(
+                        self.agent, "_summarize_api_error", lambda e: str(e)[:300]
+                    )(exc)
                     result = {
                         "final_response": f"Error: {_summary}",
                         "messages": [],
@@ -5851,7 +6411,7 @@ class AizenCLI:
             # so we skip interrupt processing to avoid stealing that input.
             interrupt_msg = None
             while agent_thread.is_alive():
-                if hasattr(self, '_interrupt_queue'):
+                if hasattr(self, "_interrupt_queue"):
                     try:
                         interrupt_msg = self._interrupt_queue.get(timeout=0.1)
                         if interrupt_msg:
@@ -5870,11 +6430,18 @@ class AizenCLI:
                                 _dbg = _aizen_home / "interrupt_debug.log"
                                 with open(_dbg, "a") as _f:
                                     import time as _t
-                                    _f.write(f"{_t.strftime('%H:%M:%S')} interrupt fired: msg={str(interrupt_msg)[:60]!r}, "
-                                             f"children={len(self.agent._active_children)}, "
-                                             f"parent._interrupt={self.agent._interrupt_requested}\n")
-                                    for _ci, _ch in enumerate(self.agent._active_children):
-                                        _f.write(f"  child[{_ci}]._interrupt={_ch._interrupt_requested}\n")
+
+                                    _f.write(
+                                        f"{_t.strftime('%H:%M:%S')} interrupt fired: msg={str(interrupt_msg)[:60]!r}, "
+                                        f"children={len(self.agent._active_children)}, "
+                                        f"parent._interrupt={self.agent._interrupt_requested}\n"
+                                    )
+                                    for _ci, _ch in enumerate(
+                                        self.agent._active_children
+                                    ):
+                                        _f.write(
+                                            f"  child[{_ci}]._interrupt={_ch._interrupt_requested}\n"
+                                        )
                             except Exception:
                                 pass
                             break
@@ -5897,6 +6464,7 @@ class AizenCLI:
             # clients' __del__ would crash prompt_toolkit's loop on GC.
             try:
                 from agent.auxiliary_client import cleanup_stale_async_clients
+
                 cleanup_stale_async_clients()
             except Exception:
                 pass
@@ -5915,19 +6483,30 @@ class AizenCLI:
             # The flush pushes data into the renderer queue; the short
             # sleep lets the renderer actually paint it before we draw.
             import time as _time
+
             sys.stdout.flush()
             _time.sleep(0.15)
 
             # Update history with full conversation
-            self.conversation_history = result.get("messages", self.conversation_history) if result else self.conversation_history
+            self.conversation_history = (
+                result.get("messages", self.conversation_history)
+                if result
+                else self.conversation_history
+            )
 
             # Get the final response
             response = result.get("final_response", "") if result else ""
 
             # Auto-generate session title after first exchange (non-blocking)
-            if response and result and not result.get("failed") and not result.get("partial"):
+            if (
+                response
+                and result
+                and not result.get("failed")
+                and not result.get("partial")
+            ):
                 try:
                     from agent.title_generator import maybe_auto_title
+
                     maybe_auto_title(
                         self._session_db,
                         self.session_id,
@@ -5941,14 +6520,20 @@ class AizenCLI:
             # Handle failed or partial results (e.g., non-retryable errors, rate limits,
             # truncated output, invalid tool calls). Both "failed" and "partial" with
             # an empty final_response mean the agent couldn't produce a usable answer.
-            if result and (result.get("failed") or result.get("partial")) and not response:
+            if (
+                result
+                and (result.get("failed") or result.get("partial"))
+                and not response
+            ):
                 error_detail = result.get("error", "Unknown error")
                 response = f"Error: {error_detail}"
                 # Stop continuous voice mode on persistent errors (e.g. 429 rate limit)
                 # to avoid an infinite error → record → error loop
                 if self._voice_continuous:
                     self._voice_continuous = False
-                    _cprint(f"\n{_DIM}Continuous voice mode stopped due to error.{_RST}")
+                    _cprint(
+                        f"\n{_DIM}Continuous voice mode stopped due to error.{_RST}"
+                    )
 
             # Handle interrupt - check if we were interrupted
             pending_message = None
@@ -5956,9 +6541,13 @@ class AizenCLI:
                 pending_message = result.get("interrupt_message") or interrupt_msg
                 # Add indicator that we were interrupted
                 if response and pending_message:
-                    response = response + "\n\n---\n_[Interrupted - processing new message]_"
+                    response = (
+                        response + "\n\n---\n_[Interrupted - processing new message]_"
+                    )
 
-            response_previewed = result.get("response_previewed", False) if result else False
+            response_previewed = (
+                result.get("response_previewed", False) if result else False
+            )
 
             # Display reasoning (thinking) box if enabled and available.
             # Skip when streaming already showed reasoning live.  Use the
@@ -5966,7 +6555,9 @@ class AizenCLI:
             # _reasoning_stream_started — the latter gets reset during
             # intermediate turn boundaries (tool-calling loops), which caused
             # the reasoning box to re-render after the final response.
-            _reasoning_already_shown = getattr(self, '_reasoning_shown_this_turn', False)
+            _reasoning_already_shown = getattr(
+                self, "_reasoning_shown_this_turn", False
+            )
             if self.show_reasoning and result and not _reasoning_already_shown:
                 reasoning = result.get("last_reasoning")
                 if reasoning:
@@ -5979,7 +6570,9 @@ class AizenCLI:
                     lines = reasoning.strip().splitlines()
                     if len(lines) > 10:
                         display_reasoning = "\n".join(lines[:10])
-                        display_reasoning += f"\n{_DIM}  ... ({len(lines) - 10} more lines){_RST}"
+                        display_reasoning += (
+                            f"\n{_DIM}  ... ({len(lines) - 10} more lines){_RST}"
+                        )
                     else:
                         display_reasoning = reasoning.strip()
                     _cprint(f"\n{r_top}\n{_DIM}{display_reasoning}{_RST}\n{r_bot}")
@@ -5988,6 +6581,7 @@ class AizenCLI:
                 # Use skin engine for label/color with fallback
                 try:
                     from aizen_cli.skin_engine import get_active_skin
+
                     _skin = get_active_skin()
                     label = _skin.get_branding("response_label", "⚕ Aizen")
                     _resp_color = _skin.get_color("response_border", "#CD7F32")
@@ -5997,9 +6591,19 @@ class AizenCLI:
                     _resp_color = "#CD7F32"
                     _resp_text = "#FFF8DC"
 
-                is_error_response = result and (result.get("failed") or result.get("partial"))
-                already_streamed = self._stream_started and self._stream_box_opened and not is_error_response
-                if use_streaming_tts and _streaming_box_opened and not is_error_response:
+                is_error_response = result and (
+                    result.get("failed") or result.get("partial")
+                )
+                already_streamed = (
+                    self._stream_started
+                    and self._stream_box_opened
+                    and not is_error_response
+                )
+                if (
+                    use_streaming_tts
+                    and _streaming_box_opened
+                    and not is_error_response
+                ):
                     # Text was already printed sentence-by-sentence; just close the box
                     w = shutil.get_terminal_size().columns
                     _cprint(f"\n{_GOLD}╰{'─' * (w - 2)}╯{_RST}")
@@ -6009,16 +6613,17 @@ class AizenCLI:
                     pass
                 else:
                     _chat_console = ChatConsole()
-                    _chat_console.print(Panel(
-                        _rich_text_from_ansi(response),
-                        title=f"[{_resp_color} bold]{label}[/]",
-                        title_align="left",
-                        border_style=_resp_color,
-                        style=_resp_text,
-                        box=rich_box.HORIZONTALS,
-                        padding=(1, 2),
-                    ))
-
+                    _chat_console.print(
+                        Panel(
+                            _rich_text_from_ansi(response),
+                            title=f"[{_resp_color} bold]{label}[/]",
+                            title_align="left",
+                            border_style=_resp_color,
+                            style=_resp_text,
+                            box=rich_box.HORIZONTALS,
+                            padding=(1, 2),
+                        )
+                    )
 
             # Play terminal bell when agent finishes (if enabled).
             # Works over SSH — the bell propagates to the user's terminal.
@@ -6035,10 +6640,9 @@ class AizenCLI:
                     daemon=True,
                 ).start()
 
-
             # Combine all interrupt messages (user may have typed multiple while waiting)
             # and re-queue as one prompt for process_loop
-            if pending_message and hasattr(self, '_pending_input'):
+            if pending_message and hasattr(self, "_pending_input"):
                 all_parts = [pending_message]
                 while not self._interrupt_queue.empty():
                     try:
@@ -6048,11 +6652,13 @@ class AizenCLI:
                     except queue.Empty:
                         break
                 combined = "\n".join(all_parts)
-                print(f"\n📨 Queued: '{combined[:50]}{'...' if len(combined) > 50 else ''}'")
+                print(
+                    f"\n📨 Queued: '{combined[:50]}{'...' if len(combined) > 50 else ''}'"
+                )
                 self._pending_input.put(combined)
-            
+
             return response
-            
+
         except Exception as e:
             print(f"Error: {e}")
             return None
@@ -6070,14 +6676,22 @@ class AizenCLI:
                 stop_event.set()
             if tts_thread is not None and tts_thread.is_alive():
                 tts_thread.join(timeout=5)
-    
+
     def _print_exit_summary(self):
         """Print session resume info on exit, similar to Claude Code."""
         print()
         msg_count = len(self.conversation_history)
         if msg_count > 0:
-            user_msgs = len([m for m in self.conversation_history if m.get("role") == "user"])
-            tool_calls = len([m for m in self.conversation_history if m.get("role") == "tool" or m.get("tool_calls")])
+            user_msgs = len(
+                [m for m in self.conversation_history if m.get("role") == "user"]
+            )
+            tool_calls = len(
+                [
+                    m
+                    for m in self.conversation_history
+                    if m.get("role") == "tool" or m.get("tool_calls")
+                ]
+            )
             elapsed = datetime.now() - self.session_start
             hours, remainder = divmod(int(elapsed.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -6087,7 +6701,7 @@ class AizenCLI:
                 duration_str = f"{minutes}m {seconds}s"
             else:
                 duration_str = f"{seconds}s"
-            
+
             # Look up session title for resume-by-name hint
             session_title = None
             if self._session_db:
@@ -6099,16 +6713,19 @@ class AizenCLI:
             print("Resume this session with:")
             print(f"  aizen --resume {self.session_id}")
             if session_title:
-                print(f"  aizen -c \"{session_title}\"")
+                print(f'  aizen -c "{session_title}"')
             print()
             print(f"Session:        {self.session_id}")
             if session_title:
                 print(f"Title:          {session_title}")
             print(f"Duration:       {duration_str}")
-            print(f"Messages:       {msg_count} ({user_msgs} user, {tool_calls} tool calls)")
+            print(
+                f"Messages:       {msg_count} ({user_msgs} user, {tool_calls} tool calls)"
+            )
         else:
             try:
                 from aizen_cli.skin_engine import get_active_goodbye
+
                 goodbye = get_active_goodbye("Goodbye! ⚕")
             except Exception:
                 goodbye = "Goodbye! ⚕"
@@ -6126,6 +6743,7 @@ class AizenCLI:
         """
         try:
             from aizen_cli.skin_engine import get_active_prompt_symbol
+
             symbol = get_active_prompt_symbol("❯ ")
         except Exception:
             symbol = "❯ "
@@ -6135,6 +6753,7 @@ class AizenCLI:
         # Prepend profile name when not default
         try:
             from aizen_cli.profiles import get_active_profile_name
+
             profile = get_active_profile_name()
             if profile not in ("default", "custom"):
                 symbol = f"{profile} {symbol}"
@@ -6184,7 +6803,12 @@ class AizenCLI:
         if self._clarify_state:
             return [("class:prompt-working", f"? {state_suffix}")]
         if self._command_running:
-            return [("class:prompt-working", f"{self._command_spinner_frame()} {state_suffix}")]
+            return [
+                (
+                    "class:prompt-working",
+                    f"{self._command_spinner_frame()} {state_suffix}",
+                )
+            ]
         if self._agent_running:
             return [("class:prompt-working", f"⚕ {state_suffix}")]
         if self._voice_mode:
@@ -6200,6 +6824,7 @@ class AizenCLI:
         style_dict = dict(getattr(self, "_tui_style_base", {}) or {})
         try:
             from aizen_cli.skin_engine import get_prompt_toolkit_style_overrides
+
             style_dict.update(get_prompt_toolkit_style_overrides())
         except Exception:
             pass
@@ -6207,7 +6832,9 @@ class AizenCLI:
 
     def _apply_tui_skin_style(self) -> bool:
         """Refresh prompt_toolkit styling for a running interactive TUI."""
-        if not getattr(self, "_app", None) or not getattr(self, "_tui_style_base", None):
+        if not getattr(self, "_app", None) or not getattr(
+            self, "_tui_style_base", None
+        ):
             return False
         self._app.style = PTStyle.from_dict(self._build_tui_style_dict())
         self._invalidate(min_interval=0.0)
@@ -6280,8 +6907,124 @@ class AizenCLI:
             completions_menu,
         ]
 
+    # ── Dashboard TUI mode ───────────────────────────────────────────────────
+
+    def _run_dashboard(self):
+        """Run the full-screen dashboard TUI instead of the classic REPL."""
+        from aizen_cli.dashboard_tui import DashboardTUI
+
+        dashboard = DashboardTUI(self)
+
+        # Seed initial state from CLI
+        model_short = (self.model or "unknown").split("/")[-1]
+        dashboard.set_session_name(model_short)
+        dashboard.set_mode(
+            "SINGLE-AGENT MODE"
+            if not self.enabled_toolsets or "all" in self.enabled_toolsets
+            else "MULTI-AGENT MODE"
+        )
+        dashboard.set_memory_status("Active")
+
+        # Sync tools from enabled toolsets
+        if self.enabled_toolsets:
+            dashboard.update_tools(
+                [t.capitalize().replace("_", " ") for t in self.enabled_toolsets[:5]]
+            )
+
+        # Sync tasks from todo store if available
+        if self.agent and hasattr(self.agent, "_todo_store") and self.agent._todo_store:
+            try:
+                todos = self.agent._todo_store.list_todos()
+                dashboard.update_tasks(
+                    [
+                        {
+                            "id": f"#{i + 1:02d}",
+                            "label": t.get("content", "")[:20],
+                            "done": t.get("status") == "completed",
+                        }
+                        for i, t in enumerate(todos[:6])
+                    ]
+                )
+            except Exception:
+                pass
+
+        # Sync conversation history into interactions
+        for msg in self.conversation_history[-20:]:
+            role = msg.get("role", "unknown")
+            content = msg.get("content", "")
+            if role in ("user", "assistant"):
+                text = str(content)[:200] if content else ""
+                if text:
+                    dashboard.add_interaction(role, text)
+
+        # Override _on_thinking to update dashboard focus
+        orig_on_thinking = self._on_thinking
+
+        def _dashboard_on_thinking(text: str) -> None:
+            if text:
+                dashboard.set_focus(text)
+                dashboard.update_live_activity({"action": text[:40]})
+            else:
+                dashboard.set_focus("Processing...")
+            if orig_on_thinking:
+                orig_on_thinking(text)
+
+        self._on_thinking = _dashboard_on_thinking
+
+        def _on_submit(text: str):
+            """Handle user input from the dashboard."""
+            if text.startswith("/"):
+                # Commands still go through process_command
+                if not self.process_command(text):
+                    dashboard.stop()
+                return
+
+            # Add to interactions
+            dashboard.add_interaction("user", text[:200])
+            dashboard.set_focus("Thinking...")
+
+            # Run the agent
+            self._agent_running = True
+            dashboard.update_live_activity(
+                {"action": "Processing query...", "progress": 10}
+            )
+            try:
+                self.chat(text)
+            finally:
+                self._agent_running = False
+                self._spinner_text = ""
+                dashboard.set_focus("Ready")
+                dashboard.update_live_activity({"action": "Idle", "progress": 0})
+
+                # Add last assistant response to interactions
+                if self.conversation_history:
+                    last = self.conversation_history[-1]
+                    if last.get("role") == "assistant":
+                        content = str(last.get("content", ""))[:200]
+                        if content:
+                            dashboard.add_interaction("assistant", content)
+
+        def _on_interrupt():
+            """Handle Ctrl+C from the dashboard."""
+            if self._agent_running and self.agent:
+                self.agent.interrupt()
+                dashboard.set_focus("Interrupted")
+            else:
+                dashboard.stop()
+
+        # Start the dashboard
+        dashboard.start(on_submit=_on_submit, on_interrupt=_on_interrupt)
+
+        # Cleanup
+        self._on_thinking = orig_on_thinking
+
     def run(self):
         """Run the interactive CLI loop with persistent input at bottom."""
+        # Branch to dashboard TUI if configured
+        if getattr(self, "tui_mode", "classic") == "dashboard":
+            self._run_dashboard()
+            return
+
         self.show_banner()
 
         # If resuming a session, load history and display it immediately
@@ -6292,11 +7035,17 @@ class AizenCLI:
 
         try:
             from aizen_cli.skin_engine import get_active_skin
+
             _welcome_skin = get_active_skin()
-            _welcome_text = _welcome_skin.get_branding("welcome", "Welcome to Aizen Agent! Type your message or /help for commands.")
+            _welcome_text = _welcome_skin.get_branding(
+                "welcome",
+                "Welcome to Aizen Agent! Type your message or /help for commands.",
+            )
             _welcome_color = _welcome_skin.get_color("banner_text", "#FFF8DC")
         except Exception:
-            _welcome_text = "Welcome to Aizen Agent! Type your message or /help for commands."
+            _welcome_text = (
+                "Welcome to Aizen Agent! Type your message or /help for commands."
+            )
             _welcome_color = "#FFF8DC"
         self.console.print(f"[{_welcome_color}]{_welcome_text}[/]")
         if self.preloaded_skills and not self._startup_skills_line_shown:
@@ -6306,47 +7055,61 @@ class AizenCLI:
             )
             self._startup_skills_line_shown = True
         self.console.print()
-        
+
         # State for async operation
         self._agent_running = False
-        self._pending_input = queue.Queue()     # For normal input (commands + new queries)
-        self._interrupt_queue = queue.Queue()   # For messages typed while agent is running
+        self._pending_input = queue.Queue()  # For normal input (commands + new queries)
+        self._interrupt_queue = (
+            queue.Queue()
+        )  # For messages typed while agent is running
         self._should_exit = False
         self._last_ctrl_c_time = 0  # Track double Ctrl+C for force exit
 
         # Give plugin manager a CLI reference so plugins can inject messages
         from aizen_cli.plugins import get_plugin_manager
+
         get_plugin_manager()._cli_ref = self
 
         # Config file watcher — detect mcp_servers changes and auto-reload
         from aizen_cli.config import get_config_path as _get_config_path
+
         _cfg_path = _get_config_path()
-        self._config_mtime: float = _cfg_path.stat().st_mtime if _cfg_path.exists() else 0.0
+        self._config_mtime: float = (
+            _cfg_path.stat().st_mtime if _cfg_path.exists() else 0.0
+        )
         self._config_mcp_servers: dict = self.config.get("mcp_servers") or {}
         self._last_config_check: float = 0.0  # monotonic time of last check
 
         # Clarify tool state: interactive question/answer with the user.
         # When the agent calls the clarify tool, _clarify_state is set and
         # the prompt_toolkit UI switches to a selection mode.
-        self._clarify_state = None      # dict with question, choices, selected, response_queue
+        self._clarify_state = (
+            None  # dict with question, choices, selected, response_queue
+        )
         self._clarify_freetext = False  # True when user chose "Other" and is typing
-        self._clarify_deadline = 0      # monotonic timestamp when the clarify times out
+        self._clarify_deadline = 0  # monotonic timestamp when the clarify times out
 
         # Sudo password prompt state (similar mechanism to clarify)
-        self._sudo_state = None         # dict with response_queue when active
+        self._sudo_state = None  # dict with response_queue when active
         self._sudo_deadline = 0
 
         # Dangerous command approval state (similar mechanism to clarify)
-        self._approval_state = None     # dict with command, description, choices, selected, response_queue
+        self._approval_state = (
+            None  # dict with command, description, choices, selected, response_queue
+        )
         self._approval_deadline = 0
-        self._approval_lock = threading.Lock()  # serialize concurrent approval prompts (delegation race fix)
+        self._approval_lock = (
+            threading.Lock()
+        )  # serialize concurrent approval prompts (delegation race fix)
 
         # Slash command loading state
         self._command_running = False
         self._command_status = ""
 
         # Secure secret capture state for skill setup
-        self._secret_state = None       # dict with var_name, prompt, metadata, response_queue
+        self._secret_state = (
+            None  # dict with var_name, prompt, metadata, response_queue
+        )
         self._secret_deadline = 0
 
         # Clipboard image attachments (paste images into the CLI)
@@ -6355,10 +7118,10 @@ class AizenCLI:
 
         # Voice mode state (protected by _voice_lock for cross-thread access)
         self._voice_lock = threading.Lock()
-        self._voice_mode = False        # Whether voice mode is enabled
-        self._voice_tts = False         # Whether TTS output is enabled
-        self._voice_recorder = None     # AudioRecorder instance (lazy init)
-        self._voice_recording = False   # Whether currently recording
+        self._voice_mode = False  # Whether voice mode is enabled
+        self._voice_tts = False  # Whether TTS output is enabled
+        self._voice_recorder = None  # AudioRecorder instance (lazy init)
+        self._voice_recording = False  # Whether currently recording
         self._voice_processing = False  # Whether STT is in progress
         self._voice_continuous = False  # Whether to auto-restart after agent responds
         self._voice_tts_done = threading.Event()  # Signals TTS playback finished
@@ -6374,23 +7137,26 @@ class AizenCLI:
         # so they know command security scanning is degraded.
         try:
             from tools.tirith_security import ensure_installed
+
             tirith_path = ensure_installed(log_failures=False)
             if tirith_path is None:
                 security_cfg = self.config.get("security", {}) or {}
                 tirith_enabled = security_cfg.get("tirith_enabled", True)
                 if tirith_enabled:
-                    _cprint(f"  {_DIM}⚠ tirith security scanner enabled but not available "
-                            f"— command scanning will use pattern matching only{_RST}")
+                    _cprint(
+                        f"  {_DIM}⚠ tirith security scanner enabled but not available "
+                        f"— command scanning will use pattern matching only{_RST}"
+                    )
         except Exception:
             pass  # Non-fatal — fail-open at scan time if unavailable
-        
+
         # Key bindings for the input area
         kb = KeyBindings()
-        
-        @kb.add('enter')
+
+        @kb.add("enter")
         def handle_enter(event):
             """Handle Enter key - submit input.
-            
+
             Routes to the correct queue based on active UI state:
             - Sudo password prompt: password goes to sudo response queue
             - Approval selection: selected choice goes to approval response queue
@@ -6464,8 +7230,14 @@ class AizenCLI:
                     if self.busy_input_mode == "queue":
                         # Queue for the next turn instead of interrupting
                         self._pending_input.put(payload)
-                        preview = text if text else f"[{len(images)} image{'s' if len(images) != 1 else ''} attached]"
-                        _cprint(f"  Queued for the next turn: {preview[:80]}{'...' if len(preview) > 80 else ''}")
+                        preview = (
+                            text
+                            if text
+                            else f"[{len(images)} image{'s' if len(images) != 1 else ''} attached]"
+                        )
+                        _cprint(
+                            f"  Queued for the next turn: {preview[:80]}{'...' if len(preview) > 80 else ''}"
+                        )
                     else:
                         self._interrupt_queue.put(payload)
                         # Debug: log to file when message enters interrupt queue
@@ -6473,25 +7245,28 @@ class AizenCLI:
                             _dbg = _aizen_home / "interrupt_debug.log"
                             with open(_dbg, "a") as _f:
                                 import time as _t
-                                _f.write(f"{_t.strftime('%H:%M:%S')} ENTER: queued interrupt msg={str(payload)[:60]!r}, "
-                                         f"agent_running={self._agent_running}\n")
+
+                                _f.write(
+                                    f"{_t.strftime('%H:%M:%S')} ENTER: queued interrupt msg={str(payload)[:60]!r}, "
+                                    f"agent_running={self._agent_running}\n"
+                                )
                         except Exception:
                             pass
                 else:
                     self._pending_input.put(payload)
                 event.app.current_buffer.reset(append_to_history=True)
-        
-        @kb.add('escape', 'enter')
+
+        @kb.add("escape", "enter")
         def handle_alt_enter(event):
             """Alt+Enter inserts a newline for multi-line input."""
-            event.current_buffer.insert_text('\n')
+            event.current_buffer.insert_text("\n")
 
-        @kb.add('c-j')
+        @kb.add("c-j")
         def handle_ctrl_enter(event):
             """Ctrl+Enter (c-j) inserts a newline. Most terminals send c-j for Ctrl+Enter."""
-            event.current_buffer.insert_text('\n')
+            event.current_buffer.insert_text("\n")
 
-        @kb.add('tab', eager=True)
+        @kb.add("tab", eager=True)
         def handle_tab(event):
             """Tab: accept completion, auto-suggestion, or start completions.
 
@@ -6512,7 +7287,9 @@ class AizenCLI:
                 if completion is None:
                     # Menu open but nothing selected — select first then grab it
                     buf.go_to_completion(0)
-                    completion = buf.complete_state and buf.complete_state.current_completion
+                    completion = (
+                        buf.complete_state and buf.complete_state.current_completion
+                    )
                 if completion is None:
                     return
                 # Accept the selected completion
@@ -6526,35 +7303,53 @@ class AizenCLI:
 
         # --- Clarify tool: arrow-key navigation for multiple-choice questions ---
 
-        @kb.add('up', filter=Condition(lambda: bool(self._clarify_state) and not self._clarify_freetext))
+        @kb.add(
+            "up",
+            filter=Condition(
+                lambda: bool(self._clarify_state) and not self._clarify_freetext
+            ),
+        )
         def clarify_up(event):
             """Move selection up in clarify choices."""
             if self._clarify_state:
-                self._clarify_state["selected"] = max(0, self._clarify_state["selected"] - 1)
+                self._clarify_state["selected"] = max(
+                    0, self._clarify_state["selected"] - 1
+                )
                 event.app.invalidate()
 
-        @kb.add('down', filter=Condition(lambda: bool(self._clarify_state) and not self._clarify_freetext))
+        @kb.add(
+            "down",
+            filter=Condition(
+                lambda: bool(self._clarify_state) and not self._clarify_freetext
+            ),
+        )
         def clarify_down(event):
             """Move selection down in clarify choices."""
             if self._clarify_state:
                 choices = self._clarify_state.get("choices") or []
                 max_idx = len(choices)  # last index is the "Other" option
-                self._clarify_state["selected"] = min(max_idx, self._clarify_state["selected"] + 1)
+                self._clarify_state["selected"] = min(
+                    max_idx, self._clarify_state["selected"] + 1
+                )
                 event.app.invalidate()
 
         # --- Dangerous command approval: arrow-key navigation ---
 
-        @kb.add('up', filter=Condition(lambda: bool(self._approval_state)))
+        @kb.add("up", filter=Condition(lambda: bool(self._approval_state)))
         def approval_up(event):
             if self._approval_state:
-                self._approval_state["selected"] = max(0, self._approval_state["selected"] - 1)
+                self._approval_state["selected"] = max(
+                    0, self._approval_state["selected"] - 1
+                )
                 event.app.invalidate()
 
-        @kb.add('down', filter=Condition(lambda: bool(self._approval_state)))
+        @kb.add("down", filter=Condition(lambda: bool(self._approval_state)))
         def approval_down(event):
             if self._approval_state:
                 max_idx = len(self._approval_state["choices"]) - 1
-                self._approval_state["selected"] = min(max_idx, self._approval_state["selected"] + 1)
+                self._approval_state["selected"] = min(
+                    max_idx, self._approval_state["selected"] + 1
+                )
                 event.app.invalidate()
 
         # --- History navigation: up/down browse history in normal input mode ---
@@ -6562,23 +7357,28 @@ class AizenCLI:
         # Buffer.auto_up/auto_down handle both: cursor movement when multi-line,
         # history browsing when on the first/last line (or single-line input).
         _normal_input = Condition(
-            lambda: not self._clarify_state and not self._approval_state and not self._sudo_state and not self._secret_state
+            lambda: (
+                not self._clarify_state
+                and not self._approval_state
+                and not self._sudo_state
+                and not self._secret_state
+            )
         )
 
-        @kb.add('up', filter=_normal_input)
+        @kb.add("up", filter=_normal_input)
         def history_up(event):
             """Up arrow: browse history when on first line, else move cursor up."""
             event.app.current_buffer.auto_up(count=event.arg)
 
-        @kb.add('down', filter=_normal_input)
+        @kb.add("down", filter=_normal_input)
         def history_down(event):
             """Down arrow: browse history when on last line, else move cursor down."""
             event.app.current_buffer.auto_down(count=event.arg)
 
-        @kb.add('c-c')
+        @kb.add("c-c")
         def handle_ctrl_c(event):
             """Handle Ctrl+C - cancel interactive prompts, interrupt agent, or exit.
-            
+
             Priority:
             0. Cancel active voice recording
             1. Cancel active sudo/approval/clarify prompt
@@ -6586,6 +7386,7 @@ class AizenCLI:
             3. Force exit (second press within 2s, or when idle)
             """
             import time as _time
+
             now = _time.time()
 
             # Cancel active voice recording.
@@ -6601,9 +7402,7 @@ class AizenCLI:
                     _should_cancel_voice = True
             if _should_cancel_voice:
                 _cprint(f"\n{_DIM}Recording cancelled.{_RST}")
-                threading.Thread(
-                    target=_recorder_ref.cancel, daemon=True
-                ).start()
+                threading.Thread(target=_recorder_ref.cancel, daemon=True).start()
                 event.app.invalidate()
                 return
 
@@ -6646,7 +7445,7 @@ class AizenCLI:
                     self._should_exit = True
                     event.app.exit()
                     return
-                
+
                 self._last_ctrl_c_time = now
                 print("\n⚡ Interrupting agent... (press Ctrl+C again to force exit)")
                 self.agent.interrupt()
@@ -6660,29 +7459,33 @@ class AizenCLI:
                 else:
                     self._should_exit = True
                     event.app.exit()
-        
-        @kb.add('c-d')
+
+        @kb.add("c-d")
         def handle_ctrl_d(event):
             """Handle Ctrl+D - exit."""
             self._should_exit = True
             event.app.exit()
 
-        @kb.add('c-z')
+        @kb.add("c-z")
         def handle_ctrl_z(event):
             """Handle Ctrl+Z - suspend process to background (Unix only)."""
             import sys
-            if sys.platform == 'win32':
+
+            if sys.platform == "win32":
                 _cprint(f"\n{_DIM}Suspend (Ctrl+Z) is not supported on Windows.{_RST}")
                 event.app.invalidate()
                 return
             import os, signal as _sig
             from prompt_toolkit.application import run_in_terminal
             from aizen_cli.skin_engine import get_active_skin
+
             agent_name = get_active_skin().get_branding("agent_name", "Aizen Agent")
             msg = f"\n{agent_name} has been suspended. Run `fg` to bring {agent_name} back."
+
             def _suspend():
                 os.write(1, msg.encode())
                 os.kill(0, _sig.SIGTSTP)
+
             run_in_terminal(_suspend)
 
         # Voice push-to-talk key: configurable via config.yaml (voice.record_key)
@@ -6690,6 +7493,7 @@ class AizenCLI:
         # Config uses "ctrl+b" format; prompt_toolkit expects "c-b" format.
         try:
             from aizen_cli.config import load_config
+
             _raw_key = load_config().get("voice", {}).get("record_key", "ctrl+b")
             _voice_key = _raw_key.lower().replace("ctrl+", "c-").replace("alt+", "a-")
         except Exception:
@@ -6720,7 +7524,11 @@ class AizenCLI:
                 # Guard: don't START recording during agent run or interactive prompts
                 if cli_ref._agent_running:
                     return
-                if cli_ref._clarify_state or cli_ref._sudo_state or cli_ref._approval_state:
+                if (
+                    cli_ref._clarify_state
+                    or cli_ref._sudo_state
+                    or cli_ref._approval_state
+                ):
                     return
                 # Guard: don't start while a previous stop/transcribe cycle is
                 # still running — recorder.stop() holds AudioRecorder._lock and
@@ -6733,6 +7541,7 @@ class AizenCLI:
                 if not cli_ref._voice_tts_done.is_set():
                     try:
                         from tools.voice_mode import stop_playback
+
                         stop_playback()
                         cli_ref._voice_tts_done.set()
                     except Exception:
@@ -6747,13 +7556,14 @@ class AizenCLI:
                 def _start_recording():
                     try:
                         cli_ref._voice_start_recording()
-                        if hasattr(cli_ref, '_app') and cli_ref._app:
+                        if hasattr(cli_ref, "_app") and cli_ref._app:
                             cli_ref._app.invalidate()
                     except Exception as e:
                         _cprint(f"\n{_DIM}Voice recording failed: {e}{_RST}")
 
                 threading.Thread(target=_start_recording, daemon=True).start()
                 event.app.invalidate()
+
         from prompt_toolkit.keys import Keys
 
         @kb.add(Keys.BracketedPaste, eager=True)
@@ -6772,24 +7582,30 @@ class AizenCLI:
             if self._try_attach_clipboard_image():
                 event.app.invalidate()
             if pasted_text:
-                line_count = pasted_text.count('\n')
+                line_count = pasted_text.count("\n")
                 buf = event.current_buffer
-                if line_count >= 5 and not buf.text.strip().startswith('/'):
+                if line_count >= 5 and not buf.text.strip().startswith("/"):
                     _paste_counter[0] += 1
                     paste_dir = _aizen_home / "pastes"
                     paste_dir.mkdir(parents=True, exist_ok=True)
-                    paste_file = paste_dir / f"paste_{_paste_counter[0]}_{datetime.now().strftime('%H%M%S')}.txt"
+                    paste_file = (
+                        paste_dir
+                        / f"paste_{_paste_counter[0]}_{datetime.now().strftime('%H%M%S')}.txt"
+                    )
                     paste_file.write_text(pasted_text, encoding="utf-8")
                     placeholder = f"[Pasted text #{_paste_counter[0]}: {line_count + 1} lines \u2192 {paste_file}]"
                     prefix = ""
-                    if buf.cursor_position > 0 and buf.text[buf.cursor_position - 1] != '\n':
+                    if (
+                        buf.cursor_position > 0
+                        and buf.text[buf.cursor_position - 1] != "\n"
+                    ):
                         prefix = "\n"
                     _paste_just_collapsed[0] = True
                     buf.insert_text(prefix + placeholder)
                 else:
                     buf.insert_text(pasted_text)
 
-        @kb.add('c-v')
+        @kb.add("c-v")
         def handle_ctrl_v(event):
             """Fallback image paste for terminals without bracketed paste.
 
@@ -6803,7 +7619,7 @@ class AizenCLI:
             if self._try_attach_clipboard_image():
                 event.app.invalidate()
 
-        @kb.add('escape', 'v')
+        @kb.add("escape", "v")
         def handle_alt_v(event):
             """Alt+V — paste image from clipboard.
 
@@ -6829,14 +7645,13 @@ class AizenCLI:
         # Create the input area with multiline (shift+enter), autocomplete, and paste handling
         from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
-
         _completer = SlashCommandCompleter(
             skill_commands_provider=lambda: _skill_commands,
         )
         input_area = TextArea(
             height=Dimension(min=1, max=8, preferred=1),
             prompt=get_prompt,
-            style='class:input-area',
+            style="class:input-area",
             multiline=True,
             wrap_lines=True,
             read_only=Condition(lambda: bool(cli_ref._command_running)),
@@ -6864,7 +7679,9 @@ class AizenCLI:
                     if len(line) == 0:
                         visual_lines += 1
                     else:
-                        visual_lines += max(1, -(-len(line) // available_width))  # ceil division
+                        visual_lines += max(
+                            1, -(-len(line) // available_width)
+                        )  # ceil division
                 return min(max(visual_lines, 1), 8)
             except Exception:
                 return 1
@@ -6897,18 +7714,21 @@ class AizenCLI:
             _prev_text_len[0] = len(text)
             if _paste_just_collapsed[0]:
                 _paste_just_collapsed[0] = False
-                _prev_newline_count[0] = text.count('\n')
+                _prev_newline_count[0] = text.count("\n")
                 return
-            line_count = text.count('\n')
+            line_count = text.count("\n")
             newlines_added = line_count - _prev_newline_count[0]
             _prev_newline_count[0] = line_count
             is_paste = chars_added > 1 or newlines_added >= 4
-            if line_count >= 5 and is_paste and not text.startswith('/'):
+            if line_count >= 5 and is_paste and not text.startswith("/"):
                 _paste_counter[0] += 1
                 # Save to temp file
                 paste_dir = _aizen_home / "pastes"
                 paste_dir.mkdir(parents=True, exist_ok=True)
-                paste_file = paste_dir / f"paste_{_paste_counter[0]}_{datetime.now().strftime('%H%M%S')}.txt"
+                paste_file = (
+                    paste_dir
+                    / f"paste_{_paste_counter[0]}_{datetime.now().strftime('%H%M%S')}.txt"
+                )
                 paste_file.write_text(text, encoding="utf-8")
                 # Replace buffer with compact reference
                 _paste_just_collapsed[0] = True
@@ -6931,6 +7751,7 @@ class AizenCLI:
 
         class _PlaceholderProcessor(Processor):
             """Render grayed-out placeholder text inside the input when empty."""
+
             def __init__(self, get_text):
                 self._get_text = get_text
 
@@ -6939,7 +7760,9 @@ class AizenCLI:
                     text = self._get_text()
                     if text:
                         # Append after existing fragments (preserves the ❯ prompt)
-                        return Transformation(fragments=ti.fragments + [('class:placeholder', text)])
+                        return Transformation(
+                            fragments=ti.fragments + [("class:placeholder", text)]
+                        )
                 return Transformation(fragments=ti.fragments)
 
         def _get_placeholder():
@@ -6967,7 +7790,9 @@ class AizenCLI:
                 return "type or Ctrl+B to record"
             return ""
 
-        input_area.control.input_processors.append(_PlaceholderProcessor(_get_placeholder))
+        input_area.control.input_processors.append(
+            _PlaceholderProcessor(_get_placeholder)
+        )
 
         # Hint line above input: shown only for interactive prompts that need
         # extra instructions (sudo countdown, approval navigation, clarify).
@@ -6978,47 +7803,56 @@ class AizenCLI:
             if cli_ref._sudo_state:
                 remaining = max(0, int(cli_ref._sudo_deadline - _time.monotonic()))
                 return [
-                    ('class:hint', '  password hidden · Enter to skip'),
-                    ('class:clarify-countdown', f'  ({remaining}s)'),
+                    ("class:hint", "  password hidden · Enter to skip"),
+                    ("class:clarify-countdown", f"  ({remaining}s)"),
                 ]
 
             if cli_ref._secret_state:
                 remaining = max(0, int(cli_ref._secret_deadline - _time.monotonic()))
                 return [
-                    ('class:hint', '  secret hidden · Enter to skip'),
-                    ('class:clarify-countdown', f'  ({remaining}s)'),
+                    ("class:hint", "  secret hidden · Enter to skip"),
+                    ("class:clarify-countdown", f"  ({remaining}s)"),
                 ]
 
             if cli_ref._approval_state:
                 remaining = max(0, int(cli_ref._approval_deadline - _time.monotonic()))
                 return [
-                    ('class:hint', '  ↑/↓ to select, Enter to confirm'),
-                    ('class:clarify-countdown', f'  ({remaining}s)'),
+                    ("class:hint", "  ↑/↓ to select, Enter to confirm"),
+                    ("class:clarify-countdown", f"  ({remaining}s)"),
                 ]
 
             if cli_ref._clarify_state:
                 remaining = max(0, int(cli_ref._clarify_deadline - _time.monotonic()))
-                countdown = f'  ({remaining}s)' if cli_ref._clarify_deadline else ''
+                countdown = f"  ({remaining}s)" if cli_ref._clarify_deadline else ""
                 if cli_ref._clarify_freetext:
                     return [
-                        ('class:hint', '  type your answer and press Enter'),
-                        ('class:clarify-countdown', countdown),
+                        ("class:hint", "  type your answer and press Enter"),
+                        ("class:clarify-countdown", countdown),
                     ]
                 return [
-                    ('class:hint', '  ↑/↓ to select, Enter to confirm'),
-                    ('class:clarify-countdown', countdown),
+                    ("class:hint", "  ↑/↓ to select, Enter to confirm"),
+                    ("class:clarify-countdown", countdown),
                 ]
 
             if cli_ref._command_running:
                 frame = cli_ref._command_spinner_frame()
                 return [
-                    ('class:hint', f'  {frame} command in progress · input temporarily disabled'),
+                    (
+                        "class:hint",
+                        f"  {frame} command in progress · input temporarily disabled",
+                    ),
                 ]
 
             return []
 
         def get_hint_height():
-            if cli_ref._sudo_state or cli_ref._secret_state or cli_ref._approval_state or cli_ref._clarify_state or cli_ref._command_running:
+            if (
+                cli_ref._sudo_state
+                or cli_ref._secret_state
+                or cli_ref._approval_state
+                or cli_ref._clarify_state
+                or cli_ref._command_running
+            ):
                 return 1
             # Keep a 1-line spacer while agent runs so output doesn't push
             # right up against the top rule of the input area
@@ -7028,7 +7862,7 @@ class AizenCLI:
             txt = cli_ref._spinner_text
             if not txt:
                 return []
-            return [('class:hint', f'  {txt}')]
+            return [("class:hint", f"  {txt}")]
 
         def get_spinner_height():
             return 1 if cli_ref._spinner_text else 0
@@ -7045,14 +7879,27 @@ class AizenCLI:
 
         # --- Clarify tool: dynamic display widget for questions + choices ---
 
-        def _panel_box_width(title: str, content_lines: list[str], min_width: int = 46, max_width: int = 76) -> int:
+        def _panel_box_width(
+            title: str,
+            content_lines: list[str],
+            min_width: int = 46,
+            max_width: int = 76,
+        ) -> int:
             """Choose a stable panel width wide enough for the title and content."""
             term_cols = shutil.get_terminal_size((100, 20)).columns
-            longest = max([len(title)] + [len(line) for line in content_lines] + [min_width - 4])
-            inner = min(max(longest + 4, min_width - 2), max_width - 2, max(24, term_cols - 6))
-            return inner + 2  # account for the single leading/trailing spaces inside borders
+            longest = max(
+                [len(title)] + [len(line) for line in content_lines] + [min_width - 4]
+            )
+            inner = min(
+                max(longest + 4, min_width - 2), max_width - 2, max(24, term_cols - 6)
+            )
+            return (
+                inner + 2
+            )  # account for the single leading/trailing spaces inside borders
 
-        def _wrap_panel_text(text: str, width: int, subsequent_indent: str = "") -> list[str]:
+        def _wrap_panel_text(
+            text: str, width: int, subsequent_indent: str = ""
+        ) -> list[str]:
             wrapped = textwrap.wrap(
                 text,
                 width=max(8, width),
@@ -7062,7 +7909,9 @@ class AizenCLI:
             )
             return wrapped or [""]
 
-        def _append_panel_line(lines, border_style: str, content_style: str, text: str, box_width: int) -> None:
+        def _append_panel_line(
+            lines, border_style: str, content_style: str, text: str, box_width: int
+        ) -> None:
             inner_width = max(0, box_width - 2)
             lines.append((border_style, "│ "))
             lines.append((content_style, text.ljust(inner_width)))
@@ -7082,60 +7931,103 @@ class AizenCLI:
             selected = state.get("selected", 0)
             preview_lines = _wrap_panel_text(question, 60)
             for i, choice in enumerate(choices):
-                prefix = "❯ " if i == selected and not cli_ref._clarify_freetext else "  "
-                preview_lines.extend(_wrap_panel_text(f"{prefix}{choice}", 60, subsequent_indent="  "))
+                prefix = (
+                    "❯ " if i == selected and not cli_ref._clarify_freetext else "  "
+                )
+                preview_lines.extend(
+                    _wrap_panel_text(f"{prefix}{choice}", 60, subsequent_indent="  ")
+                )
             other_label = (
-                "❯ Other (type below)" if cli_ref._clarify_freetext
-                else "❯ Other (type your answer)" if selected == len(choices)
+                "❯ Other (type below)"
+                if cli_ref._clarify_freetext
+                else "❯ Other (type your answer)"
+                if selected == len(choices)
                 else "  Other (type your answer)"
             )
-            preview_lines.extend(_wrap_panel_text(other_label, 60, subsequent_indent="  "))
+            preview_lines.extend(
+                _wrap_panel_text(other_label, 60, subsequent_indent="  ")
+            )
             box_width = _panel_box_width("Aizen needs your input", preview_lines)
             inner_text_width = max(8, box_width - 2)
 
             lines = []
             # Box top border
-            lines.append(('class:clarify-border', '╭─ '))
-            lines.append(('class:clarify-title', 'Aizen needs your input'))
-            lines.append(('class:clarify-border', ' ' + ('─' * max(0, box_width - len("Aizen needs your input") - 3)) + '╮\n'))
-            _append_blank_panel_line(lines, 'class:clarify-border', box_width)
+            lines.append(("class:clarify-border", "╭─ "))
+            lines.append(("class:clarify-title", "Aizen needs your input"))
+            lines.append(
+                (
+                    "class:clarify-border",
+                    " "
+                    + ("─" * max(0, box_width - len("Aizen needs your input") - 3))
+                    + "╮\n",
+                )
+            )
+            _append_blank_panel_line(lines, "class:clarify-border", box_width)
 
             # Question text
             for wrapped in _wrap_panel_text(question, inner_text_width):
-                _append_panel_line(lines, 'class:clarify-border', 'class:clarify-question', wrapped, box_width)
-            _append_blank_panel_line(lines, 'class:clarify-border', box_width)
+                _append_panel_line(
+                    lines,
+                    "class:clarify-border",
+                    "class:clarify-question",
+                    wrapped,
+                    box_width,
+                )
+            _append_blank_panel_line(lines, "class:clarify-border", box_width)
 
             if cli_ref._clarify_freetext and not choices:
                 guidance = "Type your answer in the prompt below, then press Enter."
                 for wrapped in _wrap_panel_text(guidance, inner_text_width):
-                    _append_panel_line(lines, 'class:clarify-border', 'class:clarify-choice', wrapped, box_width)
-                _append_blank_panel_line(lines, 'class:clarify-border', box_width)
+                    _append_panel_line(
+                        lines,
+                        "class:clarify-border",
+                        "class:clarify-choice",
+                        wrapped,
+                        box_width,
+                    )
+                _append_blank_panel_line(lines, "class:clarify-border", box_width)
 
             if choices:
                 # Multiple-choice mode: show selectable options
                 for i, choice in enumerate(choices):
-                    style = 'class:clarify-selected' if i == selected and not cli_ref._clarify_freetext else 'class:clarify-choice'
-                    prefix = '❯ ' if i == selected and not cli_ref._clarify_freetext else '  '
-                    wrapped_lines = _wrap_panel_text(f"{prefix}{choice}", inner_text_width, subsequent_indent="  ")
+                    style = (
+                        "class:clarify-selected"
+                        if i == selected and not cli_ref._clarify_freetext
+                        else "class:clarify-choice"
+                    )
+                    prefix = (
+                        "❯ "
+                        if i == selected and not cli_ref._clarify_freetext
+                        else "  "
+                    )
+                    wrapped_lines = _wrap_panel_text(
+                        f"{prefix}{choice}", inner_text_width, subsequent_indent="  "
+                    )
                     for wrapped in wrapped_lines:
-                        _append_panel_line(lines, 'class:clarify-border', style, wrapped, box_width)
+                        _append_panel_line(
+                            lines, "class:clarify-border", style, wrapped, box_width
+                        )
 
                 # "Other" option (5th line, only shown when choices exist)
                 other_idx = len(choices)
                 if selected == other_idx and not cli_ref._clarify_freetext:
-                    other_style = 'class:clarify-selected'
-                    other_label = '❯ Other (type your answer)'
+                    other_style = "class:clarify-selected"
+                    other_label = "❯ Other (type your answer)"
                 elif cli_ref._clarify_freetext:
-                    other_style = 'class:clarify-active-other'
-                    other_label = '❯ Other (type below)'
+                    other_style = "class:clarify-active-other"
+                    other_label = "❯ Other (type below)"
                 else:
-                    other_style = 'class:clarify-choice'
-                    other_label = '  Other (type your answer)'
-                for wrapped in _wrap_panel_text(other_label, inner_text_width, subsequent_indent="  "):
-                    _append_panel_line(lines, 'class:clarify-border', other_style, wrapped, box_width)
+                    other_style = "class:clarify-choice"
+                    other_label = "  Other (type your answer)"
+                for wrapped in _wrap_panel_text(
+                    other_label, inner_text_width, subsequent_indent="  "
+                ):
+                    _append_panel_line(
+                        lines, "class:clarify-border", other_style, wrapped, box_width
+                    )
 
-            _append_blank_panel_line(lines, 'class:clarify-border', box_width)
-            lines.append(('class:clarify-border', '╰' + ('─' * box_width) + '╯\n'))
+            _append_blank_panel_line(lines, "class:clarify-border", box_width)
+            lines.append(("class:clarify-border", "╰" + ("─" * box_width) + "╯\n"))
             return lines
 
         clarify_widget = ConditionalContainer(
@@ -7152,18 +8044,25 @@ class AizenCLI:
             state = cli_ref._sudo_state
             if not state:
                 return []
-            title = '🔐 Sudo Password Required'
-            body = 'Enter password below (hidden), or press Enter to skip'
+            title = "🔐 Sudo Password Required"
+            body = "Enter password below (hidden), or press Enter to skip"
             box_width = _panel_box_width(title, [body])
             inner = max(0, box_width - 2)
             lines = []
-            lines.append(('class:sudo-border', '╭─ '))
-            lines.append(('class:sudo-title', title))
-            lines.append(('class:sudo-border', ' ' + ('─' * max(0, box_width - len(title) - 3)) + '╮\n'))
-            _append_blank_panel_line(lines, 'class:sudo-border', box_width)
-            _append_panel_line(lines, 'class:sudo-border', 'class:sudo-text', body, box_width)
-            _append_blank_panel_line(lines, 'class:sudo-border', box_width)
-            lines.append(('class:sudo-border', '╰' + ('─' * box_width) + '╯\n'))
+            lines.append(("class:sudo-border", "╭─ "))
+            lines.append(("class:sudo-title", title))
+            lines.append(
+                (
+                    "class:sudo-border",
+                    " " + ("─" * max(0, box_width - len(title) - 3)) + "╮\n",
+                )
+            )
+            _append_blank_panel_line(lines, "class:sudo-border", box_width)
+            _append_panel_line(
+                lines, "class:sudo-border", "class:sudo-text", body, box_width
+            )
+            _append_blank_panel_line(lines, "class:sudo-border", box_width)
+            lines.append(("class:sudo-border", "╰" + ("─" * box_width) + "╯\n"))
             return lines
 
         sudo_widget = ConditionalContainer(
@@ -7179,27 +8078,45 @@ class AizenCLI:
             if not state:
                 return []
 
-            title = '🔑 Skill Setup Required'
-            prompt = state.get("prompt") or f"Enter value for {state.get('var_name', 'secret')}"
+            title = "🔑 Skill Setup Required"
+            prompt = (
+                state.get("prompt")
+                or f"Enter value for {state.get('var_name', 'secret')}"
+            )
             metadata = state.get("metadata") or {}
             help_text = metadata.get("help")
-            body = 'Enter secret below (hidden), or press Enter to skip'
+            body = "Enter secret below (hidden), or press Enter to skip"
             content_lines = [prompt, body]
             if help_text:
                 content_lines.insert(1, str(help_text))
             box_width = _panel_box_width(title, content_lines)
             lines = []
-            lines.append(('class:sudo-border', '╭─ '))
-            lines.append(('class:sudo-title', title))
-            lines.append(('class:sudo-border', ' ' + ('─' * max(0, box_width - len(title) - 3)) + '╮\n'))
-            _append_blank_panel_line(lines, 'class:sudo-border', box_width)
-            _append_panel_line(lines, 'class:sudo-border', 'class:sudo-text', prompt, box_width)
+            lines.append(("class:sudo-border", "╭─ "))
+            lines.append(("class:sudo-title", title))
+            lines.append(
+                (
+                    "class:sudo-border",
+                    " " + ("─" * max(0, box_width - len(title) - 3)) + "╮\n",
+                )
+            )
+            _append_blank_panel_line(lines, "class:sudo-border", box_width)
+            _append_panel_line(
+                lines, "class:sudo-border", "class:sudo-text", prompt, box_width
+            )
             if help_text:
-                _append_panel_line(lines, 'class:sudo-border', 'class:sudo-text', str(help_text), box_width)
-            _append_blank_panel_line(lines, 'class:sudo-border', box_width)
-            _append_panel_line(lines, 'class:sudo-border', 'class:sudo-text', body, box_width)
-            _append_blank_panel_line(lines, 'class:sudo-border', box_width)
-            lines.append(('class:sudo-border', '╰' + ('─' * box_width) + '╯\n'))
+                _append_panel_line(
+                    lines,
+                    "class:sudo-border",
+                    "class:sudo-text",
+                    str(help_text),
+                    box_width,
+                )
+            _append_blank_panel_line(lines, "class:sudo-border", box_width)
+            _append_panel_line(
+                lines, "class:sudo-border", "class:sudo-text", body, box_width
+            )
+            _append_blank_panel_line(lines, "class:sudo-border", box_width)
+            lines.append(("class:sudo-border", "╰" + ("─" * box_width) + "╯\n"))
             return lines
 
         secret_widget = ConditionalContainer(
@@ -7228,14 +8145,14 @@ class AizenCLI:
         # Using char='─' instead of hardcoded repetition so the rule
         # always spans the full terminal width on any screen size.
         input_rule_top = Window(
-            char='─',
+            char="─",
             height=1,
-            style='class:input-rule',
+            style="class:input-rule",
         )
         input_rule_bot = Window(
-            char='─',
+            char="─",
             height=1,
-            style='class:input-rule',
+            style="class:input-rule",
         )
 
         # Image attachment indicator — shows badges like [📎 Image #1] above input
@@ -7246,8 +8163,7 @@ class AizenCLI:
                 return []
             base = cli_ref._image_counter - len(cli_ref._attached_images) + 1
             badges = " ".join(
-                f"[📎 Image #{base + i}]"
-                for i in range(len(cli_ref._attached_images))
+                f"[📎 Image #{base + i}]" for i in range(len(cli_ref._attached_images))
             )
             return [("class:image-badge", f" {badges} ")]
 
@@ -7259,12 +8175,17 @@ class AizenCLI:
         # Persistent voice mode status bar (visible only when voice mode is on)
         def _get_voice_status():
             if cli_ref._voice_recording:
-                return [('class:voice-status-recording', ' ● REC  Ctrl+B to stop ')]
+                return [("class:voice-status-recording", " ● REC  Ctrl+B to stop ")]
             if cli_ref._voice_processing:
-                return [('class:voice-status', ' ◉ Transcribing... ')]
+                return [("class:voice-status", " ◉ Transcribing... ")]
             tts = " | TTS on" if cli_ref._voice_tts else ""
             cont = " | Continuous" if cli_ref._voice_continuous else ""
-            return [('class:voice-status', f' 🎤 Voice mode{tts}{cont}  —  Ctrl+B to record ')]
+            return [
+                (
+                    "class:voice-status",
+                    f" 🎤 Voice mode{tts}{cont}  —  Ctrl+B to record ",
+                )
+            ]
 
         voice_status_bar = ConditionalContainer(
             Window(
@@ -7276,7 +8197,9 @@ class AizenCLI:
 
         status_bar = ConditionalContainer(
             Window(
-                content=FormattedTextControl(lambda: cli_ref._get_status_bar_fragments()),
+                content=FormattedTextControl(
+                    lambda: cli_ref._get_status_bar_fragments()
+                ),
                 height=1,
                 # Prevent fragments that overflow the terminal width from
                 # wrapping onto a second line, which causes the status bar to
@@ -7318,59 +8241,59 @@ class AizenCLI:
                 )
             )
         )
-        
+
         # Style for the application
         self._tui_style_base = {
-            'input-area': '#FFF8DC',
-            'placeholder': '#555555 italic',
-            'prompt': '#FFF8DC',
-            'prompt-working': '#888888 italic',
-            'hint': '#555555 italic',
-            'status-bar': 'bg:#1a1a2e #C0C0C0',
-            'status-bar-strong': 'bg:#1a1a2e #FFD700 bold',
-            'status-bar-dim': 'bg:#1a1a2e #8B8682',
-            'status-bar-good': 'bg:#1a1a2e #8FBC8F bold',
-            'status-bar-warn': 'bg:#1a1a2e #FFD700 bold',
-            'status-bar-bad': 'bg:#1a1a2e #FF8C00 bold',
-            'status-bar-critical': 'bg:#1a1a2e #FF6B6B bold',
+            "input-area": "#FFF8DC",
+            "placeholder": "#555555 italic",
+            "prompt": "#FFF8DC",
+            "prompt-working": "#888888 italic",
+            "hint": "#555555 italic",
+            "status-bar": "bg:#1a1a2e #C0C0C0",
+            "status-bar-strong": "bg:#1a1a2e #FFD700 bold",
+            "status-bar-dim": "bg:#1a1a2e #8B8682",
+            "status-bar-good": "bg:#1a1a2e #8FBC8F bold",
+            "status-bar-warn": "bg:#1a1a2e #FFD700 bold",
+            "status-bar-bad": "bg:#1a1a2e #FF8C00 bold",
+            "status-bar-critical": "bg:#1a1a2e #FF6B6B bold",
             # Bronze horizontal rules around the input area
-            'input-rule': '#CD7F32',
+            "input-rule": "#CD7F32",
             # Clipboard image attachment badges
-            'image-badge': '#87CEEB bold',
-            'completion-menu': 'bg:#1a1a2e #FFF8DC',
-            'completion-menu.completion': 'bg:#1a1a2e #FFF8DC',
-            'completion-menu.completion.current': 'bg:#333355 #FFD700',
-            'completion-menu.meta.completion': 'bg:#1a1a2e #888888',
-            'completion-menu.meta.completion.current': 'bg:#333355 #FFBF00',
+            "image-badge": "#87CEEB bold",
+            "completion-menu": "bg:#1a1a2e #FFF8DC",
+            "completion-menu.completion": "bg:#1a1a2e #FFF8DC",
+            "completion-menu.completion.current": "bg:#333355 #FFD700",
+            "completion-menu.meta.completion": "bg:#1a1a2e #888888",
+            "completion-menu.meta.completion.current": "bg:#333355 #FFBF00",
             # Clarify question panel
-            'clarify-border': '#CD7F32',
-            'clarify-title': '#FFD700 bold',
-            'clarify-question': '#FFF8DC bold',
-            'clarify-choice': '#AAAAAA',
-            'clarify-selected': '#FFD700 bold',
-            'clarify-active-other': '#FFD700 italic',
-            'clarify-countdown': '#CD7F32',
+            "clarify-border": "#CD7F32",
+            "clarify-title": "#FFD700 bold",
+            "clarify-question": "#FFF8DC bold",
+            "clarify-choice": "#AAAAAA",
+            "clarify-selected": "#FFD700 bold",
+            "clarify-active-other": "#FFD700 italic",
+            "clarify-countdown": "#CD7F32",
             # Sudo password panel
-            'sudo-prompt': '#FF6B6B bold',
-            'sudo-border': '#CD7F32',
-            'sudo-title': '#FF6B6B bold',
-            'sudo-text': '#FFF8DC',
+            "sudo-prompt": "#FF6B6B bold",
+            "sudo-border": "#CD7F32",
+            "sudo-title": "#FF6B6B bold",
+            "sudo-text": "#FFF8DC",
             # Dangerous command approval panel
-            'approval-border': '#CD7F32',
-            'approval-title': '#FF8C00 bold',
-            'approval-desc': '#FFF8DC bold',
-            'approval-cmd': '#AAAAAA italic',
-            'approval-choice': '#AAAAAA',
-            'approval-selected': '#FFD700 bold',
+            "approval-border": "#CD7F32",
+            "approval-title": "#FF8C00 bold",
+            "approval-desc": "#FFF8DC bold",
+            "approval-cmd": "#AAAAAA italic",
+            "approval-choice": "#AAAAAA",
+            "approval-selected": "#FFD700 bold",
             # Voice mode
-            'voice-prompt': '#87CEEB',
-            'voice-recording': '#FF4444 bold',
-            'voice-processing': '#FFA500 italic',
-            'voice-status': 'bg:#1a1a2e #87CEEB',
-            'voice-status-recording': 'bg:#1a1a2e #FF4444 bold',
+            "voice-prompt": "#87CEEB",
+            "voice-recording": "#FF4444 bold",
+            "voice-processing": "#FFA500 italic",
+            "voice-status": "bg:#1a1a2e #87CEEB",
+            "voice-status-recording": "bg:#1a1a2e #FF4444 bold",
         }
         style = PTStyle.from_dict(self._build_tui_style_dict())
-        
+
         # Create the application
         app = Application(
             layout=layout,
@@ -7378,7 +8301,7 @@ class AizenCLI:
             style=style,
             full_screen=False,
             mouse_support=False,
-            **({'cursor': _STEADY_CURSOR} if _STEADY_CURSOR is not None else {}),
+            **({"cursor": _STEADY_CURSOR} if _STEADY_CURSOR is not None else {}),
         )
         self._app = app  # Store reference for clarify_callback
 
@@ -7402,7 +8325,7 @@ class AizenCLI:
 
         spinner_thread = threading.Thread(target=spinner_loop, daemon=True)
         spinner_thread.start()
-        
+
         # Background thread to process inputs and run agent
         def process_loop():
             while not self._should_exit:
@@ -7415,7 +8338,7 @@ class AizenCLI:
                         if not self._agent_running:
                             self._check_config_mcp_changes()
                         continue
-                    
+
                     if not user_input:
                         continue
 
@@ -7423,7 +8346,7 @@ class AizenCLI:
                     submit_images = []
                     if isinstance(user_input, tuple):
                         user_input, submit_images = user_input
-                    
+
                     # Check for commands
                     if isinstance(user_input, str) and user_input.startswith("/"):
                         _cprint(f"\n⚙️  {user_input}")
@@ -7433,17 +8356,30 @@ class AizenCLI:
                             if app.is_running:
                                 app.exit()
                         continue
-                    
+
                     # Expand paste references back to full content
                     import re as _re
-                    _paste_ref_re = _re.compile(r'\[Pasted text #\d+: \d+ lines \u2192 (.+?)\]')
-                    paste_refs = list(_paste_ref_re.finditer(user_input)) if isinstance(user_input, str) else []
+
+                    _paste_ref_re = _re.compile(
+                        r"\[Pasted text #\d+: \d+ lines \u2192 (.+?)\]"
+                    )
+                    paste_refs = (
+                        list(_paste_ref_re.finditer(user_input))
+                        if isinstance(user_input, str)
+                        else []
+                    )
                     if paste_refs:
+
                         def _expand_ref(m):
                             p = Path(m.group(1))
-                            return p.read_text(encoding="utf-8") if p.exists() else m.group(0)
+                            return (
+                                p.read_text(encoding="utf-8")
+                                if p.exists()
+                                else m.group(0)
+                            )
+
                         expanded = _paste_ref_re.sub(_expand_ref, user_input)
-                        total_lines = expanded.count('\n') + 1
+                        total_lines = expanded.count("\n") + 1
                         n_pastes = len(paste_refs)
                         _user_bar = f"[{_accent_hex()}]{'─' * 40}[/]"
                         print()
@@ -7451,7 +8387,9 @@ class AizenCLI:
                         # Show any surrounding user text alongside the paste summary
                         split_parts = _paste_ref_re.split(user_input)
                         visible_user_text = " ".join(
-                            split_parts[i].strip() for i in range(0, len(split_parts), 2) if split_parts[i].strip()
+                            split_parts[i].strip()
+                            for i in range(0, len(split_parts), 2)
+                            if split_parts[i].strip()
                         )
                         if visible_user_text:
                             ChatConsole().print(
@@ -7465,9 +8403,9 @@ class AizenCLI:
                         user_input = expanded
                     else:
                         _user_bar = f"[{_accent_hex()}]{'─' * 40}[/]"
-                        if '\n' in user_input:
-                            first_line = user_input.split('\n')[0]
-                            line_count = user_input.count('\n') + 1
+                        if "\n" in user_input:
+                            first_line = user_input.split("\n")[0]
+                            line_count = user_input.count("\n") + 1
                             print()
                             ChatConsole().print(_user_bar)
                             ChatConsole().print(
@@ -7477,12 +8415,16 @@ class AizenCLI:
                         else:
                             print()
                             ChatConsole().print(_user_bar)
-                            ChatConsole().print(f"[bold {_accent_hex()}]●[/] [bold]{_escape(user_input)}[/]")
-                    
+                            ChatConsole().print(
+                                f"[bold {_accent_hex()}]●[/] [bold]{_escape(user_input)}[/]"
+                            )
+
                     # Show image attachment count
                     if submit_images:
                         n = len(submit_images)
-                        _cprint(f"  {_DIM}📎 {n} image{'s' if n > 1 else ''} attached{_RST}")
+                        _cprint(
+                            f"  {_DIM}📎 {n} image{'s' if n > 1 else ''} attached{_RST}"
+                        )
 
                     # Regular chat - run agent
                     self._agent_running = True
@@ -7499,7 +8441,12 @@ class AizenCLI:
                         # Dispatch to a daemon thread so play_beep (sd.wait) and
                         # AudioRecorder.start (lock acquire) never block process_loop —
                         # otherwise queued user input would stall silently.
-                        if self._voice_mode and self._voice_continuous and not self._voice_recording:
+                        if (
+                            self._voice_mode
+                            and self._voice_continuous
+                            and not self._voice_recording
+                        ):
+
                             def _restart_recording():
                                 try:
                                     if self._voice_tts:
@@ -7508,33 +8455,39 @@ class AizenCLI:
                                     self._voice_start_recording()
                                     app.invalidate()
                                 except Exception as e:
-                                    _cprint(f"{_DIM}Voice auto-restart failed: {e}{_RST}")
-                            threading.Thread(target=_restart_recording, daemon=True).start()
-                    
+                                    _cprint(
+                                        f"{_DIM}Voice auto-restart failed: {e}{_RST}"
+                                    )
+
+                            threading.Thread(
+                                target=_restart_recording, daemon=True
+                            ).start()
+
                 except Exception as e:
                     print(f"Error: {e}")
-        
+
         # Start processing thread
         process_thread = threading.Thread(target=process_loop, daemon=True)
         process_thread.start()
-        
+
         # Register atexit cleanup so resources are freed even on unexpected exit
         atexit.register(_run_cleanup)
-        
+
         # Register signal handlers for graceful shutdown on SSH disconnect / SIGTERM
         def _signal_handler(signum, frame):
             """Handle SIGHUP/SIGTERM by triggering graceful cleanup."""
             logger.debug("Received signal %s, triggering graceful shutdown", signum)
             raise KeyboardInterrupt()
-        
+
         try:
             import signal as _signal
+
             _signal.signal(_signal.SIGTERM, _signal_handler)
-            if hasattr(_signal, 'SIGHUP'):
+            if hasattr(_signal, "SIGHUP"):
                 _signal.signal(_signal.SIGHUP, _signal_handler)
         except Exception:
             pass  # Signal handlers may fail in restricted environments
-        
+
         # Install a custom asyncio exception handler that suppresses the
         # "Event loop is closed" RuntimeError from httpx transport cleanup.
         # This is defense-in-depth — the primary fix is neuter_async_httpx_del
@@ -7553,6 +8506,7 @@ class AizenCLI:
                 # Set the custom handler on prompt_toolkit's event loop
                 try:
                     import asyncio as _aio
+
                     _loop = _aio.get_event_loop()
                     _loop.set_exception_handler(_suppress_closed_loop_errors)
                 except Exception:
@@ -7569,7 +8523,7 @@ class AizenCLI:
                 except (Exception, KeyboardInterrupt):
                     pass
             # Shut down voice recorder (release persistent audio stream)
-            if hasattr(self, '_voice_recorder') and self._voice_recorder:
+            if hasattr(self, "_voice_recorder") and self._voice_recorder:
                 try:
                     self._voice_recorder.shutdown()
                 except Exception:
@@ -7578,6 +8532,7 @@ class AizenCLI:
             # Clean up old temp voice recordings
             try:
                 from tools.voice_mode import cleanup_temp_recordings
+
                 cleanup_temp_recordings()
             except Exception:
                 pass
@@ -7586,7 +8541,7 @@ class AizenCLI:
             set_approval_callback(None)
             set_secret_capture_callback(None)
             # Close session in SQLite
-            if hasattr(self, '_session_db') and self._session_db and self.agent:
+            if hasattr(self, "_session_db") and self._session_db and self.agent:
                 try:
                     self._session_db.end_session(self.agent.session_id, "cli_close")
                 except (Exception, KeyboardInterrupt) as e:
@@ -7595,16 +8550,17 @@ class AizenCLI:
             # run_conversation() already fires this per-turn on normal completion,
             # so only fire here if the agent was mid-turn (_agent_running) when
             # the exit occurred, meaning run_conversation's hook didn't fire.
-            if self.agent and getattr(self, '_agent_running', False):
+            if self.agent and getattr(self, "_agent_running", False):
                 try:
                     from aizen_cli.plugins import invoke_hook as _invoke_hook
+
                     _invoke_hook(
                         "on_session_end",
                         session_id=self.agent.session_id,
                         completed=False,
                         interrupted=True,
-                        model=getattr(self.agent, 'model', None),
-                        platform=getattr(self.agent, 'platform', None) or "cli",
+                        model=getattr(self.agent, "model", None),
+                        platform=getattr(self.agent, "platform", None) or "cli",
                     )
                 except Exception:
                     pass
@@ -7613,8 +8569,9 @@ class AizenCLI:
 
 
 # ============================================================================
-# Main Entry Point
+# SECTION 5: Main Entry Point
 # ============================================================================
+
 
 def main(
     query: str = None,
@@ -7642,7 +8599,7 @@ def main(
 ):
     """
     Aizen Agent CLI - Interactive AI Assistant
-    
+
     Args:
         query: Single query to execute (then exit). Alias: -q
         q: Shorthand for --query
@@ -7662,7 +8619,7 @@ def main(
         resume: Resume a previous session by its ID (e.g., 20260225_143052_a1b2c3)
         worktree: Run in an isolated git worktree (for parallel agents). Alias: -w
         w: Shorthand for --worktree
-    
+
     Examples:
         python cli.py                            # Start interactive mode
         python cli.py --toolsets web,terminal    # Use specific toolsets
@@ -7678,11 +8635,12 @@ def main(
     # Signal to terminal_tool that we're in interactive mode
     # This enables interactive sudo password prompts with timeout
     os.environ["AIZEN_INTERACTIVE"] = "1"
-    
+
     # Handle gateway mode (messaging + cron)
     if gateway:
         import asyncio
         from gateway.run import start_gateway
+
         print("Starting Aizen Gateway (messaging platforms)...")
         asyncio.run(start_gateway())
         return
@@ -7710,16 +8668,16 @@ def main(
                 return
     else:
         wt_info = None
-    
+
     # Handle query shorthand
     query = query or q
-    
+
     # Handle skills shorthand
     skills = skills or s
-    
+
     # Handle toolsets shorthand
     toolsets = toolsets or t
-    
+
     # Parse toolsets - handle both string and tuple/list inputs
     # Default to aizen-cli toolset which includes cronjob management tools
     toolsets_list = None
@@ -7737,8 +8695,9 @@ def main(
     else:
         # Use the shared resolver so MCP servers are included at runtime
         from aizen_cli.tools_config import _get_platform_tools
+
         toolsets_list = sorted(_get_platform_tools(CLI_CONFIG, "cli"))
-    
+
     parsed_skills = _parse_skills_argument(skills)
 
     # Create CLI instance
@@ -7780,21 +8739,21 @@ def main(
             f"The original repo is at {wt_info['repo_root']}.]"
         )
         cli.system_prompt = (cli.system_prompt or "") + wt_note
-    
+
     # Handle list commands (don't init agent for these)
     if list_tools:
         cli.show_banner()
         cli.show_tools()
         sys.exit(0)
-    
+
     if list_toolsets:
         cli.show_banner()
         cli.show_toolsets()
         sys.exit(0)
-    
+
     # Register cleanup for single-query mode (interactive mode registers in run())
     atexit.register(_run_cleanup)
-    
+
     # Handle single query mode
     if query:
         if quiet:
@@ -7815,7 +8774,11 @@ def main(
                         user_message=query,
                         conversation_history=cli.conversation_history,
                     )
-                    response = result.get("final_response", "") if isinstance(result, dict) else str(result)
+                    response = (
+                        result.get("final_response", "")
+                        if isinstance(result, dict)
+                        else str(result)
+                    )
                     if response:
                         print(response)
                     print(f"\nsession_id: {cli.session_id}")
@@ -7825,7 +8788,7 @@ def main(
             cli.chat(query)
             cli._print_exit_summary()
         return
-    
+
     # Run interactive mode
     cli.run()
 
