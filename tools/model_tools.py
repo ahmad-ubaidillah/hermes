@@ -427,6 +427,27 @@ def handle_function_call(
     Returns:
         Function result as a JSON string.
     """
+    try:
+        from src.agent.permissions import check_tool_permission, PermissionResult
+
+        perm_result = check_tool_permission(function_name)
+        if perm_result == PermissionResult.DENIED:
+            return json.dumps(
+                {
+                    "error": f"Permission denied: {function_name} is not allowed to execute"
+                }
+            )
+        elif perm_result == PermissionResult.ASKED:
+            return json.dumps(
+                {
+                    "error": f"Permission required: {function_name} requires user confirmation"
+                }
+            )
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
     # Notify the read-loop tracker when a non-read/search tool runs,
     # so the *consecutive* counter resets (reads after other work are fine).
     if function_name not in _READ_SEARCH_TOOLS:
@@ -492,11 +513,48 @@ def handle_function_call(
         except Exception:
             pass
 
+        try:
+            from src.agent.doom_loop import get_doom_detector
+
+            detector = get_doom_detector()
+            detector.record_call(function_name, function_args)
+            doom_info = detector.check_doom_loop(function_name, function_args, result)
+            if doom_info and doom_info.get("detected"):
+                logger.warning(f"Doom loop warning: {doom_info['message']}")
+        except ImportError:
+            pass
+        except Exception:
+            pass
+
         return result
 
     except Exception as e:
         error_msg = f"Error executing {function_name}: {str(e)}"
         logger.error(error_msg)
+
+        try:
+            from src.agent.auto_install import (
+                should_auto_install,
+                handle_missing_package,
+            )
+
+            if should_auto_install(error_msg):
+                can_retry, message = handle_missing_package(error_msg)
+                if can_retry:
+                    logger.info(f"Auto-installed package: {message}")
+                    return json.dumps(
+                        {
+                            "error": error_msg,
+                            "auto_install": True,
+                            "package_installed": True,
+                            "message": message,
+                            "retry": True,
+                        },
+                        ensure_ascii=False,
+                    )
+        except ImportError:
+            pass
+
         return json.dumps({"error": error_msg}, ensure_ascii=False)
 
 

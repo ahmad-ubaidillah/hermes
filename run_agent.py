@@ -125,33 +125,27 @@ from core.utils import atomic_json_write
 
 
 # =============================================================================
-# SECTION 1: Helper Classes - _SafeWriter, IterationBudget
-# =============================================================================
 # (Imports moved to extracted modules)
+# =============================================================================
+
 from src.agent.safe_writer import _SafeWriter, _install_safe_stdio
 from src.agent.iteration_budget import IterationBudget
-from src.agent.tool_helpers import (
-    _NEVER_PARALLEL_TOOLS,
-    _PARALLEL_SAFE_TOOLS,
-    _PATH_SCOPED_TOOLS,
-    _MAX_TOOL_WORKERS,
-    _DESTRUCTIVE_PATTERNS,
-    _REDIRECT_OVERWRITE,
-    _is_destructive_command,
-    _should_parallelize_tool_batch,
-    _extract_parallel_scope_path,
-    _paths_overlap,
-    _BUDGET_WARNING_RE,
-    _SURROGATE_RE,
-    _sanitize_surrogates,
-    _sanitize_messages_surrogates,
-    _strip_budget_warnings_from_history,
+from src.agent.client_manager import ClientManager
+from src.agent.client_manager import ClientManager
+
+# Distillation pipeline imports for context compression enhancement
+from agent.distill import (
+    ContentClassifier,
+    ContentScorer,
+    ContentCollapser,
+    ContentComposer,
+    SignalTier,
 )
 
-
 # =============================================================================
-# SECTION 2: Tool Execution Helpers - (imported from src/agent/tool_helpers.py)
+# SECTION 2: Tool Execution Helpers
 # =============================================================================
+from src.agent.tool_helpers import _sanitize_surrogates
 
 
 # =============================================================================
@@ -226,6 +220,60 @@ class AIAgent:
         pass_session_id: bool = False,
         persist_session: bool = True,
     ):
+        """Initialize the AI Agent."""
+        # Use extracted initialization logic for better modularity
+        from src.agent.aizen_init import AizenInit
+
+        initializer = AizenInit(self)
+        initializer.initialize(
+            base_url=base_url,
+            api_key=api_key,
+            provider=provider,
+            api_mode=api_mode,
+            acp_command=acp_command,
+            acp_args=acp_args,
+            command=command,
+            args=args,
+            model=model,
+            max_iterations=max_iterations,
+            tool_delay=tool_delay,
+            enabled_toolsets=enabled_toolsets,
+            disabled_toolsets=disabled_toolsets,
+            save_trajectories=save_trajectories,
+            verbose_logging=verbose_logging,
+            quiet_mode=quiet_mode,
+            ephemeral_system_prompt=ephemeral_system_prompt,
+            log_prefix_chars=log_prefix_chars,
+            log_prefix=log_prefix,
+            providers_allowed=providers_allowed,
+            providers_ignored=providers_ignored,
+            providers_order=providers_order,
+            provider_sort=provider_sort,
+            provider_require_parameters=provider_require_parameters,
+            provider_data_collection=provider_data_collection,
+            session_id=session_id,
+            tool_progress_callback=tool_progress_callback,
+            thinking_callback=thinking_callback,
+            reasoning_callback=reasoning_callback,
+            clarify_callback=clarify_callback,
+            step_callback=step_callback,
+            stream_delta_callback=stream_delta_callback,
+            tool_gen_callback=tool_gen_callback,
+            status_callback=status_callback,
+            max_tokens=max_tokens,
+            reasoning_config=reasoning_config,
+            prefill_messages=prefill_messages,
+            platform=platform,
+            skip_context_files=skip_context_files,
+            skip_memory=skip_memory,
+            session_db=session_db,
+            iteration_budget=iteration_budget,
+            fallback_model=fallback_model,
+            checkpoints_enabled=checkpoints_enabled,
+            checkpoint_max_snapshots=checkpoint_max_snapshots,
+            pass_session_id=pass_session_id,
+            persist_session=persist_session,
+        )
         """
         Initialize the AI Agent.
 
@@ -637,11 +685,11 @@ class AIAgent:
                         headers["x-anthropic-beta"] = f"{existing_beta},{_FINE_GRAINED}"
                     else:
                         headers["x-anthropic-beta"] = _FINE_GRAINED
-                    client_kwargs["default_headers"] = headers
+                client_kwargs["default_headers"] = headers
 
             self.api_key = client_kwargs.get("api_key", "")
             try:
-                self.client = self._create_openai_client(
+                self.client = self.client_manager._create_openai_client(
                     client_kwargs, reason="agent_init", shared=True
                 )
                 if not self.quiet_mode:
@@ -932,6 +980,13 @@ class AIAgent:
             provider=self.provider,
         )
         self.compression_enabled = compression_enabled
+
+        # Initialize distillation pipeline for enhanced context compression
+        self.content_classifier = ContentClassifier()
+        self.content_scorer = ContentScorer()
+        self.content_collapser = ContentCollapser()
+        self.content_composer = ContentComposer()
+
         self._user_turn_count = 0
 
         # Cumulative token usage for the session
@@ -2141,154 +2196,13 @@ class AIAgent:
         rebuilt after context compression events. This ensures the system prompt
         is stable across all turns in a session, maximizing prefix cache hits.
         """
-        # Layers (in order):
-        #   1. Agent identity — SOUL.md when available, else DEFAULT_AGENT_IDENTITY
-        #   2. User / gateway system prompt (if provided)
-        #   3. Persistent memory (frozen snapshot)
-        #   4. Skills guidance (if skills tools are loaded)
-        #   5. Context files (AGENTS.md, .cursorrules — SOUL.md excluded here when used as identity)
-        #   6. Current date & time (frozen at build time)
-        #   7. Platform-specific formatting hint
-
-        # Try SOUL.md as primary identity (unless context files are skipped)
-        _soul_loaded = False
-        if not self.skip_context_files:
-            _soul_content = load_soul_md()
-            if _soul_content:
-                prompt_parts = [_soul_content]
-                _soul_loaded = True
-
-        if not _soul_loaded:
-            # Use default identity
-            _identity = DEFAULT_AGENT_IDENTITY
-            prompt_parts = [_identity]
-
-        # Tool-aware behavioral guidance: only inject when the tools are loaded
-        tool_guidance = []
-        if "memory" in self.valid_tool_names:
-            tool_guidance.append(MEMORY_GUIDANCE)
-        if "session_search" in self.valid_tool_names:
-            tool_guidance.append(SESSION_SEARCH_GUIDANCE)
-        if "skill_manage" in self.valid_tool_names:
-            tool_guidance.append(SKILLS_GUIDANCE)
-        if tool_guidance:
-            prompt_parts.append(" ".join(tool_guidance))
-
-        # Tool-use enforcement: tells the model to actually call tools instead
-        # of describing intended actions.  Controlled by config.yaml
-        # agent.tool_use_enforcement:
-        #   "auto" (default) — matches TOOL_USE_ENFORCEMENT_MODELS
-        #   true  — always inject (all models)
-        #   false — never inject
-        #   list  — custom model-name substrings to match
-        if self.valid_tool_names:
-            _enforce = self._tool_use_enforcement
-            _inject = False
-            if _enforce is True or (
-                isinstance(_enforce, str)
-                and _enforce.lower() in ("true", "always", "yes", "on")
-            ):
-                _inject = True
-            elif _enforce is False or (
-                isinstance(_enforce, str)
-                and _enforce.lower() in ("false", "never", "no", "off")
-            ):
-                _inject = False
-            elif isinstance(_enforce, list):
-                model_lower = (self.model or "").lower()
-                _inject = any(
-                    p.lower() in model_lower for p in _enforce if isinstance(p, str)
-                )
-            else:
-                # "auto" or any unrecognised value — use hardcoded defaults
-                model_lower = (self.model or "").lower()
-                _inject = any(p in model_lower for p in TOOL_USE_ENFORCEMENT_MODELS)
-            if _inject:
-                prompt_parts.append(TOOL_USE_ENFORCEMENT_GUIDANCE)
-
-        # Note: ephemeral_system_prompt is NOT included here. It's injected at
-        # API-call time only so it stays out of the cached/stored system prompt.
-        if system_message is not None:
-            prompt_parts.append(system_message)
-
-        if self._memory_store:
-            if self._memory_enabled:
-                mem_block = self._memory_store.format_for_system_prompt("memory")
-                if mem_block:
-                    prompt_parts.append(mem_block)
-            # USER.md is always included when enabled -- Honcho prefetch is additive.
-            if self._user_profile_enabled:
-                user_block = self._memory_store.format_for_system_prompt("user")
-                if user_block:
-                    prompt_parts.append(user_block)
-
-        has_skills_tools = any(
-            name in self.valid_tool_names
-            for name in ["skills_list", "skill_view", "skill_manage"]
+        # Import here to avoid circular imports
+        from src.agent.system_prompt import (
+            DEFAULT_AGENT_IDENTITY,
+            build_system_prompt as _build_system_prompt_internal,
         )
-        if has_skills_tools:
-            avail_toolsets = {
-                toolset
-                for toolset in (
-                    get_toolset_for_tool(tool_name)
-                    for tool_name in self.valid_tool_names
-                )
-                if toolset
-            }
-            skills_prompt = build_skills_system_prompt(
-                available_tools=self.valid_tool_names,
-                available_toolsets=avail_toolsets,
-            )
-        else:
-            skills_prompt = ""
-        if skills_prompt:
-            prompt_parts.append(skills_prompt)
 
-        if not self.skip_context_files:
-            # Use TERMINAL_CWD for context file discovery when set (gateway
-            # mode).  The gateway process runs from the aizen-agent install
-            # dir, so os.getcwd() would pick up the repo's AGENTS.md and
-            # other dev files — inflating token usage by ~10k for no benefit.
-            _context_cwd = os.getenv("TERMINAL_CWD") or None
-            context_files_prompt = build_context_files_prompt(
-                cwd=_context_cwd, skip_soul=_soul_loaded
-            )
-            if context_files_prompt:
-                prompt_parts.append(context_files_prompt)
-
-        from core.aizen_time import now as _aizen_now
-
-        now = _aizen_now()
-        timestamp_line = (
-            f"Conversation started: {now.strftime('%A, %B %d, %Y %I:%M %p')}"
-        )
-        if self.pass_session_id and self.session_id:
-            timestamp_line += f"\nSession ID: {self.session_id}"
-        if self.model:
-            timestamp_line += f"\nModel: {self.model}"
-        if self.provider:
-            timestamp_line += f"\nProvider: {self.provider}"
-        prompt_parts.append(timestamp_line)
-
-        # Alibaba Coding Plan API always returns "glm-4.7" as model name regardless
-        # of the requested model. Inject explicit model identity into the system prompt
-        # so the agent can correctly report which model it is (workaround for API bug).
-        if self.provider == "alibaba":
-            _model_short = (
-                self.model.split("/")[-1] if "/" in self.model else self.model
-            )
-            prompt_parts.append(
-                f"You are powered by the model named {_model_short}. "
-                f"The exact model ID is {self.model}. "
-                f"When asked what model you are, always answer based on this information, "
-                f"not on any model name returned by the API."
-            )
-
-        platform_key = (self.platform or "").lower().strip()
-        if platform_key in PLATFORM_HINTS:
-            prompt_parts.append(PLATFORM_HINTS[platform_key])
-
-        return "\n\n".join(prompt_parts)
+        return _build_system_prompt_internal(agent=self, system_message=system_message)
 
     # =========================================================================
     # Pre/post-call guardrails (inspired by PR #1321 — @alireza78a)
@@ -3231,6 +3145,117 @@ class AIAgent:
     def _close_request_openai_client(self, client: Any, *, reason: str) -> None:
         self._close_openai_client(client, reason=reason, shared=False)
 
+    def _try_refresh_codex_client_credentials(self, *, force: bool = True) -> bool:
+        if self.api_mode != "codex_responses" or self.provider != "openai-codex":
+            return False
+
+        try:
+            from aizen_cli.auth import resolve_codex_runtime_credentials
+
+            creds = resolve_codex_runtime_credentials(force_refresh=force)
+        except Exception as exc:
+            logger.debug("Codex credential refresh failed: %s", exc)
+            return False
+
+        api_key = creds.get("api_key")
+        base_url = creds.get("base_url")
+        if not isinstance(api_key, str) or not api_key.strip():
+            return False
+        if not isinstance(base_url, str) or not base_url.strip():
+            return False
+
+        self.api_key = api_key.strip()
+        self.base_url = base_url.strip().rstrip("/")
+        self._client_kwargs["api_key"] = self.api_key
+        self._client_kwargs["base_url"] = self.base_url
+
+        if not self._replace_primary_openai_client(reason="codex_credential_refresh"):
+            return False
+
+        return True
+
+    def _try_refresh_nous_client_credentials(self, *, force: bool = True) -> bool:
+        if self.api_mode != "chat_completions" or self.provider != "nous":
+            return False
+
+        try:
+            from aizen_cli.auth import resolve_nous_runtime_credentials
+
+            creds = resolve_nous_runtime_credentials(
+                min_key_ttl_seconds=max(
+                    60, int(os.getenv("AIZEN_NOUS_MIN_KEY_TTL_SECONDS", "1800"))
+                ),
+                timeout_seconds=float(os.getenv("AIZEN_NOUS_TIMEOUT_SECONDS", "15")),
+                force_mint=force,
+            )
+        except Exception as exc:
+            logger.debug("Nous credential refresh failed: %s", exc)
+            return False
+
+        api_key = creds.get("api_key")
+        base_url = creds.get("base_url")
+        if not isinstance(api_key, str) or not api_key.strip():
+            return False
+        if not isinstance(base_url, str) or not base_url.strip():
+            return False
+
+        self.api_key = api_key.strip()
+        self.base_url = base_url.strip().rstrip("/")
+        self._client_kwargs["api_key"] = self.api_key
+        self._client_kwargs["base_url"] = self.base_url
+        self._client_kwargs.pop("default_headers", None)
+
+        if not self._replace_primary_openai_client(reason="nous_credential_refresh"):
+            return False
+
+        return True
+
+    def _try_refresh_anthropic_client_credentials(self) -> bool:
+        if self.api_mode != "anthropic_messages" or not hasattr(
+            self, "_anthropic_api_key"
+        ):
+            return False
+        if self.provider != "anthropic":
+            return False
+
+        try:
+            from agent.anthropic_adapter import (
+                resolve_anthropic_token,
+                build_anthropic_client,
+            )
+
+            new_token = resolve_anthropic_token()
+        except Exception as exc:
+            logger.debug("Anthropic credential refresh failed: %s", exc)
+            return False
+
+        if not isinstance(new_token, str) or not new_token.strip():
+            return False
+        new_token = new_token.strip()
+        if new_token == self._anthropic_api_key:
+            return False
+
+        try:
+            self._anthropic_client.close()
+        except Exception:
+            pass
+
+        try:
+            self._anthropic_client = build_anthropic_client(
+                new_token, getattr(self, "_anthropic_base_url", None)
+            )
+        except Exception as exc:
+            logger.warning(
+                "Failed to rebuild Anthropic client after credential refresh: %s", exc
+            )
+            return False
+
+        self._anthropic_api_key = new_token
+        from agent.anthropic_adapter import _is_oauth_token
+
+        self._is_anthropic_oauth = _is_oauth_token(new_token)
+        return True
+
     def _run_codex_stream(
         self, api_kwargs: dict, client: Any = None, on_first_delta: callable = None
     ):
@@ -3343,121 +3368,6 @@ class AIAgent:
         raise RuntimeError(
             "Responses create(stream=True) fallback did not emit a terminal response."
         )
-
-    def _try_refresh_codex_client_credentials(self, *, force: bool = True) -> bool:
-        if self.api_mode != "codex_responses" or self.provider != "openai-codex":
-            return False
-
-        try:
-            from aizen_cli.auth import resolve_codex_runtime_credentials
-
-            creds = resolve_codex_runtime_credentials(force_refresh=force)
-        except Exception as exc:
-            logger.debug("Codex credential refresh failed: %s", exc)
-            return False
-
-        api_key = creds.get("api_key")
-        base_url = creds.get("base_url")
-        if not isinstance(api_key, str) or not api_key.strip():
-            return False
-        if not isinstance(base_url, str) or not base_url.strip():
-            return False
-
-        self.api_key = api_key.strip()
-        self.base_url = base_url.strip().rstrip("/")
-        self._client_kwargs["api_key"] = self.api_key
-        self._client_kwargs["base_url"] = self.base_url
-
-        if not self._replace_primary_openai_client(reason="codex_credential_refresh"):
-            return False
-
-        return True
-
-    def _try_refresh_nous_client_credentials(self, *, force: bool = True) -> bool:
-        if self.api_mode != "chat_completions" or self.provider != "nous":
-            return False
-
-        try:
-            from aizen_cli.auth import resolve_nous_runtime_credentials
-
-            creds = resolve_nous_runtime_credentials(
-                min_key_ttl_seconds=max(
-                    60, int(os.getenv("AIZEN_NOUS_MIN_KEY_TTL_SECONDS", "1800"))
-                ),
-                timeout_seconds=float(os.getenv("AIZEN_NOUS_TIMEOUT_SECONDS", "15")),
-                force_mint=force,
-            )
-        except Exception as exc:
-            logger.debug("Nous credential refresh failed: %s", exc)
-            return False
-
-        api_key = creds.get("api_key")
-        base_url = creds.get("base_url")
-        if not isinstance(api_key, str) or not api_key.strip():
-            return False
-        if not isinstance(base_url, str) or not base_url.strip():
-            return False
-
-        self.api_key = api_key.strip()
-        self.base_url = base_url.strip().rstrip("/")
-        self._client_kwargs["api_key"] = self.api_key
-        self._client_kwargs["base_url"] = self.base_url
-        # Nous requests should not inherit OpenRouter-only attribution headers.
-        self._client_kwargs.pop("default_headers", None)
-
-        if not self._replace_primary_openai_client(reason="nous_credential_refresh"):
-            return False
-
-        return True
-
-    def _try_refresh_anthropic_client_credentials(self) -> bool:
-        if self.api_mode != "anthropic_messages" or not hasattr(
-            self, "_anthropic_api_key"
-        ):
-            return False
-        # Only refresh credentials for the native Anthropic provider.
-        # Other anthropic_messages providers (MiniMax, Alibaba, etc.) use their own keys.
-        if self.provider != "anthropic":
-            return False
-
-        try:
-            from agent.anthropic_adapter import (
-                resolve_anthropic_token,
-                build_anthropic_client,
-            )
-
-            new_token = resolve_anthropic_token()
-        except Exception as exc:
-            logger.debug("Anthropic credential refresh failed: %s", exc)
-            return False
-
-        if not isinstance(new_token, str) or not new_token.strip():
-            return False
-        new_token = new_token.strip()
-        if new_token == self._anthropic_api_key:
-            return False
-
-        try:
-            self._anthropic_client.close()
-        except Exception:
-            pass
-
-        try:
-            self._anthropic_client = build_anthropic_client(
-                new_token, getattr(self, "_anthropic_base_url", None)
-            )
-        except Exception as exc:
-            logger.warning(
-                "Failed to rebuild Anthropic client after credential refresh: %s", exc
-            )
-            return False
-
-        self._anthropic_api_key = new_token
-        # Update OAuth flag — token type may have changed (API key ↔ OAuth)
-        from agent.anthropic_adapter import _is_oauth_token
-
-        self._is_anthropic_oauth = _is_oauth_token(new_token)
-        return True
 
     def _anthropic_messages_create(self, api_kwargs: dict):
         if self.api_mode == "anthropic_messages":
@@ -4997,9 +4907,96 @@ class AIAgent:
         # Pre-compression memory flush: let the model save memories before they're lost
         self.flush_memories(messages, min_turns=0)
 
-        compressed = self.context_compressor.compress(
-            messages, current_tokens=approx_tokens
-        )
+        # Apply distillation pipeline for enhanced context compression
+        if hasattr(self, "content_composer") and self.compression_enabled:
+            try:
+                # Process each message individually to preserve structure
+                processed_messages = []
+                total_original_chars = 0
+                total_processed_chars = 0
+
+                for msg in messages:
+                    if (
+                        not isinstance(msg, dict)
+                        or "content" not in msg
+                        or not msg["content"]
+                    ):
+                        # Keep non-content messages as-is (e.g., tool calls, etc.)
+                        processed_messages.append(msg)
+                        continue
+
+                    content = msg["content"]
+                    if not isinstance(content, str) or not content.strip():
+                        # Keep empty content as-is
+                        processed_messages.append(msg)
+                        total_original_chars += len(content)
+                        total_processed_chars += len(content)
+                        continue
+
+                    total_original_chars += len(content)
+
+                    # Apply distillation pipeline to this message's content
+                    try:
+                        # Classify content type
+                        content_type = self.content_classifier.classify(content)
+
+                        # Score content by importance (line-by-line)
+                        scored_lines = self.content_scorer.score_lines(content)
+
+                        # Compose filtered content based on importance tiers
+                        distilled_content, stats = (
+                            self.content_composer.compose_with_tiers(content)
+                        )
+
+                        # Create new message with distilled content
+                        processed_msg = msg.copy()
+                        processed_msg["content"] = distilled_content
+                        processed_messages.append(processed_msg)
+
+                        total_processed_chars += len(distilled_content)
+
+                        # Log significant compression
+                        if stats.get("removal_ratio", 0) > 0.2:  # Log if >20% reduction
+                            logger.debug(
+                                f"Distillation: {stats['original_lines']} -> {stats['kept_lines']} lines "
+                                f"({stats['removal_ratio']:.1%} reduction) for message"
+                            )
+                    except Exception as e:
+                        # If distillation fails, keep original message
+                        logger.debug(
+                            f"Distillation error for message (keeping original): {e}"
+                        )
+                        processed_messages.append(msg)
+                        total_processed_chars += len(content)
+
+                # Log overall compression stats
+                if total_original_chars > 0:
+                    overall_ratio = (
+                        total_original_chars - total_processed_chars
+                    ) / total_original_chars
+                    if overall_ratio > 0.05:  # Log if >5% overall reduction
+                        logger.debug(
+                            f"Distillation pre-processing: {total_original_chars} -> {total_processed_chars} chars "
+                            f"({overall_ratio:.1%} overall reduction)"
+                        )
+
+                # Use processed messages for context compression
+                compressed = self.context_compressor.compress(
+                    processed_messages, current_tokens=approx_tokens
+                )
+            except Exception as e:
+                # If anything goes wrong, fall back to standard compression
+                logger.debug(
+                    f"Distillation pipeline error (falling back to standard compression): {e}"
+                )
+                compressed = self.context_compressor.compress(
+                    messages, current_tokens=approx_tokens
+                )
+        else:
+            # Standard context compression without distillation
+            compressed = self.context_compressor.compress(
+                messages, current_tokens=approx_tokens
+            )
 
         todo_snapshot = self._todo_store.format_for_injection()
         if todo_snapshot:

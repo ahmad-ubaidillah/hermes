@@ -2950,9 +2950,12 @@ class AizenCLI:
                     f"    [bold {_accent_hex()}]{cmd:<22}[/] [dim]-[/] {_escape(info['description'])}"
                 )
 
-        _cprint(f"\n  {_DIM}Tip: Just type your message to chat with Aizen!{_RST}")
-        _cprint(f"  {_DIM}Multi-line: Alt+Enter for a new line{_RST}")
-        _cprint(f"  {_DIM}Paste image: Alt+V (or /paste){_RST}\n")
+        # Tips section - no more vim-style exit!
+        _cprint(f"\n  {_BOLD}── Tips ──{_RST}")
+        _cprint(f"  {_DIM}• Just type your message to chat with Aizen!{_RST}")
+        _cprint(f"  {_DIM}• Multi-line: Alt+Enter for a new line{_RST}")
+        _cprint(f"  {_DIM}• Paste image: Alt+V (or /paste){_RST}")
+        _cprint(f"  {_DIM}• Exit: Type /quit or /exit or press Ctrl+C{_RST}\n")
 
     def show_tools(self):
         """Display available tools with kawaii ASCII art."""
