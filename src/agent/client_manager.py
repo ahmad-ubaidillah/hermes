@@ -3,15 +3,15 @@ OpenAI client management for AIAgent.
 Extracted from run_agent.py to reduce file size and improve organization.
 """
 
+import logging
 import os
 import threading
 from typing import Any, Dict
 from unittest.mock import Mock
 
-import structlog
 from openai import OpenAI
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ClientManager:
