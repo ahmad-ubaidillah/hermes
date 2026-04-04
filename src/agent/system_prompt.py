@@ -11,14 +11,18 @@ from agent.prompt_builder import (
 from core.aizen_time import now as _aizen_now
 from agent.redact import RedactingFormatter
 
-from src.agent.tool_helpers import (
-    get_toolset_for_tool,
-    get_tool_definitions,
-)
-from tools.memory_tool import MemoryStore
-from tools.soul_tool import load_soul_md
-from tools.skills_tool import build_skills_system_prompt
-from tools.context_files_tool import build_context_files_prompt
+from tools.model_tools import get_toolset_for_tool, get_tool_definitions
+
+# Try to import optional tools
+try:
+    from tools.memory_tool import MemoryStore
+except ImportError:
+    MemoryStore = None
+
+try:
+    from tools.skills_tool import build_skills_system_prompt
+except ImportError:
+    build_skills_system_prompt = None
 
 
 # Guidance constants (moved from run_agent.py for modularity)
