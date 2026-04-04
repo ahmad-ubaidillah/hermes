@@ -221,6 +221,27 @@ MIT License - see [LICENSE](LICENSE)
 
 ---
 
+## Uninstallation
+
+To uninstall Aizen Agent:
+
+```bash
+# Option 1: Keep data (recommended)
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/uninstall.sh | bash
+
+# Option 2: Remove everything including all data
+curl -fsSL https://raw.githubusercontent.com/ahmad-ubaidillah/hermes/main/scripts/uninstall.sh | bash -s -- --full
+```
+
+Or use the built-in uninstall command:
+
+```bash
+aizen uninstall        # Keep configs and sessions
+aizen uninstall --full # Remove everything
+```
+
+---
+
 ## Credits
 
 Fork of [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com)
