@@ -159,7 +159,7 @@ def load_cli_config() -> Dict[str, Any]:
     # Default configuration
     defaults = {
         "model": {
-            "default": "anthropic/claude-opus-4.6",
+            "default": "",  # Empty — user must configure via setup
             "base_url": OPENROUTER_BASE_URL,
             "provider": "auto",
         },
@@ -1186,7 +1186,7 @@ class AizenCLI:
             if isinstance(_model_config, dict)
             else (_model_config or "")
         )
-        _DEFAULT_CONFIG_MODEL = "anthropic/claude-opus-4.6"
+        _DEFAULT_CONFIG_MODEL = ""
         self.model = model or _config_model or _DEFAULT_CONFIG_MODEL
         # Auto-detect model from local server if still on default
         if self.model == _DEFAULT_CONFIG_MODEL:
@@ -7023,6 +7023,17 @@ class AizenCLI:
 
     def run(self):
         """Run the interactive CLI loop with persistent input at bottom."""
+        # Force setup on first run if no model is configured
+        if not self.model or self._model_is_default:
+            self.console.print(
+                "[bold yellow]⚠️  No model configured. Please run setup first.[/]"
+            )
+            self.console.print()
+            self.process_command("/setup")
+            if not self.model or self._model_is_default:
+                self.console.print("[bold red]Setup was not completed. Exiting.[/]")
+                return
+
         # Branch to dashboard TUI if configured
         if getattr(self, "tui_mode", "classic") == "dashboard":
             self._run_dashboard()
