@@ -8,7 +8,7 @@
    /   |  /  _/__  /  / ____/ | / /  /   | / ____/ ____/ | / /_  __/
   / /| |  / /   / /  / __/ /  |/ /  / /| |/ / __/ __/ /  |/ / / /   
  / ___ |_/ /   / /__/ /___/ /|  /  / ___ / /_/ / /___/ /|  / / /    
-/_/  |_/___/  /____/_____/_/ |_/  /_/  |_\\____/_____/_/ |_/ /_/     
+/_/  |_/___/  /____/_____/_/ |_/  /_/  |_\____/_____/_/ |_/ /_/     
   </pre>
 </p>
 
@@ -23,7 +23,7 @@
 <p align="center">
   <a href="https://github.com/ahmad-ubaidillah/hermes"><img src="https://img.shields.io/badge/GitHub-ahmad--ubaidillah/hermes-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
   <a href="https://github.com/ahmad-ubaidillah/aizen/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/Version-3.0.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Version-3.1.0-blue?style=for-the-badge" alt="Version">
 </p>
 
 ---
@@ -39,12 +39,18 @@ Aizen Agent is an autonomous AI team platform that helps you build software with
 | Feature | Description |
 |---------|-------------|
 | **<z> Agent** | Chat with Aizen - your AI coding companion |
-| **IntentGate** | Smart intent classification - routes tasks to appropriate agents |
-| **Parallel Agents** | Run 5+ agents concurrently with priority queues |
-| **48 Lifecycle Hooks** | Fine-grained control over agent lifecycle |
-| **Hash-Anchored Edit** | Zero stale-line file editing |
-| **Web Dashboard** | FastAPI + React dashboard for monitoring |
-| **Skill System** | Modular skills for different workflows |
+| **Distillation Pipeline** | 70-90% token reduction via context compression |
+| **Doom Loop Detection** | Auto-detect and escape infinite retry loops |
+| **L0/L1/L2 Context Engine** | Three-tier context with automatic compaction |
+| **Self-Healing Execution** | Auto-retry failed operations with smart strategies |
+| **Permission System** | allow/deny/ask modes for tool access control |
+| **Auto Pip-Install** | Automatic package installation for missing imports |
+| **Hash-Anchored Edits** | Zero stale-line file editing (68.3% success rate) |
+| **Planning Agents** | Prometheus (planner), Metis (gap analyzer), Momus (reviewer) |
+| **Skill Memory Layer** | Learn from successful task patterns |
+| **Wisdom Accumulation** | Extract and reuse lessons from past tasks |
+| **100+ Skills** | Modular skills for different workflows |
+| **6 Gateway Platforms** | Telegram, Discord, Slack, WhatsApp, etc. |
 
 ---
 
@@ -78,7 +84,8 @@ This will:
 - Install all dependencies
 - Check for OpenCode (install if missing)
 - Create `aizen` command
-- Run setup wizard
+- Run setup wizard (optional)
+- Auto-configure PAGER=cat for better CLI experience
 
 ### Manual Install
 
@@ -136,6 +143,32 @@ aizen /skill codebase-inspection
 
 ---
 
+## Advanced Features
+
+### Doom Loop Detection
+Automatically detects when the agent is stuck in a failure loop and triggers recovery strategies.
+
+### Context Engine (L0/L1/L2)
+Three-tier context management:
+- **L0 (Hot)**: Current conversation context
+- **L1 (Warm)**: Recent session history  
+- **L2 (Cold)**: Long-term memory via vector DB
+
+### Self-Healing Execution
+Automatically retries failed operations with exponential backoff:
+- Syntax errors → fix and retry
+- Import errors → auto-install missing packages
+- Permission errors → request approval
+- Rate limits → wait and retry
+- Network errors → retry with backoff
+
+### Planning Agents
+- **Prometheus**: Breaks down complex tasks into actionable steps
+- **Metis**: Identifies gaps and ambiguities in task descriptions
+- **Momus**: Reviews execution plans for quality and completeness
+
+---
+
 ## Free Models (via OpenCode)
 
 Aizen auto-detects OpenCode credentials for seamless free model access:
@@ -155,27 +188,30 @@ Aizen comes with 100+ built-in skills:
 
 | Category | Skills |
 |----------|--------|
+| **Software Dev** | code-review, test-driven-development, systematic-debugging |
 | **DevOps** | `arch-dev-setup`, `pre-commit-checks`, `hermes-autostart` |
 | **GitHub** | `github-pr-workflow`, `github-issues`, `code-review` |
 | **Creative** | `ascii-art`, `excalidraw`, `songwriting` |
 | **MLOps** | `unsloth`, `axolotl`, `lm-evaluation-harness` |
+| **Research** | `ml-paper-writing`, `polymarket` |
 | **System** | `chroma-vector-db`, `local-task-board`, `linux-scripts` |
 
 Browse all skills: `aizen /skills`
 
 ---
 
-## Team Agents
+## Gateway Platforms
 
-Aizen Agent includes specialized AI agents:
+Connect Aizen to your favorite messaging platforms:
 
-| Agent | Role | Focus |
-|-------|------|-------|
-| **Aizen** | CEO | Decision making, coordination |
-| **Atlas** | Architect | System design, tech decisions |
-| **Cody** | Developer | Implementation, coding |
-| **Nova** | PM | Requirements, backlog |
-| **Testa** | QA | Testing, bug reports |
+| Platform | Status |
+|----------|--------|
+| Telegram | ✅ |
+| Discord | ✅ |
+| Slack | ✅ |
+| WhatsApp | ✅ |
+| Home Assistant | ✅ |
+| Signal | ✅ |
 
 ---
 
