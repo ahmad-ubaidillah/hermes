@@ -7,6 +7,9 @@ from agent.prompt_builder import (
     PLATFORM_HINTS,
     TOOL_USE_ENFORCEMENT_MODELS,
     DEFAULT_AGENT_IDENTITY,
+    load_soul_md,
+    build_context_files_prompt,
+    build_skills_system_prompt,
 )
 from core.aizen_time import now as _aizen_now
 from agent.redact import RedactingFormatter
@@ -19,12 +22,6 @@ try:
 except ImportError:
     MemoryStore = None
 
-try:
-    from tools.skills_tool import build_skills_system_prompt
-except ImportError:
-    build_skills_system_prompt = None
-
-
 # Guidance constants (moved from run_agent.py for modularity)
 MEMORY_GUIDANCE = "When users ask about past conversations, preferences, or facts, check your memory first."
 SESSION_SEARCH_GUIDANCE = (
@@ -34,7 +31,7 @@ SKILLS_GUIDANCE = "Use skills_list to discover available skills, skill_view to s
 TOOL_USE_ENFORCEMENT_GUIDANCE = "You must use tools when appropriate. Do not pretend to have capabilities you lack - if you need to read a file, use the read_file tool. If you need to run a command, use the terminal tool. If you need information, use the appropriate search tool."
 
 
-def build_system_prompt(agent, system_message: str = None) -> str:
+def build_system_prompt(agent, system_message: Optional[str] = None) -> str:
     """
     Assemble the full system prompt from all layers.
 
@@ -51,18 +48,14 @@ def build_system_prompt(agent, system_message: str = None) -> str:
     #   6. Current date & time (frozen at build time)
     #   7. Platform-specific formatting hint
 
-    # Try SOUL.md as primary identity (unless context files are skipped)
+    # Initialize prompt_parts with default identity
+    prompt_parts = [DEFAULT_AGENT_IDENTITY]
     _soul_loaded = False
     if not agent.skip_context_files:
         _soul_content = load_soul_md()
         if _soul_content:
             prompt_parts = [_soul_content]
             _soul_loaded = True
-
-    if not _soul_loaded:
-        # Use default identity
-        _identity = DEFAULT_AGENT_IDENTITY
-        prompt_parts = [_identity]
 
     # Tool-aware behavioral guidance: only inject when the tools are loaded
     tool_guidance = []

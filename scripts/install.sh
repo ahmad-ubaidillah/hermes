@@ -81,15 +81,24 @@ RUN_SETUP=true
 CHECK_OPENCODE=true
 MINIMAL=false
 BRANCH="main"
+LOCAL_SOURCE=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --skip-setup) RUN_SETUP=false; shift ;;
         --no-opencode) CHECK_OPENCODE=false; shift ;;
         --minimal) MINIMAL=true; CHECK_OPENCODE=false; shift ;;
         --branch) BRANCH="$2"; shift 2 ;;
+        --local) LOCAL_SOURCE="$2"; shift 2 ;;
+        --log) LOG_FILE="$2"; shift 2 ;;
         *) shift ;;
     esac
 done
+
+# If --log specified, tee all output to file
+if [ -n "$LOG_FILE" ]; then
+    mkdir -p "$(dirname "$LOG_FILE")"
+    exec > >(tee -a "$LOG_FILE") 2>&1
+fi
 
 # Clear screen for fresh start
 clear
@@ -157,7 +166,17 @@ fi
 
 # Step 2: Clone/Update repository
 step "Installing Aizen Agent... "
-if [ -d "$INSTALL_DIR" ]; then
+if [ -n "$LOCAL_SOURCE" ]; then
+    # Use local source directory
+    if [ ! -d "$LOCAL_SOURCE" ]; then
+        fail "Local source directory not found: $LOCAL_SOURCE"
+        exit 1
+    fi
+    mkdir -p "$INSTALL_DIR"
+    rsync -a --exclude='venv' --exclude='.venv' --exclude='__pycache__' --exclude='.git' "$LOCAL_SOURCE/" "$INSTALL_DIR/"
+    cd "$INSTALL_DIR"
+    success "Installed from local source"
+elif [ -d "$INSTALL_DIR" ]; then
     cd "$INSTALL_DIR"
     if git fetch origin "$BRANCH" 2>/dev/null && git checkout "$BRANCH" 2>/dev/null; then
         git pull origin "$BRANCH" >/dev/null 2>&1 || true
