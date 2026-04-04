@@ -206,14 +206,68 @@ if [ "$CHECK_OPENCODE" = true ]; then
     step "Checking OpenCode... "
     if ! command -v opencode &>/dev/null; then
         info "OpenCode not found, installing..."
+        
+        # Try multiple installation methods
+        INSTALLED=false
+        
+        # Method 1: npm install
         if command -v npm &>/dev/null; then
-            if npm install -g @opencode-ai/opencode >/dev/null 2>&1; then
-                success "OpenCode installed"
-            else
-                warn "OpenCode install failed (optional)"
+            if npm install -g @opencode-ai/opencode 2>/dev/null; then
+                success "OpenCode installed via npm"
+                INSTALLED=true
             fi
-        else
-            warn "npm not found, skipping OpenCode"
+        fi
+        
+        # Method 2: Direct binary download
+        if [ "$INSTALLED" = false ]; then
+            OPENCODE_DIR="$HOME/.local/opencode"
+            mkdir -p "$OPENCODE_DIR"
+            
+            # Detect OS
+            OS=$(uname -s)
+            ARCH=$(uname -m)
+            
+            case "$OS" in
+                Linux)
+                    case "$ARCH" in
+                        x86_64) PLATFORM="linux-x64";;
+                        aarch64|arm64) PLATFORM="linux-arm64";;
+                        *) PLATFORM="";;
+                    esac
+                    ;;
+                Darwin)
+                    case "$ARCH" in
+                        x86_64) PLATFORM="darwin-x64";;
+                        aarch64|arm64) PLATFORM="darwin-arm64";;
+                        *) PLATFORM="";;
+                    esac
+                    ;;
+                *) PLATFORM="";;
+            esac
+            
+            if [ -n "$PLATFORM" ]; then
+                info "Trying binary download for $PLATFORM..."
+                if curl -LsSf "https://github.com/opencode-ai/opencode/releases/latest/download/opencode-${PLATFORM}" -o "$HOME/.local/bin/opencode" 2>/dev/null; then
+                    chmod +x "$HOME/.local/bin/opencode"
+                    if command -v opencode &>/dev/null; then
+                        success "OpenCode installed via binary"
+                        INSTALLED=true
+                    fi
+                fi
+            fi
+        fi
+        
+        # Method 3: Corepack (Node.js built-in)
+        if [ "$INSTALLED" = false ] && command -v corepack &>/dev/null; then
+            if corepack enable 2>/dev/null && corepack prepare opencode@latest --activate 2>/dev/null; then
+                success "OpenCode installed via corepack"
+                INSTALLED=true
+            fi
+        fi
+        
+        if [ "$INSTALLED" = false ]; then
+            warn "OpenCode install failed (optional - you can install manually)"
+            info "Manual install: npm install -g @opencode-ai/opencode"
         fi
     else
         success "OpenCode found"
