@@ -14,13 +14,38 @@ from openai import OpenAI
 logger = logging.getLogger(__name__)
 
 
+class BoundLogger:
+    """Simple wrapper to add context to log records."""
+
+    def __init__(self, base_logger, **context):
+        self._logger = base_logger
+        self._context = context
+
+    def _add_context(self, args):
+        if args and isinstance(args[0], str):
+            return args
+        return args
+
+    def info(self, msg, *args, **kwargs):
+        self._logger.info(msg, *args, **self._context, **kwargs)
+
+    def debug(self, msg, *args, **kwargs):
+        self._logger.debug(msg, *args, **self._context, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self._logger.warning(msg, *args, **self._context, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        self._logger.error(msg, *args, **self._context, **kwargs)
+
+
 class ClientManager:
     """Manages OpenAI client creation, validation, and lifecycle for AIAgent."""
 
     def __init__(self, aizen_agent):
         """Initialize with reference to the AIAgent instance."""
         self.agent = aizen_agent
-        self.logger = logger.bind(agent_id=id(aizen_agent))
+        self.logger = BoundLogger(logger, agent_id=id(aizen_agent))
 
     def _openai_client_lock(self) -> threading.RLock:
         """Get or create the OpenAI client lock."""
